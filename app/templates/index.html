@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GLOBE Site Reconstruction</title>
+<style>
+  :root {
+    --bg: #10161a;
+    --panel: #182126;
+    --line: #26333a;
+    --text: #e8eff0;
+    --muted: #8fa3aa;
+    --accent: #4fb286;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 51px); }
+  .sidebar { border-right: 1px solid var(--line); overflow-y: auto; padding: 14px; }
+  .controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  select, button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: inherit;
+  }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .obs {
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    background: var(--panel);
+  }
+  .obs:hover { border-color: var(--accent); }
+  .obs.active { border-color: var(--accent); background: #1c2a26; }
+  .obs-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .obs-name { font-weight: 600; font-size: 13px; }
+  .chip { flex: none; font-size: 10px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+  .chip-browned { background: #3a2a1d; color: #e0955f; }
+  .chip-ok { background: #1c2a26; color: var(--accent); }
+  .chip-muted { background: #202b31; color: var(--muted); }
+  .visits { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .visit { padding: 1px 7px; font-size: 10px; border-radius: 6px; color: var(--muted); }
+  .visit-active { border-color: var(--accent); color: var(--text); }
+  .obs-meta { color: var(--muted); font-size: 12px; }
+  .obs-flag { color: #d9a441; font-size: 11px; }
+  .obs-error { color: #e0644f; font-size: 12px; margin: 6px 0; padding: 6px 8px;
+    border: 1px solid #5a2a24; border-radius: 6px; background: #2a1b19; }
+  .stage-wrap { position: relative; }
+  .viewer-stage { position: absolute; inset: 0; }
+  .viewer-stage canvas { display: block; }
+  .viewer-empty {
+    display: flex; align-items: center; justify-content: center;
+    height: 100%; color: var(--muted);
+  }
+  .viewer-badge {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(16, 22, 26, 0.82);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    max-width: 340px;
+    backdrop-filter: blur(6px);
+  }
+  .viewer-site { font-weight: 600; }
+  .viewer-badge-collapsed { padding: 6px 34px 6px 12px; font-size: 12px; }
+  .badge-toggle {
+    position: absolute; top: 6px; right: 6px; width: 22px; height: 22px;
+    padding: 0; line-height: 1; border-radius: 5px; font-size: 14px;
+    background: transparent; color: var(--muted);
+  }
+  .badge-toggle:hover { color: var(--text); }
+  .viewer-meta, .viewer-muc { color: var(--muted); font-size: 12px; }
+  .viewer-muc { color: var(--accent); }
+  .viewer-warn { color: #d9a441; font-size: 12px; margin-top: 4px; }
+  .viewer-hint {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    color: var(--muted); font-size: 11px; pointer-events: none;
+  }
+  .note { color: var(--muted); font-size: 12px; margin-top: 12px; }
+  .veg-row { font-size: 12px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
+  .veg-browned { color: #e0955f; font-weight: 600; }
+  .veg-near { color: var(--muted); }
+  .veg-muted { color: var(--muted); font-style: italic; }
+  .veg-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .veg-range { font-weight: 400; color: var(--muted); font-size: 11px; }
+  .veg-gps { font-style: italic; }
+  .viewer-hud {
+    position: absolute; left: 50%; bottom: 38px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
+    background: rgba(16, 22, 26, 0.82); border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 10px; backdrop-filter: blur(6px); max-width: calc(100% - 28px);
+  }
+  .hud-heading { font-size: 12px; color: var(--muted); min-width: 92px; }
+  .hud-heading b { color: var(--text); }
+  .hud-btns { display: flex; gap: 4px; align-items: center; }
+  .hud-btn { padding: 3px 9px; font-size: 12px; }
+  .hud-btn.hud-missing { opacity: 0.45; text-decoration: line-through; }
+  .hud-sep { width: 1px; height: 16px; background: var(--line); margin: 0 4px; }
+  .hud-fov { padding: 3px 9px; font-size: 11px; color: var(--muted); }
+  .veg-spark { margin-top: 8px; }
+  .veg-spark-title { color: var(--muted); font-size: 11px; margin-bottom: 2px; }
+  .veg-spark svg { display: block; }
+  .veg-spark-key { display: flex; gap: 10px; font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .veg-spark-key .k-drought::before { content: "▎"; color: #d9a441; }
+  .veg-spark-key .k-fire::before { content: "▎"; color: #e0644f; }
+  .lcms { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .lcms-title { font-size: 12px; font-weight: 600; }
+  .lcms-sub { color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+  .lcms-row { margin-bottom: 7px; }
+  .lcms-name { font-size: 11px; color: var(--text); }
+  .lcms-vals { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: 10px; color: var(--muted); }
+  .lcms-yr b { color: #7f939b; font-weight: 500; }
+  .lcms-delta { margin-left: auto; font-weight: 600; color: var(--accent); }
+  .lcms-delta.bad { color: #e0955f; }
+  /* Narrow screens: put the viewer first and the list beneath it. A fixed 320 px
+     sidebar left almost no room for the reconstruction on a phone or small laptop. */
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; grid-template-rows: auto auto; height: auto; }
+    .stage-wrap { order: -1; height: 62vh; min-height: 320px; }
+    .sidebar { border-right: none; border-top: 1px solid var(--line); overflow-y: visible; }
+    .viewer-badge { max-width: calc(100% - 28px); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GLOBE Site Reconstruction</h1>
+  <span class="sub">Six-direction land cover photos &rarr; explorable site</span>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="stage-wrap" id="viewer-root"></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "react": "/static/vendor/esm/21af4f1488681981213deb7347b59b095ab991c6.mjs",
+    "react/jsx-runtime": "/static/vendor/esm/6d1ed337243bf56b11bf84a09cf04928a0407e72.mjs",
+    "react/jsx-dev-runtime": "/static/vendor/esm/d26048ffc170ce75bfaf45fc8eb8bb38b5e630e4.mjs",
+    "react-dom": "/static/vendor/esm/fc27742141401c5aa297656894d6fcc38766e1bd.mjs",
+    "react-dom/client": "/static/vendor/esm/5ce3aa6812cfbeabb97114d91d6e5a3d71a0b5df.mjs",
+    "three": "/static/vendor/esm/66666d6d4449616d72a21843c4119c2fd8f4ae96.mjs",
+    "htm": "/static/vendor/esm/17d8cfd6e1401180330da4fca63d1179b7431428.mjs",
+    "@react-three/fiber": "/static/vendor/esm/8ad49292a15f93d52978618a1154af0111248e19.mjs",
+    "@react-three/drei": "/static/vendor/esm/83d2f2a3d1c82cc39783245f729b84b1e10e65fa.mjs"
+  }
+}
+</script>
+
+<script type="module">
+import React, { useState, useEffect, useRef } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  CubeMapViewer, LcmsPanel, fetchObservation, searchSites, html,
+} from "/static/js/cubemap-viewer.mjs";
+
+/* Two independent roots: the sidebar list and the WebGL stage. Keeping them
+   separate means re-rendering the list never tears down the canvas. They share
+   the selected observation through a small window event, the same pattern the
+   CoralPulse dashboard used to feed its species viewer. */
+/* fetch() only rejects on network failure, so a 503 from the API would otherwise
+   look like success and then fail inside .json(). Turn any non-2xx into an Error
+   carrying the server's own explanation. */
+async function getJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    let detail = `${res.status}`;
+    try { detail = (await res.json()).detail || detail; } catch (e) { /* not JSON */ }
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+/* A readable name for a site. The MGRS grid name ("04QGJ764064") is the real
+   identifier and stays visible, but it says nothing to a person, so lead with the
+   observer's own field note or the land cover they recorded. */
+function siteTitle(row) {
+  const note = (row.field_notes || "").trim();
+  if (note) return note.length > 46 ? note.slice(0, 45) + "…" : note;
+  if (row.muc_description) return row.muc_description;
+  return "Land cover site";
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? (iso || "").slice(0, 10)
+    : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
+}
+
+/* One card per site, with a chip per visit. The same site is visited repeatedly
+   (one has 8 observations in two days), and listing each visit as its own card
+   buried the list under near-duplicates. */
+function groupBySite(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    if (!groups.has(row.site_id)) groups.set(row.site_id, []);
+    groups.get(row.site_id).push(row);
+  }
+  return [...groups.values()].map((visits) => {
+    visits.sort((a, b) => (b.measured_at || "").localeCompare(a.measured_at || ""));
+    return visits;
+  });
+}
+
+function BrownedChip({ fraction }) {
+  if (fraction === null || fraction === undefined) {
+    return html`<span className="chip chip-muted" title="Outside the Pukalani browning study area">no vegetation data</span>`;
+  }
+  const pct = Math.round(fraction * 100);
+  return html`<span className=${"chip " + (fraction >= 0.25 ? "chip-browned" : "chip-ok")}
+                    title="Share of the 100 m site footprint that browned, 2019 to 2022">
+    ${pct}% browned</span>`;
+}
+
+function Sidebar() {
+  const [areas, setAreas] = useState([]);
+  const [area, setArea] = useState("pukalani");
+  const [completeOnly, setCompleteOnly] = useState(true);
+  const [results, setResults] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  // Bumped on every selection so a slow response for an earlier click can be
+  // recognised as stale and dropped, rather than overwriting the newer choice.
+  const openToken = useRef(0);
+
+  const open = (row) => {
+    const token = ++openToken.current;
+    setActiveId(row.land_cover_id);
+    setError(null);
+    return fetchObservation(row.land_cover_id)
+      .then((obs) => {
+        if (token !== openToken.current) return; // a newer click superseded this one
+        window.dispatchEvent(new CustomEvent("globe:observation", { detail: obs }));
+      })
+      .catch((e) => {
+        if (token === openToken.current) setError(e.message);
+      });
+  };
+
+  useEffect(() => {
+    getJson("/api/sites/study-areas").then(setAreas).catch((e) => setError(e.message));
+  }, []);
+
+  useEffect(() => {
+    // Same hazard on the list: change the area twice quickly and the first
+    // request can resolve last. `cancelled` makes this effect's result inert
+    // once a newer one has started.
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    openToken.current += 1;
+    searchSites({ area, complete_only: String(completeOnly), limit: "60" })
+      .then((rows) => {
+        if (cancelled) return;
+        setResults(rows);
+        setActiveId(null);
+        window.dispatchEvent(new CustomEvent("globe:observation", { detail: null }));
+        // Open the nearest observation straight away: landing on an empty stage
+        // makes a first-time viewer work out what to click before seeing anything.
+        // Open the first card's latest visit, so the stage shows exactly what that
+        // card's chip describes rather than a different visit to the same site.
+        if (rows.length) open(groupBySite(rows)[0][0]);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setResults([]);
+        setError(e.message);
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [area, completeOnly]);
+
+  const groups = groupBySite(results);
+
+  return html`
+    <div>
+      <div className="controls">
+        <select value=${area} onChange=${(e) => setArea(e.target.value)}>
+          ${areas.map((a) => html`<option key=${a.key} value=${a.key}>${a.name}</option>`)}
+        </select>
+        <button onClick=${() => setCompleteOnly((v) => !v)}
+                title="Complete observations have all six photos">
+          ${completeOnly ? "6/6 photos only" : "all observations"}
+        </button>
+      </div>
+      ${error ? html`<div className="obs-error" role="alert">Couldn't load: ${error}</div>` : null}
+      <div className="obs-meta">
+        ${loading ? "loading…"
+          : `${groups.length} site${groups.length === 1 ? "" : "s"} · ${results.length} observation${results.length === 1 ? "" : "s"}`}
+      </div>
+      <div style=${{ marginTop: "10px" }}>
+        ${groups.map((visits) => {
+          const latest = visits[0];
+          const isActive = visits.some((v) => v.land_cover_id === activeId);
+          return html`
+            <div key=${latest.site_id}
+                 className=${"obs" + (isActive ? " active" : "")}
+                 onClick=${() => open(latest)}>
+              <div className="obs-top">
+                <div className="obs-name">${siteTitle(latest)}</div>
+                <${BrownedChip} fraction=${latest.site_browned_fraction} />
+              </div>
+              <div className="obs-meta">
+                ${latest.site_name}
+                ${latest.elevation_m != null ? ` · ${Math.round(latest.elevation_m)} m` : ""}
+                ${visits.length > 1 ? ` · ${visits.length} visits` : ""}
+              </div>
+              <div className="visits">
+                ${visits.map((v) => html`
+                  <button key=${v.land_cover_id}
+                          className=${"visit" + (v.land_cover_id === activeId ? " visit-active" : "")}
+                          title=${v.is_complete ? "all six photos" : `missing ${v.missing_directions.join(", ")}`}
+                          onClick=${(e) => { e.stopPropagation(); open(v); }}>
+                    ${fmtDate(v.measured_at)}${v.is_complete ? "" : " ⚠"}
+                  </button>`)}
+              </div>
+            </div>`;
+        })}
+      </div>
+      <div className="note">
+        Cube-map reprojection of six fixed-point photos — a look-around
+        reconstruction, not photogrammetry. Seams are expected.
+      </div>
+      <${LcmsPanel} />
+    </div>`;
+}
+
+function Viewer() {
+  const [observation, setObservation] = useState(null);
+  useEffect(() => {
+    const on = (e) => setObservation(e.detail);
+    window.addEventListener("globe:observation", on);
+    return () => window.removeEventListener("globe:observation", on);
+  }, []);
+  return html`<${CubeMapViewer} observation=${observation} />`;
+}
+
+createRoot(document.getElementById("sidebar")).render(html`<${Sidebar} />`);
+createRoot(document.getElementById("viewer-root")).render(html`<${Viewer} />`);
+</script>
+
+</body>
+</html>

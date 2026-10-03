@@ -1,0 +1,3 @@
+/* esm.sh - react-composer@5.0.3 */
+import{cloneElement as u}from"react";import r from"/static/vendor/esm/bc741aad33ce758be45146bed24a04fb4736bc88.mjs";function t(e){return f(e.children,e.components)}t.propTypes={children:r.func.isRequired,components:r.arrayOf(r.oneOfType([r.element,r.func])).isRequired};function f(e,n,o){if(o=o||[],!n[0])return e(o);function c(p){return f(e,n.slice(1),o.concat([p]))}return typeof n[0]=="function"?n[0]({results:o,render:c}):u(n[0],{children:c})}export{t as default};
+//# sourceMappingURL=react-composer.mjs.map

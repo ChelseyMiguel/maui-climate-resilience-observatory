@@ -1,0 +1,3 @@
+/* esm.sh - potpack@1.0.2 */
+function f(o){let s=0,l=0;for(let t of o)s+=t.w*t.h,l=Math.max(l,t.w);o.sort((t,a)=>a.h-t.h);let e=[{x:0,y:0,w:Math.max(Math.ceil(Math.sqrt(s/.95)),l),h:1/0}],w=0,i=0;for(let t of o)for(let a=e.length-1;a>=0;a--){let h=e[a];if(!(t.w>h.w||t.h>h.h)){if(t.x=h.x,t.y=h.y,i=Math.max(i,t.y+t.h),w=Math.max(w,t.x+t.w),t.w===h.w&&t.h===h.h){let n=e.pop();a<e.length&&(e[a]=n)}else t.h===h.h?(h.x+=t.w,h.w-=t.w):t.w===h.w?(h.y+=t.h,h.h-=t.h):(e.push({x:h.x+t.w,y:h.y,w:h.w-t.w,h:t.h}),h.y+=t.h,h.h-=t.h);break}}return{w,h:i,fill:s/(w*i)||0}}export{f as default};
+//# sourceMappingURL=potpack.mjs.map

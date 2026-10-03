@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+# Cached GLOBE responses and mirrored photos — regenerate with scripts/ingest_maui.py
+data/cache/
+data/photos/
+data/sites_*.json

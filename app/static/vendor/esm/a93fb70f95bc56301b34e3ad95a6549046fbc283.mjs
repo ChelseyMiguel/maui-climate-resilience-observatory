@@ -1,0 +1,3 @@
+/* esm.sh - @use-gesture/core@10.3.1/dist/maths-0ab39ae9.esm */
+function M(r,u,e){return Math.max(u,Math.min(r,e))}var y={toVector(r,u){return r===void 0&&(r=u),Array.isArray(r)?r:[r,r]},add(r,u){return[r[0]+u[0],r[1]+u[1]]},sub(r,u){return[r[0]-u[0],r[1]-u[1]]},addTo(r,u){r[0]+=u[0],r[1]+=u[1]},subTo(r,u){r[0]-=u[0],r[1]-=u[1]}};function b(r,u,e){return u===0||Math.abs(u)===1/0?Math.pow(r,e*5):r*u*e/(u+e*r)}function t(r,u,e,f=.15){return f===0?M(r,u,e):r<u?-b(u-r,e-u,f)+u:r>e?+b(r-e,e-u,f)+e:r}function A(r,[u,e],[f,a]){let[[d,c],[h,n]]=r;return[t(u,d,c,f),t(e,h,n,a)]}export{y as V,A as c,t as r};
+//# sourceMappingURL=maths-0ab39ae9.esm.mjs.map

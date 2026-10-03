@@ -1,0 +1,36 @@
+/* esm.sh - @monogrid/gainmap-js@3.4.0 */
+import{Q as E}from"/static/vendor/esm/9b681618eef3c14cad2d9cfd0e21a6d1b50a51be.mjs";import{c as q,L as B,e as I,X as O,G as W}from"/static/vendor/esm/b3c8a41aeb614dda6a7fe70f3ffb0d1366fc09bf.mjs";import{M as Z,a as U}from"/static/vendor/esm/b3c8a41aeb614dda6a7fe70f3ffb0d1366fc09bf.mjs";import{ShaderMaterial as G,NoBlending as N,Vector3 as p,WebGLRenderer as Q,FileLoader as y}from"three";var J=`
+varying vec2 vUv;
+
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`,X=`
+// min half float value
+#define HALF_FLOAT_MIN vec3( -65504, -65504, -65504 )
+// max half float value
+#define HALF_FLOAT_MAX vec3( 65504, 65504, 65504 )
+
+uniform sampler2D sdr;
+uniform sampler2D gainMap;
+uniform vec3 gamma;
+uniform vec3 offsetHdr;
+uniform vec3 offsetSdr;
+uniform vec3 gainMapMin;
+uniform vec3 gainMapMax;
+uniform float weightFactor;
+
+varying vec2 vUv;
+
+void main() {
+  vec3 rgb = texture2D( sdr, vUv ).rgb;
+  vec3 recovery = texture2D( gainMap, vUv ).rgb;
+  vec3 logRecovery = pow( recovery, gamma );
+  vec3 logBoost = gainMapMin * ( 1.0 - logRecovery ) + gainMapMax * logRecovery;
+  vec3 hdrColor = (rgb + offsetSdr) * exp2( logBoost * weightFactor ) - offsetHdr;
+  vec3 clampedHdrColor = max( HALF_FLOAT_MIN, min( HALF_FLOAT_MAX, hdrColor ));
+  gl_FragColor = vec4( clampedHdrColor , 1.0 );
+}
+`,v=class extends G{_maxDisplayBoost;_hdrCapacityMin;_hdrCapacityMax;constructor({gamma:e,offsetHdr:a,offsetSdr:n,gainMapMin:h,gainMapMax:s,maxDisplayBoost:r,hdrCapacityMin:i,hdrCapacityMax:f,sdr:c,gainMap:m}){super({name:"GainMapDecoderMaterial",vertexShader:J,fragmentShader:X,uniforms:{sdr:{value:c},gainMap:{value:m},gamma:{value:new p(1/e[0],1/e[1],1/e[2])},offsetHdr:{value:new p().fromArray(a)},offsetSdr:{value:new p().fromArray(n)},gainMapMin:{value:new p().fromArray(h)},gainMapMax:{value:new p().fromArray(s)},weightFactor:{value:(Math.log2(r)-i)/(f-i)}},blending:N,depthTest:!1,depthWrite:!1}),this._maxDisplayBoost=r,this._hdrCapacityMin=i,this._hdrCapacityMax=f,this.needsUpdate=!0,this.uniformsNeedUpdate=!0}get sdr(){return this.uniforms.sdr.value}set sdr(e){this.uniforms.sdr.value=e}get gainMap(){return this.uniforms.gainMap.value}set gainMap(e){this.uniforms.gainMap.value=e}get offsetHdr(){return this.uniforms.offsetHdr.value.toArray()}set offsetHdr(e){this.uniforms.offsetHdr.value.fromArray(e)}get offsetSdr(){return this.uniforms.offsetSdr.value.toArray()}set offsetSdr(e){this.uniforms.offsetSdr.value.fromArray(e)}get gainMapMin(){return this.uniforms.gainMapMin.value.toArray()}set gainMapMin(e){this.uniforms.gainMapMin.value.fromArray(e)}get gainMapMax(){return this.uniforms.gainMapMax.value.toArray()}set gainMapMax(e){this.uniforms.gainMapMax.value.fromArray(e)}get gamma(){let e=this.uniforms.gamma.value;return[1/e.x,1/e.y,1/e.z]}set gamma(e){let a=this.uniforms.gamma.value;a.x=1/e[0],a.y=1/e[1],a.z=1/e[2]}get hdrCapacityMin(){return this._hdrCapacityMin}set hdrCapacityMin(e){this._hdrCapacityMin=e,this.calculateWeight()}get hdrCapacityMax(){return this._hdrCapacityMax}set hdrCapacityMax(e){this._hdrCapacityMax=e,this.calculateWeight()}get maxDisplayBoost(){return this._maxDisplayBoost}set maxDisplayBoost(e){this._maxDisplayBoost=Math.max(1,Math.min(65504,e)),this.calculateWeight()}calculateWeight(){let e=(Math.log2(this._maxDisplayBoost)-this._hdrCapacityMin)/(this._hdrCapacityMax-this._hdrCapacityMin);this.uniforms.weightFactor.value=Math.max(0,Math.min(1,e))}},z=q({renderer:Q,createMaterial:d=>new v(d),createQuadRenderer:d=>new E(d)}),Y=d=>{if(!d.renderer)throw new Error("Renderer is required for decode function");let e=z({...d,renderer:d.renderer});try{e.render()}catch(a){throw e.disposeOnDemandRenderer(),a}return e},w=class extends B{constructor(e,a){super({renderer:e,createMaterial:n=>new v(n),createQuadRenderer:n=>new E(n)},a)}async render(e,a,n,h){let{sdrImage:s,gainMapImage:r,needsFlip:i}=await this.processImages(n,h,"flipY"),{gainMap:f,sdr:c}=this.createTextures(s,r,i);this.updateQuadRenderer(e,s,f,c,a),e.render()}},D=class extends w{load([e,a,n],h,s,r){let i=this.prepareQuadRenderer(),f,c,m,l=async()=>{if(f&&c&&m){try{await this.render(i,m,f,c)}catch(t){this.manager.itemError(e),this.manager.itemError(a),this.manager.itemError(n),typeof r=="function"&&r(t),i.disposeOnDemandRenderer();return}typeof h=="function"&&h(i),this.manager.itemEnd(e),this.manager.itemEnd(a),this.manager.itemEnd(n),i.disposeOnDemandRenderer()}},o=!0,C=0,_=0,R=!0,A=0,H=0,F=!0,L=0,b=0,x=()=>{if(typeof s=="function"){let t=C+A+L,P=_+H+b,T=o&&R&&F;s(new ProgressEvent("progress",{lengthComputable:T,loaded:P,total:t}))}};this.manager.itemStart(e),this.manager.itemStart(a),this.manager.itemStart(n);let u=new y(this._internalLoadingManager);u.setResponseType("arraybuffer"),u.setRequestHeader(this.requestHeader),u.setPath(this.path),u.setWithCredentials(this.withCredentials),u.load(e,async t=>{if(typeof t=="string")throw new Error("Invalid sdr buffer");f=t,await l()},t=>{o=t.lengthComputable,_=t.loaded,C=t.total,x()},t=>{this.manager.itemError(e),typeof r=="function"&&r(t)});let g=new y(this._internalLoadingManager);g.setResponseType("arraybuffer"),g.setRequestHeader(this.requestHeader),g.setPath(this.path),g.setWithCredentials(this.withCredentials),g.load(a,async t=>{if(typeof t=="string")throw new Error("Invalid gainmap buffer");c=t,await l()},t=>{R=t.lengthComputable,H=t.loaded,A=t.total,x()},t=>{this.manager.itemError(a),typeof r=="function"&&r(t)});let M=new y(this._internalLoadingManager);return M.setRequestHeader(this.requestHeader),M.setPath(this.path),M.setWithCredentials(this.withCredentials),M.load(n,async t=>{if(typeof t!="string")throw new Error("Invalid metadata string");m=JSON.parse(t),await l()},t=>{F=t.lengthComputable,b=t.loaded,L=t.total,x()},t=>{this.manager.itemError(n),typeof r=="function"&&r(t)}),i}},S=class extends w{load(e,a,n,h){let s=this.prepareQuadRenderer(),r=new y(this._internalLoadingManager);return r.setResponseType("arraybuffer"),r.setRequestHeader(this.requestHeader),r.setPath(this.path),r.setWithCredentials(this.withCredentials),this.manager.itemStart(e),r.load(e,async i=>{if(typeof i=="string")throw new Error("Invalid buffer, received [string], was expecting [ArrayBuffer]");let f=new Uint8Array(i),c,m,l;try{let o=await I(f);c=o.sdr,m=o.gainMap,l=o.metadata}catch(o){if(o instanceof O||o instanceof W)console.warn(`Failure to reconstruct an HDR image from ${e}: Gain map metadata not found in the file, HDRJPGLoader will render the SDR jpeg`),l={gainMapMin:[0,0,0],gainMapMax:[1,1,1],gamma:[1,1,1],hdrCapacityMin:0,hdrCapacityMax:1,offsetHdr:[0,0,0],offsetSdr:[0,0,0]},c=f;else throw o}try{await this.render(s,l,c.buffer,m?.buffer)}catch(o){this.manager.itemError(e),typeof h=="function"&&h(o),s.disposeOnDemandRenderer();return}typeof a=="function"&&a(s),this.manager.itemEnd(e),s.disposeOnDemandRenderer()},n,i=>{this.manager.itemError(e),typeof h=="function"&&h(i)}),s}};export{v as GainMapDecoderMaterial,D as GainMapLoader,W as GainMapNotFoundError,S as HDRJPGLoader,S as JPEGRLoader,B as LoaderBaseShared,Z as MPFExtractor,E as QuadRenderer,O as XMPMetadataNotFoundError,q as createDecodeFunction,Y as decode,I as extractGainmapFromJPEG,U as extractXMP};
+//# sourceMappingURL=gainmap-js.mjs.map
