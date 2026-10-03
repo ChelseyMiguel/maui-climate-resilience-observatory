@@ -11,3 +11,13 @@ venv/
 data/cache/
 data/photos/
 data/sites_*.json
+
+# Svelte map: dependencies are reinstalled with `npm install`. The BUILT map in
+# app/static/map/ is committed on purpose, so the app runs without Node.
+web/node_modules/
+
+# Raw terrain tiles (re-downloadable); the derived grid upcountry_dem.* is kept.
+data/terrain/tiles/
+
+# Structure-from-motion scratch output (scripts/sfm/run_sfm.py)
+data/sfm/

@@ -1,0 +1,12 @@
+:root {
+  --bg: #10161a; --panel: #172025; --line: #26333a; --text: #e8eff0;
+  --muted: #8fa3aa; --accent: #4fb286; --amber: #e0955f; --fire: #ff3b30;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+a { color: var(--accent); }
+button, select, input { font: inherit; color: inherit; }

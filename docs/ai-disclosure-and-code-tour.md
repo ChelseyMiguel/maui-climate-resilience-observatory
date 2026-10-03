@@ -29,7 +29,10 @@ assistant during development, September–October 2026.
 - Found and fixed bugs, including a polygon-hole error that had overcounted
   browned sites and a rendering problem in the 3D viewer.
 - Drafted the Earth Engine export scripts in `scripts/gee/`, modelled on the
-  existing `gee_export_nbr.js`.
+  existing `gee_export_nbr.js`, including the burned-vs-unburned fire comparison.
+- Built the 3D map page (`web/`, Svelte + three.js) and the hazard data layer:
+  fetched the NIFC fire perimeters, Drought Monitor index and terrain, found that
+  the study area did not burn, and ran the structure-from-motion experiment.
 
 **What I did:** `[fill in — only what is true. Candidates, from the files:]`
 
@@ -52,7 +55,8 @@ work created after Oct 30, 2025, so say which parts are reused versus new.
 
 **Open-source libraries:** FastAPI, Uvicorn, Pydantic, httpx, pypdf, pytest, Ruff
 (Python); React, three.js, @react-three/fiber, @react-three/drei, htm (JavaScript,
-vendored). Languages: Python, JavaScript, Earth Engine JavaScript.
+vendored); Svelte, Vite, three.js (the `/map` page); COLMAP via pycolmap (SfM
+experiment only). Languages: Python, JavaScript, Svelte, Earth Engine JavaScript.
 
 **Data sources and credit:**
 
@@ -60,6 +64,9 @@ vendored). Languages: Python, JavaScript, Earth Engine JavaScript.
   no authentication).
 - LCMS v2024-10: USDA Forest Service Landscape Change Monitoring System.
 - Sentinel-2 imagery: ESA / Copernicus, processed in Google Earth Engine.
+- Fire perimeters: National Interagency Fire Center (WFIGS, perimeter history).
+- Drought: U.S. Drought Monitor, University of Nebraska-Lincoln.
+- Terrain: AWS Terrain Tiles (Tilezen), largely USGS 3DEP for Hawaiʻi.
 - NASA SEES (Earth System Explorers) and the GLOBE team: guidance and permission to
   be credited. `[exact wording they asked for, if any]` Do not imply they reviewed
   or endorsed the tool.
@@ -84,6 +91,9 @@ For each row, try answering the question out loud *without* looking at the code.
 | `AOI_BROWNED_FRACTION` (42.7%) | The yardstick for a site's own browned share | Why does 63% not prove much on its own? The sites cluster in one hotspot of an area that is already 43% browned |
 | `lib/vegetation/lcms.py` | County-wide LCMS trends | **Why is it labelled county-wide, not per-site?** Maui County is 1.17 M acres; your analysis is a 1.5 km study area |
 | `scripts/gee/*.js` | Per-site LCMS classes and NDVI/NBR curves from Earth Engine | Why not call Earth Engine live? Authentication, and a demo that fails on judging day |
+| `lib/hazards.py` | Distance from a site to the nearest 2023 fire perimeter | **Why "distance", never "risk"?** Nothing here models fire behaviour; it only says where fire actually went |
+| `web/` Svelte map | 3D terrain with layers draped on it | Why can a canvas map straight onto the mesh? The elevation grid is spaced linearly in lat/lon |
+| `scripts/sfm/run_sfm.py` | Tried to build a 3D model from repeat visits | **Why did it fail?** Photos close enough to match had no parallax; ones far enough apart didn't match (grass, changing light) |
 | `mirror_photos()` | Saves photos locally so the demo works offline | Why write to a temp file and rename? An interrupted download would leave a truncated image |
 
 **Two honest claims to be able to defend:**

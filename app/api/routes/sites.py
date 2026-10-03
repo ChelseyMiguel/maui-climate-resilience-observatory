@@ -13,6 +13,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
+from lib import hazards
 from lib.globe_api import client
 from lib.vegetation import browning, lcms
 
@@ -152,6 +153,9 @@ class SiteDetail(SiteSummary):
     country_code: str | None
     photos: dict[str, PhotoItem]
     vegetation: VegetationContext | None = None
+    # Nearest 8 Aug 2023 fire perimeter. A distance to where fire actually went,
+    # NOT a fire-risk score.
+    fire: dict | None = None
 
 
 class SeriesPoint(BaseModel):
@@ -242,6 +246,7 @@ def _with_local_photos(site: client.LandCoverSite, data: dict) -> dict:
 def _detail(site: client.LandCoverSite) -> SiteDetail:
     """Full detail plus the vegetation-health context for where the observer stood."""
     detail = SiteDetail(**_with_local_photos(site, site.to_dict()))
+    detail.fire = hazards.fire_context(site.latitude, site.longitude)
     detail.vegetation = VegetationContext(
         **browning.context_for_point(
             site.latitude, site.longitude, site.location_accuracy_m

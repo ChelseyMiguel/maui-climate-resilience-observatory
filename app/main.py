@@ -10,11 +10,11 @@ from __future__ import annotations
 import mimetypes
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import sites
+from app.api.routes import layers, sites
 from lib.globe_api import client
 
 # Browsers refuse to execute ES modules served with a non-JS Content-Type, and
@@ -42,6 +42,18 @@ client.PHOTO_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/photos", StaticFiles(directory=str(client.PHOTO_DIR)), name="photos")
 
 app.include_router(sites.router, prefix="/api/sites", tags=["sites"])
+app.include_router(layers.router, prefix="/api/layers", tags=["layers"])
+
+# The 3D map + disaster-awareness page is a separate Svelte app (web/), built by
+# Vite into app/static/map/. Only the existing viewer above needs no build step.
+_MAP_INDEX = _static_dir / "map" / "index.html"
+
+
+@app.get("/map", response_class=FileResponse)
+def map_page() -> FileResponse:
+    if not _MAP_INDEX.exists():
+        raise HTTPException(status_code=503, detail="Map not built — run: cd web && npm install && npm run build")
+    return FileResponse(_MAP_INDEX, media_type="text/html")
 
 
 @app.get("/", response_class=FileResponse)

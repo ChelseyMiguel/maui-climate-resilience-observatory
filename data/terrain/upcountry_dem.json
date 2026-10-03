@@ -1,0 +1,16 @@
+{
+  "bbox": {
+    "west": -156.45,
+    "south": 20.7,
+    "east": -156.24,
+    "north": 20.88
+  },
+  "width": 320,
+  "height": 293,
+  "min_m": -10,
+  "max_m": 3051,
+  "row_order": "north_to_south",
+  "spacing": "linear in latitude and longitude",
+  "encoding": "int16 little-endian metres",
+  "source": "AWS Terrain Tiles (Tilezen), Terrarium, z13"
+}

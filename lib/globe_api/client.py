@@ -249,6 +249,26 @@ def _clean(value) -> str | None:
     return text
 
 
+# Field-note answers that carry no information about the site. Some observers
+# type "No" into the notes box; as a site title that reads as nonsense. Matched
+# exactly (case-insensitive) — short notes like "Park" or "Beach", and codes like
+# "SOH045", are real and are kept.
+NON_ANSWER_NOTES = frozenset(
+    {"no", "none", "n/a", "na", "nope", "nothing", "null", "nil", "-", ".", "x", "test"}
+)
+
+
+def meaningful_note(note: str | None) -> str | None:
+    """A field note fit to show as a label, or None if it is a non-answer.
+
+    Only for display: the raw note stays in `field_notes` for provenance.
+    """
+    text = _clean(note)
+    if text is None or text.strip().lower() in NON_ANSWER_NOTES:
+        return None
+    return text
+
+
 def _as_float(value) -> float | None:
     text = _clean(value)
     if text is None:

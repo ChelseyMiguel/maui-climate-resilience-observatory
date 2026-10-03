@@ -78,7 +78,32 @@ Safe to say today:
 - dNBR detects more browning than dNDVI at the -0.10 threshold (median -0.098
   vs -0.084), i.e. the SWIR-based index is more sensitive to this drought.
 
+## The fires and the study area — read this before any fire claim
+
+The August 2023 perimeters (NIFC WFIGS) show that **none of the fires burned
+inside the Pukalani study area.** The nearest, Olinda, has its edge ~3 km from the
+study-area centre, so ~1.5 km outside the 1.5 km circle; Kula is 6.2 km away and
+Pulehu 5.2 km. **No browned-patch polygon lies inside any perimeter.**
+
+So the browning analysis describes ground *near* the fires, not ground that burned.
+Supportable: "regional drought preconditioning in the Upcountry area that
+burned". Not supportable: "the browned ground burned".
+
+`scripts/gee/fire_perimeter_browning.js` runs the same dNDVI/dNBR method inside
+each burned perimeter against a 1 km unburned ring next to it. Until it has been
+run, there is no evidence either way about the burned ground itself.
+
+Drought context (U.S. Drought Monitor, Maui County): 2022 had the highest annual
+mean DSCI in the record (214); in the week of the fires it was 135 and rising
+(106 -> 135 -> 180 over three weeks).
+
 Not safe to say yet:
+
+- ~~"The browned patches burned."~~ — none lie inside a 2023 perimeter.
+- ~~"Browning predicted where the fire went."~~ — untested; needs the burned-vs-
+  unburned comparison, and even then it is a correlation, not a prediction.
+- ~~"The tool does structure-from-motion / a 3D reconstruction of a site."~~ — SfM
+  was attempted and failed on this data (`docs/sfm-experiment.md`).
 
 - ~~"These sites are inside browned patches."~~ — 11 of 31 read as inside, but
   only 1 has a GPS error small enough to say so (the sites sit 5-40 m from the

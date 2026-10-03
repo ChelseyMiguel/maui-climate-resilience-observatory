@@ -181,3 +181,26 @@ def test_to_dict_is_json_safe():
     assert d["is_complete"] is True
     assert d["photos"]["North"]["classifications"][0]["percent"] == 100
     assert not math.isnan(d["latitude"])
+
+
+def test_non_answer_notes_are_not_used_as_labels():
+    assert client.meaningful_note("No") is None
+    assert client.meaningful_note("  n/a ") is None
+    assert client.meaningful_note("null") is None
+    assert client.meaningful_note(None) is None
+
+
+def test_short_but_real_notes_are_kept():
+    """Real Hawaii data has notes like these; a length cut-off would wrongly drop them."""
+    for note in ("Park", "Beach", "SOH045", "Hb2", "Rice Park Maui"):
+        assert client.meaningful_note(note) == note
+
+
+def test_viewer_and_api_use_the_same_non_answer_list():
+    """The viewer (JS) and the map API (Python) each filter notes; keep them in step."""
+    import re
+    from pathlib import Path
+
+    page = (Path(__file__).resolve().parents[2] / "app" / "templates" / "index.html").read_text()
+    js_list = re.search(r"NON_ANSWER_NOTES = new Set\(\[(.*?)\]\)", page).group(1)
+    assert set(re.findall(r'"([^"]*)"', js_list)) == set(client.NON_ANSWER_NOTES)

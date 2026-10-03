@@ -27,7 +27,15 @@ everything still works, loading photos from `data.globe.gov` on demand.
 .venv/bin/python -m uvicorn app.main:app --reload
 ```
 
-Then open http://localhost:8000.
+Then open http://localhost:8000 for the 360° site viewer, and
+http://localhost:8000/map for the 3D map and fire context.
+
+The map is already built into `app/static/map/`, so **running the app needs no
+Node.js**. Only changing the map does:
+
+```bash
+cd web && npm install && npm run build
+```
 
 ## What works today
 
@@ -178,6 +186,42 @@ on judging day.
 Both scripts reuse the masking, band pairing and `-9999` sentinel from
 `gee_export_nbr.js`, so their CSVs drop into the existing loaders unchanged.
 
+## 3D map and fire context (`/map`)
+
+A separate page, built with **Svelte + three.js** (in `web/`, compiled by Vite into
+`app/static/map/`). It is the one part of the project with a build step; the 360°
+viewer still has none.
+
+- **3D terrain** of Upcountry Maui from a 320 x 293 elevation grid
+  (`scripts/fetch_terrain.py`, AWS Terrain Tiles / USGS 3DEP). Checked against
+  GLOBE observers' recorded elevations at 30 sites: **median difference 1 m**.
+  Relief can be exaggerated 1-4x.
+- **Layers draped on it:** the 879 browning patches, the fire perimeters, the
+  1.5 km study area, and a pin per GLOBE site coloured by browned share.
+  Clicking a pin shows the site and links into its 360° view (`/?obs=<id>`).
+- **The August 8, 2023 fires** — Olinda, Kula, Pulehu, Lahaina — from the National
+  Interagency Fire Center (`scripts/fetch_fire_perimeters.py`). Dates are shown in
+  Hawaiʻi time: the service stores UTC, which would put them on 9 Aug.
+- **Drought, then fire:** a timeline of Maui County's weekly U.S. Drought Monitor
+  index (`scripts/fetch_drought.py`) against the study area's NDVI, with 2022 (the
+  worst drought year, mean DSCI 214) and the fire date marked.
+- **Be prepared:** links to official alert and preparedness sources (MEMA Alerts,
+  Maui EMA, HWMO, HI-EMA, Ready.gov, Ready Set Go!), each checked to resolve. The
+  page says plainly that it is **not an emergency alert system**.
+
+**The key finding it surfaces: the Pukalani study area did not burn.** The nearest
+2023 perimeter (Olinda) starts ~1.5 km outside it, and no browned patch lies inside
+any perimeter. The page says so, and `docs/evidence-claims.md` explains what can
+and can't be claimed as a result. `scripts/gee/fire_perimeter_browning.js` runs the
+browning method on the burned ground itself against a 1 km unburned ring.
+
+## Structure-from-motion: tried, and why it failed
+
+`scripts/sfm/run_sfm.py` attempts a COLMAP reconstruction of the one site with
+multi-view coverage (8 visits, 32 photos). It does not reconstruct: only 12 of 496
+image pairs match, and those are near-identical viewpoints. Full write-up, and why
+it motivates the capture rig: `docs/sfm-experiment.md`.
+
 ## Layout
 
 ```
@@ -190,8 +234,16 @@ app/
 lib/globe_api/client.py      GLOBE API client, parsing, caching, geo filtering
 lib/vegetation/browning.py   spatial join to the browning patches + NDVI/NBR series
 lib/vegetation/lcms.py       LCMS county land-change trajectories
+lib/hazards.py               fire perimeters, drought record, distance-to-fire
+app/api/routes/layers.py     map layers: terrain, browning, fires, drought, sites
+web/                         Svelte + three.js source for /map (npm run build)
+app/static/map/              the built map (committed, so no Node at runtime)
+app/static/js/view-math.mjs  viewer camera maths, unit-tested with node --test
 scripts/gee/                 Earth Engine export scripts (run in the Code Editor)
 scripts/extract_lcms.py      LCMS Dashboard PDFs -> data/research/lcms_maui.json
+scripts/fetch_*.py           fire perimeters, drought index, terrain grid
+scripts/sfm/run_sfm.py       structure-from-motion experiment (optional pycolmap)
+tests/js/                    node --test "tests/js/*.test.mjs"
 data/research/               browning patches + monthly NDVI/NBR (committed)
 scripts/ingest_maui.py       warm the cache before a demo
 tests/unit/                  parsing tests built from real API responses

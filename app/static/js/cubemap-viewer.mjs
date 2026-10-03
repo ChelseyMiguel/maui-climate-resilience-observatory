@@ -186,6 +186,11 @@ function HeadingBadge({ observation }) {
           </div>`
         : null}
       <${BrowningReadout} vegetation=${observation.vegetation} />
+      ${observation.fire && observation.fire.available ? html`
+        <div className="veg-sub fire-line">
+          Nearest Aug 2023 fire: ${observation.fire.nearest_fire},
+          ${observation.fire.inside_perimeter ? " inside its perimeter" : ` ${observation.fire.distance_km} km away`}
+        </div>` : null}
       ${observation.vegetation && observation.vegetation.in_analysis_area
         ? html`<${NdviSparkline} />`
         : null}

@@ -29,6 +29,7 @@
   }
   header h1 { font-size: 16px; margin: 0; font-weight: 600; }
   header .sub { color: var(--muted); font-size: 12px; }
+  header .maplink { margin-left: auto; font-size: 13px; color: var(--accent); text-decoration: none; }
   .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 51px); }
   .sidebar { border-right: 1px solid var(--line); overflow-y: auto; padding: 14px; }
   .controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -104,6 +105,7 @@
   .veg-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
   .veg-range { font-weight: 400; color: var(--muted); font-size: 11px; }
   .veg-gps { font-style: italic; }
+  .fire-line { color: #ff8a80; }
   .viewer-hud {
     position: absolute; left: 50%; bottom: 38px; transform: translateX(-50%);
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
@@ -147,6 +149,7 @@
 <header>
   <h1>GLOBE Site Reconstruction</h1>
   <span class="sub">Six-direction land cover photos &rarr; explorable site</span>
+  <a class="maplink" href="/map">3D map &amp; fire context &rarr;</a>
 </header>
 
 <div class="layout">
@@ -197,8 +200,13 @@ async function getJson(url) {
 /* A readable name for a site. The MGRS grid name ("04QGJ764064") is the real
    identifier and stays visible, but it says nothing to a person, so lead with the
    observer's own field note or the land cover they recorded. */
+// Same list as NON_ANSWER_NOTES in lib/globe_api/client.py: notes that say
+// nothing about the site ("No", "n/a") must not become its title.
+const NON_ANSWER_NOTES = new Set(["no", "none", "n/a", "na", "nope", "nothing", "null", "nil", "-", ".", "x", "test"]);
+
 function siteTitle(row) {
-  const note = (row.field_notes || "").trim();
+  let note = (row.field_notes || "").trim();
+  if (NON_ANSWER_NOTES.has(note.toLowerCase())) note = "";
   if (note) return note.length > 46 ? note.slice(0, 45) + "…" : note;
   if (row.muc_description) return row.muc_description;
   return "Land cover site";
@@ -234,6 +242,11 @@ function BrownedChip({ fraction }) {
                     title="Share of the 100 m site footprint that browned, 2019 to 2022">
     ${pct}% browned</span>`;
 }
+
+/* Deep link from the 3D map ("Open the 360° view"): /?obs=<land_cover_id>. Read
+   once and consumed by the first list load, so changing area or filter afterwards
+   behaves normally instead of snapping back to the linked observation. */
+let pendingObs = new URLSearchParams(window.location.search).get("obs");
 
 function Sidebar() {
   const [areas, setAreas] = useState([]);
@@ -281,9 +294,17 @@ function Sidebar() {
         window.dispatchEvent(new CustomEvent("globe:observation", { detail: null }));
         // Open the nearest observation straight away: landing on an empty stage
         // makes a first-time viewer work out what to click before seeing anything.
-        // Open the first card's latest visit, so the stage shows exactly what that
-        // card's chip describes rather than a different visit to the same site.
-        if (rows.length) open(groupBySite(rows)[0][0]);
+        if (pendingObs) {
+          // The linked observation may not be in this area's list; the API finds
+          // it by id regardless, so open it directly.
+          const id = pendingObs;
+          pendingObs = null;
+          open({ land_cover_id: id });
+        } else if (rows.length) {
+          // Open the first card's latest visit, so the stage shows exactly what that
+          // card's chip describes rather than a different visit to the same site.
+          open(groupBySite(rows)[0][0]);
+        }
       })
       .catch((e) => {
         if (cancelled) return;

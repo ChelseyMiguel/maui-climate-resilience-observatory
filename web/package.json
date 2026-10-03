@@ -1,0 +1,20 @@
+{
+  "name": "globe-map",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "3D terrain map and wildfire/drought awareness view for GLOBE Site Reconstruction",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "svelte": "^5.57.1",
+    "vite": "^8.3.2"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  }
+}
