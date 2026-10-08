@@ -120,3 +120,131 @@ def site_pins() -> list[dict]:
         })
     pins.sort(key=lambda p: p["site_name"])
     return pins
+
+
+# ---------------------------------------------------------------------------
+# Observatory layers: regions, community context, drought maps, rasters
+# ---------------------------------------------------------------------------
+
+CONTEXT = DATA / "context"
+CONTEXT_KEYS = ("fire_stations", "ems_stations", "hospitals", "public_schools", "private_schools")
+RASTERS = {
+    "dndvi": browning.DATA_DIR / "dndvi_2019_2022.tif",
+    "dnbr": browning.DATA_DIR / "dnbr_2019_2022.tif",
+}
+
+
+@router.get("/regions")
+def region_boundaries() -> FileResponse:
+    """Pukalani, Makawao and Kula as 2020 Census Designated Places."""
+    return FileResponse(_require(CONTEXT / "regions.geojson", "scripts/fetch_context_layers.py"),
+                        media_type="application/geo+json")
+
+
+@router.get("/context")
+def context_catalog() -> list[dict]:
+    """What community-context layers exist, how many features, and how current
+    each is in its publisher's own words."""
+    path = _require(CONTEXT / "catalog.json", "scripts/fetch_context_layers.py")
+    return json.loads(path.read_text())
+
+
+@router.get("/context/{key}")
+def context_layer(key: str) -> FileResponse:
+    if key not in CONTEXT_KEYS:
+        raise HTTPException(status_code=404, detail=f"Unknown context layer '{key}'")
+    return FileResponse(_require(CONTEXT / f"{key}.geojson", "scripts/fetch_context_layers.py"),
+                        media_type="application/geo+json")
+
+
+@router.get("/drought-maps")
+def drought_map_index() -> list[dict]:
+    """One U.S. Drought Monitor map per year, for the week nearest 8 August."""
+    path = _require(CONTEXT / "drought_maps" / "index.json", "scripts/fetch_drought_maps.py")
+    return json.loads(path.read_text())
+
+
+@router.get("/drought-maps/{year}")
+def drought_map(year: int) -> FileResponse:
+    for entry in drought_map_index():
+        if entry["year"] == year:
+            return FileResponse(CONTEXT / "drought_maps" / entry["file"],
+                                media_type="application/geo+json")
+    raise HTTPException(status_code=404, detail=f"No drought map for {year}")
+
+
+@router.get("/raster/{name}")
+def raster(name: str) -> FileResponse:
+    """The project's own change rasters (GeoTIFF, EPSG:32604, 10 m): dNDVI or dNBR,
+    dry season 2022 minus dry season 2019."""
+    path = RASTERS.get(name)
+    if path is None:
+        raise HTTPException(status_code=404, detail=f"Unknown raster '{name}'")
+    return FileResponse(_require(path, "the browning analysis"), media_type="image/tiff")
+
+
+@router.get("/observations")
+def all_observations() -> list[dict]:
+    """Every GLOBE land cover observation in the Upcountry extent, with its date,
+    so the map's year filter can show what was actually observed that year."""
+    meta = json.loads(_require(TERRAIN_META, "scripts/fetch_terrain.py").read_text())
+    box = meta["bbox"]
+    try:
+        observations = client.fetch_sites(DEFAULT_START, DEFAULT_END, bbox=REGION)
+    except client.GlobeUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return [
+        {"land_cover_id": o.land_cover_id, "site_name": o.site_name,
+         "label": client.meaningful_note(o.field_notes) or o.muc_description or "Land cover site",
+         "lat": o.latitude, "lon": o.longitude,
+         "date": o.measured_at.date().isoformat() if o.measured_at else None,
+         "complete": o.is_complete, "teams": o.globe_teams}
+        for o in observations
+        if box["west"] <= o.longitude <= box["east"] and box["south"] <= o.latitude <= box["north"]
+    ]
+
+
+@router.get("/insights/{key}")
+def region_insights(key: str) -> dict:
+    from lib import regions
+
+    data = regions.insights(key)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region '{key}'")
+    return data
+
+
+# ---------------------------------------------------------------------------
+# Satellite imagery for the 3D map (exported by scripts/gee/imagery_before_after.js)
+# ---------------------------------------------------------------------------
+
+IMAGERY_DIR = DATA / "imagery"
+IMAGERY = {
+    "before_2023": ("Before the fires", "Sentinel-2 true colour, 1 May – 7 Aug 2023"),
+    "after_2023": ("After the fires", "Sentinel-2 true colour, 15 Aug – 31 Oct 2023"),
+}
+
+
+@router.get("/imagery")
+def imagery_index() -> dict:
+    """Which before/after images exist. They are produced by running the Earth
+    Engine script, so the app reports what's missing rather than failing."""
+    available = [
+        {"id": k, "label": label, "period": period}
+        for k, (label, period) in IMAGERY.items()
+        if (IMAGERY_DIR / f"{k}.tif").exists()
+    ]
+    return {
+        "available": available,
+        "missing": [k for k in IMAGERY if not (IMAGERY_DIR / f"{k}.tif").exists()],
+        "how": "Run scripts/gee/imagery_before_after.js in the Earth Engine Code Editor, "
+               "then save the exports as data/imagery/before_2023.tif and after_2023.tif.",
+    }
+
+
+@router.get("/imagery/{key}")
+def imagery_file(key: str) -> FileResponse:
+    if key not in IMAGERY:
+        raise HTTPException(status_code=404, detail=f"Unknown imagery '{key}'")
+    return FileResponse(_require(IMAGERY_DIR / f"{key}.tif", "scripts/gee/imagery_before_after.js"),
+                        media_type="image/tiff")

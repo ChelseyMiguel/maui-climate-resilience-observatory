@@ -1,230 +1,117 @@
 <script>
-  // Upcountry Maui in 3D, with the 2023 fires, the drought record, and the
-  // browning analysis together. A companion to the 360-degree site viewer at "/".
-  //
-  // Discipline carried over from docs/evidence-claims.md: everything here is
-  // labelled with its scale and source, and the page states plainly what the
-  // data does NOT show — the study area did not burn, and nothing here is a
-  // fire-risk score or an alert.
-  import { onMount } from 'svelte';
-  import Terrain3D from './lib/Terrain3D.svelte';
-  import Timeline from './lib/Timeline.svelte';
-  import { loadAll } from './lib/api.js';
+  // The Observatory shell: navigation, the always-visible research-only notice,
+  // and a tiny router. The 360° GLOBE site viewer stays its own page (/viewer).
+  import { path as currentPath, interceptLinks } from './lib/router.ts';
+  import Notice from './components/Notice.svelte';
+  import Overview from './pages/Overview.svelte';
 
-  let data = null;
-  let error = null;
-  let map;
-  let selected = null;
-  let show = { browning: true, fires: true, sites: true, study: true };
-  let exaggeration = 2;
-
-  onMount(async () => {
-    try {
-      data = await loadAll();
-    } catch (e) {
-      error = e.message;
-    }
-  });
-
-  $: fires2023 = data
-    ? data.fires.features
-        .filter((f) => f.properties.year === 2023)
-        .map((f) => f.properties)
-        .sort((a, b) => b.acres - a.acres)
-    : [];
-
-  function select(pin) {
-    selected = pin;
-    map?.focus(pin.lat, pin.lon);
-  }
-
-  const pct = (f) => (f === null || f === undefined ? null : Math.round(f * 100));
-  const acres = (a) => (a ? Math.round(a).toLocaleString() : '?');
-
-  // Every link below was checked to resolve to the live page (Oct 2026).
-  const RESOURCES = [
-    { href: 'https://www.mauicounty.gov/983/MEMA-Alerts', name: 'MEMA Alerts',
-      why: 'Sign up for official Maui County emergency alerts' },
-    { href: 'https://www.mauicounty.gov/70/Emergency-Management-Agency', name: 'Maui Emergency Management Agency',
-      why: 'The county agency for emergencies and evacuations' },
-    { href: 'https://www.mauicounty.gov/190/Emergency-Preparedness', name: 'Maui County: Emergency Preparedness',
-      why: 'Household and family planning' },
-    { href: 'https://www.hwmo.org/', name: 'Hawaiʻi Wildfire Management Organization',
-      why: 'Local wildfire prevention, Firewise, and community programs' },
-    { href: 'https://dod.hawaii.gov/hiema/', name: 'Hawaiʻi Emergency Management Agency',
-      why: 'State-level emergency information' },
-    { href: 'https://www.ready.gov/wildfires', name: 'Ready.gov — Wildfires',
-      why: 'What to do before, during, and after a wildfire' },
-    { href: 'https://www.wildlandfirersg.org/', name: 'Ready, Set, Go!',
-      why: 'Preparing your home and family to evacuate early' },
+  // Pages load on demand: the map libraries (MapLibre ~0.8 MB, three.js ~0.6 MB)
+  // are only downloaded when someone opens a page that uses them, so the Overview
+  // stays fast. The Overview itself ships in the main bundle.
+  const PAGES = {
+    '/': () => Promise.resolve({ default: Overview }),
+    '/explore': () => import('./pages/Explore.svelte'),
+    '/insights': () => import('./pages/Insights.svelte'),
+    '/map': () => import('./pages/Map3D.svelte'),
+    '/methods': () => import('./pages/Methods.svelte'),
+    '/sources': () => import('./pages/Sources.svelte'),
+    '/about': () => import('./pages/About.svelte'),
+  };
+  const NAV = [
+    ['/', 'Overview'], ['/explore', 'Map Explorer'], ['/insights', 'Region Insights'],
+    ['/map', '3D View'], ['/viewer', 'Site Viewer'], ['/methods', 'Methods'],
+    ['/sources', 'Sources'], ['/about', 'About'],
   ];
+  const TITLES = {
+    '/': 'Overview', '/explore': 'Map Explorer', '/insights': 'Region Insights', '/map': '3D View',
+    '/methods': 'Methods & Transparency', '/sources': 'Data Sources', '/about': 'About',
+  };
+
+  let menuOpen = false;
+  $: loader = PAGES[$currentPath];
+  $: pagePromise = loader ? loader() : null;
+  $: fullBleed = $currentPath === '/explore' || $currentPath === '/map';
+  $: document.title = `${TITLES[$currentPath] ?? 'Not found'} · Rural Hawaiʻi Climate Resilience Observatory`;
+  $: $currentPath, (menuOpen = false);
 </script>
 
-<header>
-  <div>
-    <h1>Upcountry Maui in 3D</h1>
-    <span class="sub">Drought, browning, and the August 2023 fires</span>
+<svelte:window on:click={interceptLinks} />
+
+<a class="skip" href="#main">Skip to content</a>
+<header class="site">
+  <div class="bar">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+        <path d="M2 24c5-7 9-10 14-10s9 3 14 10" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M6 24c4-4 7-6 10-6s6 2 10 6" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".6"/>
+        <circle cx="16" cy="8" r="3.2" fill="currentColor"/>
+      </svg>
+      <span><b>Climate Resilience Observatory</b><small>Rural Hawaiʻi · Upcountry Maui</small></span>
+    </a>
+    <button class="menu" aria-expanded={menuOpen} aria-controls="nav" on:click={() => (menuOpen = !menuOpen)}>
+      Menu
+    </button>
+    <nav id="nav" class:open={menuOpen} aria-label="Main">
+      {#each NAV as [href, label]}
+        <a {href} aria-current={$currentPath === href ? 'page' : undefined}>{label}</a>
+      {/each}
+    </nav>
   </div>
-  <a class="back" href="/">← 360° site viewer</a>
+  {#if !fullBleed}<div class="wrap noticebar"><Notice compact /></div>{/if}
 </header>
 
-{#if error}
-  <div class="error" role="alert">Couldn't load the map data: {error}</div>
-{:else if !data}
-  <div class="loading">Loading terrain, fire perimeters, and sites…</div>
-{:else}
-  <main>
-    <section class="stage">
-      <Terrain3D
-        bind:this={map}
-        terrain={data.terrain}
-        browning={data.browning}
-        fires={data.fires}
-        sites={data.sites}
-        studyArea={data.studyArea}
-        {show}
-        {exaggeration}
-        selectedId={selected?.site_id}
-        on:select={(e) => select(e.detail)}
-      />
-
-      <div class="controls">
-        <label><input type="checkbox" bind:checked={show.browning} />
-          <span class="sw sw-brown"></span>Browned 2019→2022</label>
-        <label><input type="checkbox" bind:checked={show.fires} />
-          <span class="sw sw-fire"></span>Fire perimeters</label>
-        <label><input type="checkbox" bind:checked={show.sites} />
-          <span class="sw sw-site"></span>GLOBE sites</label>
-        <label><input type="checkbox" bind:checked={show.study} />
-          <span class="sw sw-study"></span>Study area</label>
-        <label class="exag">Relief ×{exaggeration}
-          <input type="range" min="1" max="4" step="0.5" bind:value={exaggeration} /></label>
-      </div>
-      <div class="hint">drag to orbit · right-drag to pan · scroll to zoom · click a pin</div>
+<main id="main" class:fullBleed tabindex="-1">
+  {#if pagePromise}
+    {#await pagePromise}
+      <div class="wrap pageload" aria-busy="true">Loading…</div>
+    {:then mod}
+      <svelte:component this={mod.default} />
+    {:catch err}
+      <section class="wrap notfound" role="alert"><h1>Couldn’t load this page</h1><p>{err.message}</p></section>
+    {/await}
+  {:else}
+    <section class="wrap notfound">
+      <h1>Page not found</h1>
+      <p><a href="/">Back to the overview</a></p>
     </section>
+  {/if}
+</main>
 
-    <aside>
-      {#if selected}
-        <section class="card site">
-          <button class="close" on:click={() => (selected = null)} aria-label="Close">×</button>
-          <h2>{selected.label}</h2>
-          <div class="muted">{selected.site_name} · {selected.visits} visit{selected.visits === 1 ? '' : 's'}
-            · latest {selected.latest}</div>
-          {#if pct(selected.browned_fraction) !== null}
-            <p><b class="amber">{pct(selected.browned_fraction)}%</b> of this 100 m site browned, 2019→2022
-              <span class="muted">(study area overall: {Math.round(data.studyArea.browned_fraction * 100)}%)</span></p>
-          {:else}
-            <p class="muted">Outside the browning study area — no vegetation measurement here.</p>
-          {/if}
-          {#if selected.fire?.available}
-            <p>Nearest Aug 2023 fire: <b>{selected.fire.nearest_fire}</b>,
-              {selected.fire.inside_perimeter ? 'inside its perimeter' : `${selected.fire.distance_km} km away`}.
-              <span class="muted">Distance to where fire went — not a risk score.</span></p>
-          {/if}
-          <a class="open" href={`/?obs=${encodeURIComponent(selected.land_cover_id)}`}>Open the 360° view →</a>
-        </section>
-      {/if}
-
-      <section class="card">
-        <h2>The August 8, 2023 fires</h2>
-        <ul class="fires">
-          {#each fires2023 as f}
-            <li><b>{f.name}</b><span>{acres(f.acres)} acres</span></li>
-          {/each}
-        </ul>
-        <p class="callout">
-          <b>The Pukalani study area did not burn.</b> The nearest perimeter, Olinda, starts about
-          {(data.studyArea.fire.distance_km - data.studyArea.radius_m / 1000).toFixed(1)} km outside it.
-          The browning here describes the drought-stressed landscape around the fires — not the ground
-          that burned.
-        </p>
-        <p class="muted small">Perimeters: National Interagency Fire Center (WFIGS). Dates in Hawaiʻi time.</p>
-      </section>
-
-      <section class="card">
-        <h2>Drought, then fire</h2>
-        <Timeline drought={data.drought.series} ndvi={data.drought.ndvi} worstYear={data.drought.worst_year} />
-      </section>
-
-      <section class="card">
-        <h2>What this shows — and what it doesn't</h2>
-        <ul class="claims">
-          <li class="yes">Drought peaked in {data.drought.worst_year}, the year before the fires; study-area greenness bottomed out in Aug 2022.</li>
-          <li class="yes">The GLOBE sites near Pukalani sit in a heavily browned part of the study area.</li>
-          <li class="no">It does not show that browned ground burned — none of it lies inside a 2023 perimeter.</li>
-          <li class="no">It is not a fire-risk map, forecast, or alert.</li>
-        </ul>
-      </section>
-
-      <section class="card prepare">
-        <h2>Be prepared</h2>
-        <p class="small">This is a research and education tool, <b>not an emergency alert system</b>. For
-          current conditions and evacuation orders, use official sources:</p>
-        <ul class="links">
-          {#each RESOURCES as r}
-            <li><a href={r.href} target="_blank" rel="noopener noreferrer">{r.name}</a>
-              <span class="muted small">{r.why}</span></li>
-          {/each}
-        </ul>
-      </section>
-
-      <p class="muted small sources">
-        Sources: terrain — AWS Terrain Tiles (USGS 3DEP); fires — NIFC; drought — U.S. Drought Monitor;
-        browning — this project's Sentinel-2 analysis; sites — NASA GLOBE Observer.
-      </p>
-    </aside>
-  </main>
+{#if !fullBleed}
+  <footer class="wrap">
+    <p class="small muted">An independent, student-led research and education project. Data from NASA GLOBE,
+      the National Interagency Fire Center, the U.S. Drought Monitor, the USDA Forest Service, the Hawaiʻi
+      Statewide GIS Program, and the author’s own Sentinel-2 analysis — see <a href="/sources">Sources</a>.
+      No institutional endorsement is implied.</p>
+  </footer>
 {/if}
 
 <style>
-  header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 18px; border-bottom: 1px solid var(--line); gap: 12px;
-  }
-  h1 { font-size: 16px; margin: 0; }
-  .sub { color: var(--muted); font-size: 12px; }
-  .back { font-size: 13px; text-decoration: none; }
-  main { display: grid; grid-template-columns: 1fr 380px; height: calc(100vh - 57px); }
-  .stage { position: relative; min-height: 300px; }
-  aside { border-left: 1px solid var(--line); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; position: relative; }
-  .card h2 { font-size: 14px; margin: 0 0 8px; }
-  .card p { margin: 6px 0; }
-  .muted { color: var(--muted); }
-  .small { font-size: 12px; }
-  .amber { color: var(--amber); }
-  .site { border-color: var(--accent); }
-  .close { position: absolute; top: 6px; right: 8px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); }
-  .open { display: inline-block; margin-top: 4px; font-weight: 600; }
-  .fires { list-style: none; padding: 0; margin: 0 0 8px; }
-  .fires li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed var(--line); }
-  .fires li span { color: var(--muted); }
-  .callout { background: rgba(255, 59, 48, 0.08); border-left: 3px solid var(--fire); padding: 8px 10px; border-radius: 4px; }
-  .claims { padding-left: 0; list-style: none; margin: 0; font-size: 13px; }
-  .claims li { padding-left: 20px; position: relative; margin: 5px 0; }
-  .claims .yes::before { content: '✓'; position: absolute; left: 2px; color: var(--accent); }
-  .claims .no::before { content: '✗'; position: absolute; left: 2px; color: var(--fire); }
-  .links { padding-left: 0; list-style: none; margin: 6px 0 0; }
-  .links li { margin: 7px 0; display: flex; flex-direction: column; }
-  .prepare { border-color: #5a2a24; }
-  .sources { margin: 0 2px 8px; }
-  .controls {
-    position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 4px;
-    background: rgba(16, 22, 26, 0.86); border: 1px solid var(--line); border-radius: 10px;
-    padding: 8px 10px; font-size: 12px; backdrop-filter: blur(6px);
-  }
-  .controls label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-  .sw-brown { background: #e89646; }
-  .sw-fire { background: transparent; border: 2px solid var(--fire); }
-  .sw-site { background: #ff9f43; border-radius: 50%; }
-  .sw-study { border: 2px dashed #fff; }
-  .exag { margin-top: 4px; flex-direction: column; align-items: flex-start !important; }
-  .hint { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--muted); pointer-events: none; }
-  .loading, .error { padding: 40px; text-align: center; color: var(--muted); }
-  .error { color: #ff6b5e; }
-  @media (max-width: 860px) {
-    main { grid-template-columns: 1fr; grid-template-rows: 60vh auto; height: auto; }
-    aside { border-left: none; border-top: 1px solid var(--line); }
+  .skip { position: absolute; left: -999px; top: 0; background: var(--forest); color: #fff; padding: .5em 1em; z-index: 10; }
+  .skip:focus { left: 8px; top: 8px; }
+  header.site { background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .bar { display: flex; align-items: center; gap: 18px; padding: 10px 22px; max-width: 1400px; margin: 0 auto; }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--forest); text-decoration: none; }
+  .brand span { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand b { font-family: var(--serif); font-size: 1.05rem; }
+  .brand small { color: var(--muted); font-size: .75rem; }
+  nav { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
+  nav a { padding: .4em .7em; border-radius: 6px; color: var(--ink-2); text-decoration: none; font-size: .92rem; }
+  nav a:hover { background: var(--paper-2); color: var(--forest); }
+  nav a[aria-current='page'] { background: var(--forest); color: #fff; }
+  .menu { display: none; margin-left: auto; border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: .35em .8em; }
+  .noticebar { padding-bottom: 10px; }
+  main { outline: none; }
+  main.fullBleed { height: calc(100vh - 57px); }
+  footer { padding: 28px 22px 40px; border-top: 1px solid var(--line); margin-top: 48px; }
+  .notfound { padding: 60px 22px; }
+  .pageload { padding: 60px 22px; color: var(--muted); }
+  /* Eight links need ~1100 px on one line; below that, collapse to a menu
+     rather than wrapping onto a second row. */
+  @media (max-width: 1120px) {
+    .menu { display: block; }
+    nav { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--card);
+          flex-direction: column; padding: 8px 14px 14px; border-bottom: 1px solid var(--line); }
+    nav.open { display: flex; }
   }
 </style>

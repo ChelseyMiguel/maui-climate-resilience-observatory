@@ -97,11 +97,36 @@ Drought context (U.S. Drought Monitor, Maui County): 2022 had the highest annual
 mean DSCI in the record (214); in the week of the fires it was 135 and rising
 (106 -> 135 -> 180 over three weeks).
 
+## Drought years — corrected
+
+U.S. Drought Monitor, Maui County, 2018–2024 (weekly category shares):
+
+- **2022 had the highest average drought index (DSCI 214) and 20 weeks of D4
+  "exceptional" drought** (August–December, up to 9.3% of the county).
+- **D4 also occurred in 2019 (4 weeks), 2020 (1) and 2021 (8).** An earlier
+  version of this project said 2022 was "the only year Maui reached D4" — that was
+  true only of the single early-August map shown per year, not of whole years.
+- "Worst year" means worst of **2018–2024**, the years pulled; the Drought Monitor's
+  record goes back to 2000. Don't say "on record".
+
+## Places — Pukalani, Makawao, Kula (2020 Census places)
+
+- The 1.5 km study area is **~81% inside Pukalani, ~6% Makawao, 0% Kula**. Its
+  vegetation series can be described as Pukalani's study area, never as Makawao's
+  or Kula's.
+- **The Olinda fire burned inside the Makawao Census place, and the Kula fire inside
+  Kula.** Pukalani's boundary is ~0.6 km from the Olinda perimeter.
+- Pukalani study-area dry-season NDVI: 0.405 (2019) → 0.327 (2022), −19%; NBR −42%.
+  Both years have all five dry-season months. A two-year comparison, not a trend.
+
 Not safe to say yet:
 
 - ~~"The browned patches burned."~~ — none lie inside a 2023 perimeter.
 - ~~"Browning predicted where the fire went."~~ — untested; needs the burned-vs-
   unburned comparison, and even then it is a correlation, not a prediction.
+- ~~"2022 was the only year with exceptional (D4) drought."~~ — D4 also occurred in
+  2019, 2020 and 2021; 2022 had by far the most weeks.
+- ~~"Makawao/Kula browned X%."~~ — no vegetation series exists for either yet.
 - ~~"The tool does structure-from-motion / a 3D reconstruction of a site."~~ — SfM
   was attempted and failed on this data (`docs/sfm-experiment.md`).
 

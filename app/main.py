@@ -8,10 +8,13 @@ under `data/cache/` by `lib.globe_api.client`, which is all this needs for now.
 from __future__ import annotations
 
 import mimetypes
+import threading
+from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import quote
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import layers, sites
@@ -21,7 +24,17 @@ from lib.globe_api import client
 # the host Python's mime DB does not always know .mjs.
 mimetypes.add_type("text/javascript", ".mjs")
 
-app = FastAPI(title="GLOBE Site Reconstruction", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Region insights take a few seconds of geometry each the first time. Compute
+    # them in the background so the first person to open the page doesn't wait.
+    from lib import regions
+
+    threading.Thread(target=regions.warm, name="warm-regions", daemon=True).start()
+    yield
+
+
+app = FastAPI(title="GLOBE Site Reconstruction", version="0.1.0", lifespan=lifespan)
 
 # The page is served as a plain static file rather than through a template
 # engine. It carries no server-side variables, and htm's inline-style syntax
@@ -44,21 +57,40 @@ app.mount("/photos", StaticFiles(directory=str(client.PHOTO_DIR)), name="photos"
 app.include_router(sites.router, prefix="/api/sites", tags=["sites"])
 app.include_router(layers.router, prefix="/api/layers", tags=["layers"])
 
-# The 3D map + disaster-awareness page is a separate Svelte app (web/), built by
-# Vite into app/static/map/. Only the existing viewer above needs no build step.
-_MAP_INDEX = _static_dir / "map" / "index.html"
+# The Observatory (Svelte, built by Vite into static/site) owns these paths; the
+# browser router inside it decides which page to show. Node is only needed to
+# rebuild it, never to run it.
+_SITE_INDEX = _static_dir / "site" / "index.html"
+SITE_PATHS = ("/", "/explore", "/insights", "/map", "/methods", "/sources", "/about")
 
 
-@app.get("/map", response_class=FileResponse)
-def map_page() -> FileResponse:
-    if not _MAP_INDEX.exists():
-        raise HTTPException(status_code=503, detail="Map not built — run: cd web && npm install && npm run build")
-    return FileResponse(_MAP_INDEX, media_type="text/html")
+def _site() -> FileResponse:
+    if not _SITE_INDEX.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Observatory not built — run: cd web && npm install && npm run build",
+        )
+    return FileResponse(_SITE_INDEX, media_type="text/html")
 
 
-@app.get("/", response_class=FileResponse)
-def index() -> FileResponse:
+@app.get("/", response_class=FileResponse, response_model=None)
+def index(request: Request) -> FileResponse | RedirectResponse:
+    # Links made before the Observatory existed pointed at /?obs=<id> for the
+    # 360-degree viewer; keep them working.
+    obs = request.query_params.get("obs")
+    if obs:
+        return RedirectResponse(url=f"/viewer?obs={quote(obs)}", status_code=307)
+    return _site()
+
+
+@app.get("/viewer", response_class=FileResponse)
+def viewer() -> FileResponse:
+    """The 360-degree GLOBE site viewer (no build step)."""
     return FileResponse(_INDEX, media_type="text/html")
+
+
+for _path in SITE_PATHS[1:]:
+    app.add_api_route(_path, _site, methods=["GET"], response_class=FileResponse, include_in_schema=False)
 
 
 @app.get("/health")

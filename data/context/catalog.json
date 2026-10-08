@@ -1,0 +1,86 @@
+[
+  {
+    "id": "regions",
+    "title": "2020 Census Designated Places",
+    "count": 3,
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/Census/MapServer/28",
+    "currency": "2020 Census (decennial boundaries)",
+    "names": [
+      "Kula",
+      "Makawao",
+      "Pukalani"
+    ]
+  },
+  {
+    "id": "fire_stations",
+    "title": "Fire stations",
+    "count": 4,
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/EmergMgmtPubSafety/MapServer/7",
+    "currency": "as of December 2025",
+    "names": [
+      "Kula (E13)",
+      "Makawao (E5)",
+      "Paia (E2)",
+      "Wailea (E14)"
+    ]
+  },
+  {
+    "id": "ems_stations",
+    "title": "EMS stations",
+    "count": 3,
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/EmergMgmtPubSafety/MapServer/8",
+    "currency": "as of December 2025",
+    "names": [
+      "Haiku (M-2)",
+      "Kihei (M-14)",
+      "Kula (M-11)"
+    ]
+  },
+  {
+    "id": "hospitals",
+    "title": "Hospitals",
+    "count": 1,
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/Infrastructure/MapServer/5",
+    "currency": "as of September 2026",
+    "names": [
+      "Kula Hospital"
+    ]
+  },
+  {
+    "id": "public_schools",
+    "title": "Public schools",
+    "count": 11,
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/Infrastructure/MapServer/7",
+    "currency": "as of November 2024",
+    "names": [
+      "Kalama Intermediate",
+      "Kamalii Elementary",
+      "Kekaulike High",
+      "Kihei Charter School",
+      "Kihei Elementary",
+      "Kula Elementary",
+      "Kulanihako\u02bbi High",
+      "Lokelani Intermediate",
+      "Makawao Elementary",
+      "Paia Elementary",
+      "Pukalani Elementary"
+    ]
+  },
+  {
+    "id": "private_schools",
+    "title": "Private schools",
+    "count": 8,
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/Infrastructure/MapServer/8",
+    "currency": "as of November 2021",
+    "names": [
+      "Carden Academy of Maui",
+      "Doris Todd Christian Academy",
+      "Haleakala Waldorf School",
+      "Horizons Academy of Maui, Inc.",
+      "Kamehameha Schools Maui",
+      "Montessori School of Maui",
+      "ROOTS School of Maui",
+      "Seabury Hall"
+    ]
+  }
+]

@@ -31,6 +31,7 @@ from lib.vegetation.browning import Polygon, _polygons_of
 DATA = Path(__file__).resolve().parents[1] / "data" / "research"
 FIRES_PATH = DATA / "maui_fire_perimeters.geojson"
 DROUGHT_PATH = DATA / "maui_dsci_weekly.csv"
+CATEGORIES_PATH = DATA / "maui_drought_categories_weekly.csv"
 
 # The study area used by every Earth Engine script in this project
 # (gee_export_ndvi.js / gee_export_nbr.js): a 1.5 km circle around this point.
@@ -98,6 +99,24 @@ def fire_context(lat: float, lon: float, year: int | None = 2023) -> dict:
     }
 
 
+@lru_cache(maxsize=1)
+def exceptional_drought_weeks() -> dict[str, dict]:
+    """Per year: how many weeks any of Maui County was in D4 (exceptional), and the
+    largest share of the county it covered. From the weekly category statistics —
+    a single map per year cannot answer this, since D4 can come and go."""
+    if not CATEGORIES_PATH.exists():
+        return {}
+    out: dict[str, dict] = {}
+    with CATEGORIES_PATH.open() as handle:
+        for row in csv.DictReader(handle):
+            d4 = float(row["d4"])
+            if d4 > 0:
+                year = out.setdefault(row["date"][:4], {"weeks": 0, "max_pct": 0.0})
+                year["weeks"] += 1
+                year["max_pct"] = max(year["max_pct"], d4)
+    return out
+
+
 def drought_summary() -> dict:
     """Annual means and the week of the 8 Aug 2023 fires, for the timeline."""
     series = drought_series()
@@ -113,6 +132,8 @@ def drought_summary() -> dict:
         "available": True,
         "annual_mean": annual,  # only years with at least half a year of weeks
         "worst_year": worst_year,
+        # D4 occurred in several years (2019-2022); this says how much.
+        "exceptional_weeks": exceptional_drought_weeks(),
         "weeks_around_fires": fire_weeks,
         "source": "U.S. Drought Monitor (UNL), Maui County DSCI",
     }

@@ -21,3 +21,6 @@ data/terrain/tiles/
 
 # Structure-from-motion scratch output (scripts/sfm/run_sfm.py)
 data/sfm/
+
+# Before/after satellite GeoTIFFs from scripts/gee/imagery_before_after.js (~11 MB each)
+data/imagery/

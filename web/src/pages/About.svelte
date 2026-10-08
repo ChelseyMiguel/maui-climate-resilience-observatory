@@ -1,0 +1,42 @@
+<section class="wrap page">
+  <p class="eyebrow">About</p>
+  <h1>An independent, student-led project</h1>
+  <div class="cols">
+    <div>
+      <p>The Rural Hawaiʻi Climate Resilience Observatory is a research and education project by a high-school student
+        on Maui, built for the Congressional App Challenge. It grows out of research on whether the 2022 drought left
+        Upcountry vegetation browned ahead of the August 2023 fires, carried out through the NASA SEES Earth System
+        Explorers program.</p>
+      <p>Its centre is a <a href="/viewer">GLOBE site viewer</a> that rebuilds a citizen scientist’s six land-cover
+        photos into a 360° view, so a satellite number can be checked against what the ground actually looked like.</p>
+      <h2>Acknowledgements</h2>
+      <p>Thanks to the NASA SEES and GLOBE team for their guidance and permission to be credited. This acknowledgement
+        does not mean any organisation has reviewed or endorsed the tool or its findings.</p>
+      <p>Data from NASA GLOBE Observer citizen scientists, the National Interagency Fire Center, the U.S. Drought
+        Monitor, the USDA Forest Service, the Hawaiʻi Statewide GIS Program, the U.S. Census Bureau and Copernicus
+        Sentinel-2. See <a href="/sources">Sources</a>.</p>
+    </div>
+    <aside class="card">
+      <h2>Use responsibly</h2>
+      <ul>
+        <li>Research and education only.</li>
+        <li>Not an emergency alert, evacuation routing, or fire-risk service.</li>
+        <li>No individual property assessments.</li>
+        <li>Historical data — nothing here is live.</li>
+      </ul>
+      <p class="small">For emergencies: <a href="https://www.mauicounty.gov/983/MEMA-Alerts" target="_blank" rel="noopener noreferrer">MEMA Alerts</a> ·
+        <a href="https://www.mauicounty.gov/70/Emergency-Management-Agency" target="_blank" rel="noopener noreferrer">Maui Emergency Management Agency</a></p>
+      <h2>AI use</h2>
+      <p class="small">Built with substantial help from an AI coding assistant (Claude). How it was used, and what
+        was the author’s own work, is disclosed in full in the project’s submission.</p>
+    </aside>
+  </div>
+</section>
+
+<style>
+  .page { padding-top: 34px; }
+  .cols { display: grid; grid-template-columns: 1.5fr 1fr; gap: 26px; align-items: start; }
+  .cols > div { max-width: 44em; }
+  aside ul { padding-left: 1.1em; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+</style>

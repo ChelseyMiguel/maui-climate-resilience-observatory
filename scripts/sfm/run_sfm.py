@@ -71,6 +71,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--site", default="04QGJ763065")
     ap.add_argument(
+        "--images", type=Path, default=None,
+        help="Folder of your own overlapping photos (see docs/capture-protocol.md). "
+             "When given, these are used instead of the GLOBE photos for --site.",
+    )
+    ap.add_argument(
         "--relaxed", action="store_true",
         help="Lower COLMAP's match thresholds. Grassy GLOBE sites are repetitive "
              "texture, so few pairs reach the default 100-inlier starting pair; "
@@ -83,9 +88,22 @@ def main() -> None:
         shutil.rmtree(work)
     work.mkdir(parents=True)
 
-    manifest = collect_images(args.site, work)
-    print(f"{args.site}: {len(manifest)} horizontal photos from "
-          f"{len({m['land_cover_id'] for m in manifest})} visits")
+    if args.images:
+        src = args.images.expanduser()
+        photos = sorted(p for p in src.iterdir() if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".heic"})
+        if any(p.suffix.lower() == ".heic" for p in photos):
+            raise SystemExit("HEIC photos found — export them as JPEG first (COLMAP can't read HEIC).")
+        (work / "images").mkdir(parents=True, exist_ok=True)
+        for p in photos:
+            shutil.copy(p, work / "images" / p.name)
+        manifest = [{"image": p.name, "source": "own capture"} for p in photos]
+    else:
+        manifest = collect_images(args.site, work)
+    if args.images:
+        print(f"{args.site}: {len(manifest)} photos from {args.images}")
+    else:
+        print(f"{args.site}: {len(manifest)} horizontal photos from "
+              f"{len({m['land_cover_id'] for m in manifest})} visits")
     if len(manifest) < 3:
         raise SystemExit("not enough mirrored photos — run ingest_maui.py --download-photos")
 

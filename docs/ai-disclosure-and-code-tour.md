@@ -30,6 +30,11 @@ assistant during development, September–October 2026.
   browned sites and a rendering problem in the 3D viewer.
 - Drafted the Earth Engine export scripts in `scripts/gee/`, modelled on the
   existing `gee_export_nbr.js`, including the burned-vs-unburned fire comparison.
+- Built the Observatory web app (`web/`: Svelte, TypeScript, MapLibre, three.js)
+  from a build brief: the Overview, Map Explorer, Region Insights, Methods, Sources
+  and About pages, the typed data layer, CSV export, the guided 3D tour and the
+  viewer mini-map; fetched the Hawaiʻi Statewide GIS, Census and Drought Monitor
+  map layers; wrote the UTM conversion used to place the rasters.
 - Built the 3D map page (`web/`, Svelte + three.js) and the hazard data layer:
   fetched the NIFC fire perimeters, Drought Monitor index and terrain, found that
   the study area did not burn, and ran the structure-from-motion experiment.
@@ -94,6 +99,9 @@ For each row, try answering the question out loud *without* looking at the code.
 | `lib/hazards.py` | Distance from a site to the nearest 2023 fire perimeter | **Why "distance", never "risk"?** Nothing here models fire behaviour; it only says where fire actually went |
 | `web/` Svelte map | 3D terrain with layers draped on it | Why can a canvas map straight onto the mesh? The elevation grid is spaced linearly in lat/lon |
 | `scripts/sfm/run_sfm.py` | Tried to build a 3D model from repeat visits | **Why did it fail?** Photos close enough to match had no parallax; ones far enough apart didn't match (grass, changing light) |
+| `web/src/lib/utm.ts` | Converts the rasters' UTM metres to lat/lon | **How do you know it's right?** The raster's centre lands 2.7 m from the study-area point, inside one 10 m pixel; and a value read in the browser matches one read straight from the file |
+| `lib/regions.py` | Decides which places get a vegetation series | **Why does Kula show "not available"?** Your study area doesn't touch it (0%), so its series can't stand in for Kula |
+| `web/src/lib/adapters.ts` | The only code that knows the API's shapes | Why have it? A new data source means a new adapter, not rewriting the pages |
 | `mirror_photos()` | Saves photos locally so the demo works offline | Why write to a temp file and rename? An interrupted download would leave a truncated image |
 
 **Two honest claims to be able to defend:**

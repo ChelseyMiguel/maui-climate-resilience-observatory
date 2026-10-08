@@ -21,6 +21,9 @@
   export let show = { browning: true, fires: true, sites: true, study: true };
   export let exaggeration = 2;
   export let selectedId = null;
+  // Optional real imagery (a canvas covering exactly the terrain bbox, linear in
+  // lat/lon — see scripts/gee/imagery_before_after.js). Replaces the elevation tint.
+  export let imagery = null;
 
   const dispatch = createEventDispatcher();
   const CANVAS_W = 2048;
@@ -149,7 +152,7 @@
     const ctx = overlay.getContext('2d');
     const { bbox } = terrain.meta;
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(baseLayer, 0, 0, overlay.width, overlay.height);
+    ctx.drawImage(imagery || baseLayer, 0, 0, overlay.width, overlay.height);
 
     if (show.browning && browning) {
       // Holes in the patches are unbrowned ground: 'evenodd' leaves them unfilled.
@@ -293,6 +296,40 @@
     requestRender();
   }
 
+  // ---------- camera moves (guided tour) ----------
+  const reduceMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let flight = 0;
+
+  /** Move the camera to look at lat/lon from a heading (degrees clockwise from
+   *  north), pitch above the horizon, and distance in km. Eased; instant when the
+   *  viewer prefers reduced motion. Resolves when the move finishes. */
+  export function flyTo(lat, lon, { distanceKm = 6, headingDeg = 135, pitchDeg = 35, duration = 2200 } = {}) {
+    if (!ready) return Promise.resolve();
+    const [x, z] = proj.toLocal(lon, lat);
+    const ground = (Math.max(sampleElevation(terrain.grid, terrain.meta, lon, lat) || 0, 0) / 1000) * exaggeration;
+    const h = (headingDeg * Math.PI) / 180, p = (pitchDeg * Math.PI) / 180;
+    const endTarget = new THREE.Vector3(x, ground, z);
+    // The camera sits behind the look direction: north is -z, east is +x.
+    const endPos = endTarget.clone().add(new THREE.Vector3(
+      -Math.sin(h) * Math.cos(p) * distanceKm, Math.sin(p) * distanceKm, Math.cos(h) * Math.cos(p) * distanceKm));
+    const startTarget = controls.target.clone(), startPos = camera.position.clone();
+    const id = ++flight;
+    const ms = reduceMotion ? 0 : duration;
+    return new Promise((resolve) => {
+      const t0 = performance.now();
+      const step = (now) => {
+        if (id !== flight) return resolve();           // superseded by a newer move
+        const t = ms ? Math.min(1, (now - t0) / ms) : 1;
+        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        controls.target.lerpVectors(startTarget, endTarget, e);
+        camera.position.lerpVectors(startPos, endPos, e);
+        renderNow();
+        if (t < 1) requestAnimationFrame(step); else resolve();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
   // ---------- lifecycle ----------
   onMount(() => {
     build();
@@ -310,7 +347,7 @@
   });
 
   // Reactive updates once the scene exists.
-  $: if (ready) { show; paintOverlay(); }
+  $: if (ready) { show; imagery; paintOverlay(); }
   $: if (ready) { exaggeration; applyExaggeration(); }
   $: if (ready) { sites; selectedId; show; renderPins(); }
 </script>

@@ -1,20 +1,27 @@
 {
-  "name": "globe-map",
+  "name": "climate-resilience-observatory",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "3D terrain map and wildfire/drought awareness view for GLOBE Site Reconstruction",
+  "description": "Rural Hawaii Climate Resilience Observatory — Svelte front end (served by the FastAPI app)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "node --test \"../tests/js/*.test.mjs\""
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
     "svelte": "^5.57.1",
+    "svelte-check": "^4.7.6",
+    "typescript": "^5.9.3",
     "vite": "^8.3.2"
   },
   "dependencies": {
+    "geotiff": "^3.0.5",
+    "maplibre-gl": "^6.13.0",
     "three": "^0.186.1"
   }
 }

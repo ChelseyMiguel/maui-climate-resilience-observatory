@@ -359,6 +359,80 @@ function ViewHud({ apiRef, view, missing, trueFov, onToggleFov }) {
     </div>`;
 }
 
+/* Inset map: where this site is relative to the study area and the 2023 fire
+ * perimeters, with a wedge showing which way the viewer is facing. Plain SVG in a
+ * flat local projection (accurate to well under 1% over the 8 km shown). Layers
+ * are fetched once and shared by every site. */
+const MINI = { size: 150, halfKm: 4 };
+let miniLayers = null;
+
+function MiniMap({ observation, heading }) {
+  const [layers, setLayers] = useState(miniLayers);
+  useEffect(() => {
+    if (miniLayers) return;
+    Promise.all([
+      fetch("/api/layers/study-area").then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/layers/fires").then((r) => (r.ok ? r.json() : null)),
+    ]).then(([sa, fires]) => {
+      miniLayers = { sa, fires };
+      setLayers(miniLayers);
+    }).catch(() => setLayers(false));
+  }, []);
+  if (!layers || !observation) return null;
+
+  const { size, halfKm } = MINI;
+  const lat0 = observation.latitude, lon0 = observation.longitude;
+  const kx = 111.32 * Math.cos((lat0 * Math.PI) / 180);
+  const px = (lon, lat) => [
+    size / 2 + (((lon - lon0) * kx) / halfKm) * (size / 2),
+    size / 2 - (((lat - lat0) * 111.32) / halfKm) * (size / 2),
+  ];
+  const ringPath = (ring) => {
+    const step = Math.max(1, Math.floor(ring.length / 300));
+    return ring.filter((_, i) => i % step === 0)
+      .map((p, i) => `${i ? "L" : "M"}${px(p[0], p[1]).map((v) => v.toFixed(1)).join(",")}`).join(" ") + "Z";
+  };
+  const fires = (layers.fires?.features || []).filter((f) => f.properties.year === 2023);
+  const firePaths = fires.flatMap((f) => {
+    const g = f.geometry;
+    const polys = g.type === "Polygon" ? [g.coordinates] : g.coordinates;
+    return polys.map((rings) => ringPath(rings[0]));
+  });
+  const sa = layers.sa;
+  const [sx, sy] = sa ? px(sa.lon, sa.lat) : [0, 0];
+  const sr = sa ? ((sa.radius_m / 1000) / halfKm) * (size / 2) : 0;
+
+  // Facing wedge: +/-30 degrees around the heading, 0 = north (up the map).
+  const c = size / 2, len = 34, rad = (d) => ((d - 90) * Math.PI) / 180;
+  const pt = (d) => `${(c + len * Math.cos(rad(d))).toFixed(1)},${(c + len * Math.sin(rad(d))).toFixed(1)}`;
+  const wedge = `M${c},${c} L${pt(heading - 30)} A${len},${len} 0 0 1 ${pt(heading + 30)} Z`;
+  const kmBar = (1 / halfKm) * (size / 2);
+  const fire = observation.fire && observation.fire.available ? observation.fire : null;
+  const label = `Map: this site${fire ? `, ${fire.inside_perimeter ? "inside" : `${fire.distance_km} km from`} the ${fire.nearest_fire} fire perimeter` : ""}, facing ${Math.round(heading)} degrees.`;
+
+  return html`
+    <figure className="minimap" aria-label=${label} role="img">
+      <svg viewBox=${`0 0 ${size} ${size}`} width=${size} height=${size}>
+        <defs><clipPath id="miniclip"><rect width=${size} height=${size} rx="8" /></clipPath></defs>
+        <g clipPath="url(#miniclip)">
+          <rect width=${size} height=${size} fill="#16211f" />
+          ${firePaths.map((d, i) => html`<path key=${i} d=${d} fill="rgba(229,57,53,0.32)" stroke="#ff5a4f" strokeWidth="1.2" />`)}
+          ${sa ? html`<circle cx=${sx} cy=${sy} r=${sr} fill="none" stroke="#e8eff0" strokeWidth="1.2" strokeDasharray="4 3" />` : null}
+          <path d=${wedge} fill="rgba(79,178,134,0.45)" stroke="#4fb286" strokeWidth="1" />
+          <circle cx=${c} cy=${c} r="4" fill="#4fb286" stroke="#fff" strokeWidth="1.5" />
+          <text x=${size - 10} y="16" fill="#e8eff0" fontSize="11" fontWeight="700" textAnchor="middle">N</text>
+          <path d=${`M${size - 10},20 L${size - 14},28 L${size - 6},28 Z`} fill="#e8eff0" />
+          <line x1="8" x2=${8 + kmBar} y1=${size - 10} y2=${size - 10} stroke="#e8eff0" strokeWidth="2" />
+          <text x="8" y=${size - 14} fill="#c9d4d8" fontSize="9">1 km</text>
+        </g>
+      </svg>
+      <figcaption>
+        <span className="mk mk-fire"></span>2023 fires
+        <span className="mk mk-study"></span>study area
+      </figcaption>
+    </figure>`;
+}
+
 /* Hooks live here, not in CubeMapViewer, so that component can return early for
  * the empty state without breaking the rules of hooks. */
 function LoadedViewer({ observation }) {
@@ -383,6 +457,7 @@ function LoadedViewer({ observation }) {
         <${ViewDriver} apiRef=${apiRef} onView=${onView} />
       <//>
       <${HeadingBadge} observation=${observation} />
+      <${MiniMap} observation=${observation} heading=${view.heading} />
       <${ViewHud} apiRef=${apiRef} view=${view}
                   missing=${observation.missing_directions || []}
                   trueFov=${trueFov} onToggleFov=${() => setTrueFov((v) => !v)} />

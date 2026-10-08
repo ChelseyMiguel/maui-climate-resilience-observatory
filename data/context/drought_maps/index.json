@@ -1,0 +1,76 @@
+[
+  {
+    "year": 2018,
+    "week": "2018-08-07",
+    "file": "usdm_2018-08-07.geojson",
+    "categories": [
+      0,
+      1
+    ]
+  },
+  {
+    "year": 2019,
+    "week": "2019-08-06",
+    "file": "usdm_2019-08-06.geojson",
+    "categories": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "year": 2020,
+    "week": "2020-08-11",
+    "file": "usdm_2020-08-11.geojson",
+    "categories": [
+      0,
+      1,
+      2
+    ]
+  },
+  {
+    "year": 2021,
+    "week": "2021-08-10",
+    "file": "usdm_2021-08-10.geojson",
+    "categories": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "year": 2022,
+    "week": "2022-08-09",
+    "file": "usdm_2022-08-09.geojson",
+    "categories": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  {
+    "year": 2023,
+    "week": "2023-08-08",
+    "file": "usdm_2023-08-08.geojson",
+    "categories": [
+      0,
+      1,
+      2
+    ]
+  },
+  {
+    "year": 2024,
+    "week": "2024-08-06",
+    "file": "usdm_2024-08-06.geojson",
+    "categories": [
+      0,
+      1,
+      2,
+      3
+    ]
+  }
+]

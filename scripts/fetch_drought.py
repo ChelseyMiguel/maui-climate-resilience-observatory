@@ -18,7 +18,10 @@ from pathlib import Path
 import httpx
 
 OUT = Path(__file__).resolve().parents[1] / "data" / "research" / "maui_dsci_weekly.csv"
+OUT_CATEGORIES = OUT.with_name("maui_drought_categories_weekly.csv")
 URL = "https://usdmdataservices.unl.edu/api/CountyStatistics/GetDSCI"
+URL_CATEGORIES = ("https://usdmdataservices.unl.edu/api/CountyStatistics/"
+                  "GetDroughtSeverityStatisticsByAreaPercent")
 MAUI_COUNTY_FIPS = "15009"
 
 
@@ -39,6 +42,27 @@ def main(start: str = "1/1/2018", end: str = "12/31/2024") -> None:
         writer = csv.DictWriter(handle, fieldnames=["date", "dsci"])
         writer.writeheader()
         writer.writerows(rows)
+
+    # Percent of the county in each category, every week. Needed to say anything
+    # about D4 accurately: one map per year cannot show whether a category
+    # appeared at other times of year.
+    cats = httpx.get(
+        URL_CATEGORIES,
+        params={"aoi": MAUI_COUNTY_FIPS, "startdate": start, "enddate": end, "statisticsType": 1},
+        headers={"Accept": "application/json"},
+        timeout=60.0,
+    )
+    cats.raise_for_status()
+    cat_rows = sorted(
+        ({"date": r["mapDate"][:10], **{k: float(r[k] or 0) for k in ("d0", "d1", "d2", "d3", "d4")}}
+         for r in cats.json()),
+        key=lambda r: r["date"],
+    )
+    with OUT_CATEGORIES.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["date", "d0", "d1", "d2", "d3", "d4"])
+        writer.writeheader()
+        writer.writerows(cat_rows)
+    print(f"wrote {OUT_CATEGORIES.relative_to(Path.cwd())}: {len(cat_rows)} weeks")
 
     peak = max(rows, key=lambda r: r["dsci"])
     print(f"wrote {OUT.relative_to(Path.cwd())}: {len(rows)} weeks, "

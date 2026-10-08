@@ -29,7 +29,8 @@
   }
   header h1 { font-size: 16px; margin: 0; font-weight: 600; }
   header .sub { color: var(--muted); font-size: 12px; }
-  header .maplink { margin-left: auto; font-size: 13px; color: var(--accent); text-decoration: none; }
+  header .maplink.first { margin-left: auto; }
+  header .maplink { margin-left: 14px; font-size: 13px; color: var(--accent); text-decoration: none; }
   .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 51px); }
   .sidebar { border-right: 1px solid var(--line); overflow-y: auto; padding: 14px; }
   .controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -106,6 +107,14 @@
   .veg-range { font-weight: 400; color: var(--muted); font-size: 11px; }
   .veg-gps { font-style: italic; }
   .fire-line { color: #ff8a80; }
+  .minimap { position: absolute; right: 14px; top: 14px; margin: 0; z-index: 2;
+    background: rgba(16, 22, 26, 0.82); border: 1px solid var(--line); border-radius: 10px; padding: 6px; }
+  .minimap svg { display: block; }
+  .minimap figcaption { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+  .minimap .mk { display: inline-block; width: 10px; height: 8px; margin-left: 4px; }
+  .minimap .mk-fire { background: rgba(229,57,53,0.5); border: 1px solid #ff5a4f; }
+  .minimap .mk-study { border: 1px dashed #e8eff0; }
+  @media (max-width: 820px) { .minimap { display: none; } }
   .viewer-hud {
     position: absolute; left: 50%; bottom: 38px; transform: translateX(-50%);
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
@@ -149,7 +158,9 @@
 <header>
   <h1>GLOBE Site Reconstruction</h1>
   <span class="sub">Six-direction land cover photos &rarr; explorable site</span>
-  <a class="maplink" href="/map">3D map &amp; fire context &rarr;</a>
+  <a class="maplink first" href="/">Observatory home</a>
+  <a class="maplink" href="/explore">Map Explorer</a>
+  <a class="maplink" href="/map">3D view &rarr;</a>
 </header>
 
 <div class="layout">

@@ -156,9 +156,30 @@ def test_observation_detail_includes_nearest_fire():
     assert obs["fire"]["inside_perimeter"] is False
 
 
-def test_map_page_is_served_once_built():
-    response = api.get("/map")
-    if (ROOT / "app" / "static" / "map" / "index.html").exists():
-        assert response.status_code == 200 and "/static/map/assets/" in response.text
-    else:
-        assert response.status_code == 503 and "npm run build" in response.json()["detail"]
+def test_observatory_pages_are_served_once_built():
+    built = (ROOT / "app" / "static" / "site" / "index.html").exists()
+    for path in ("/", "/explore", "/insights", "/map", "/methods", "/sources", "/about"):
+        response = api.get(path)
+        if built:
+            assert response.status_code == 200, path
+            assert "/static/site/assets/" in response.text, path
+        else:
+            assert response.status_code == 503 and "npm run build" in response.json()["detail"]
+
+
+def test_viewer_moved_to_its_own_path():
+    response = api.get("/viewer")
+    assert response.status_code == 200
+    assert "cubemap-viewer.mjs" in response.text
+
+
+def test_old_viewer_deep_links_redirect():
+    """Links from before the Observatory pointed at /?obs=<id>."""
+    response = api.get("/?obs=93353", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/viewer?obs=93353"
+
+
+def test_redirect_encodes_the_observation_id():
+    response = api.get("/?obs=a b&c", follow_redirects=False)
+    assert response.headers["location"] == "/viewer?obs=a%20b"

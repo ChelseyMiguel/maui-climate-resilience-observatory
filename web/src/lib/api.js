@@ -13,7 +13,7 @@ async function getJson(url) {
 
 /* The elevation grid is raw Int16 little-endian. Read it through a DataView so
  * the byte order is explicit rather than whatever the machine happens to use. */
-async function getTerrain() {
+export async function getTerrain() {
   const meta = await getJson('/api/layers/terrain');
   const res = await fetch('/api/layers/terrain.bin');
   if (!res.ok) throw new Error(`/api/layers/terrain.bin: ${res.status}`);
