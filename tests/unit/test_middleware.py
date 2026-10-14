@@ -106,3 +106,10 @@ def test_errors_are_never_given_a_cache_lifetime(monkeypatch):
     assert r.status_code == 503
     assert "cache-control" not in r.headers
     assert r.headers["x-content-type-options"] == "nosniff"
+
+
+@pytest.mark.parametrize("path", ["/", "/viewer"])
+def test_pages_declare_an_icon_so_browsers_do_not_request_a_missing_favicon(path):
+    """No <link rel=icon> makes every browser fetch /favicon.ico, which is a 404
+    and a red console error on the first page a visitor sees."""
+    assert 'rel="icon"' in api.get(path).text
