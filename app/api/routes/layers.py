@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from app.api.routes.sites import DEFAULT_END, DEFAULT_START, REGION
-from lib import hazards
+from lib import hazards, relationships
 from lib.globe_api import client
 from lib.vegetation import browning
 
@@ -71,6 +71,20 @@ def drought() -> dict:
         "ndvi": [{"date": d, "value": v} for d, v in browning.ndvi_series()],
         **hazards.drought_summary(),
     }
+
+
+@router.get("/drought-greenness")
+def drought_greenness() -> dict:
+    """County drought against Pukalani NDVI/NBR: scatter points, lag profile and
+    dry-season means, all computed in `lib.relationships`."""
+    data = relationships.drought_greenness()
+    if not data["available"]:
+        raise HTTPException(
+            status_code=503,
+            detail="drought-greenness series missing: need data/research/pukalani_ndvi_monthly.csv "
+                   "and maui_dsci_weekly.csv (see scripts/fetch_drought.py)",
+        )
+    return data
 
 
 @router.get("/study-area")
