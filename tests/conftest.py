@@ -34,3 +34,9 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "needs_globe_cache" in item.keywords:
             item.add_marker(skip)
+
+
+@pytest.fixture(autouse=True)
+def _no_retry_pauses(monkeypatch):
+    """Failure-path tests must not sit through real retry back-off."""
+    monkeypatch.setattr(client, "RETRY_DELAYS", ())

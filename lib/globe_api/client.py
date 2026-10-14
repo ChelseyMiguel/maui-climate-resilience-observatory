@@ -35,6 +35,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import time
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -399,6 +400,40 @@ class GlobeUnavailableError(RuntimeError):
     """The GLOBE API could not be reached and there is no cached copy to use."""
 
 
+# Seconds to wait before each retry; the length is the number of retries. A
+# decade pull is ten requests and a photo mirror is hundreds, so one dropped
+# connection should cost a pause, not the run.
+RETRY_DELAYS: tuple[float, ...] = (1.0, 3.0)
+
+
+def _is_transient(exc: httpx.HTTPError) -> bool:
+    """Worth retrying: the server or network hiccuped, the request itself is fine.
+
+    A 403/404 or a proxy refusal will answer the same way next time, so those
+    fail at once instead of being retried.
+    """
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        return status == 429 or status >= 500
+    return isinstance(
+        exc, (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError)
+    )
+
+
+def _get(url: str, **kwargs) -> httpx.Response:
+    """`httpx.get` + `raise_for_status`, retrying transient failures with a pause."""
+    for delay in (*RETRY_DELAYS, None):
+        try:
+            response = httpx.get(url, **kwargs)
+            response.raise_for_status()
+            return response
+        except httpx.HTTPError as exc:
+            if delay is None or not _is_transient(exc):
+                raise
+            time.sleep(delay)
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 def _iter_year_chunks(start_s: str, end_s: str):
     """Split a date range into calendar-year chunks.
 
@@ -425,8 +460,7 @@ def _fetch_chunk(start_s: str, end_s: str, timeout: float) -> list[dict]:
         "sample": "FALSE",
     }
     try:
-        response = httpx.get(BASE_URL, params=params, timeout=timeout)
-        response.raise_for_status()
+        response = _get(BASE_URL, params=params, timeout=timeout)
     except httpx.HTTPError as exc:
         raise GlobeUnavailableError(
             f"GLOBE API request failed for {start_s}..{end_s}: {exc}"
@@ -601,8 +635,7 @@ def mirror_photos(
         if target.exists() and target.stat().st_size > 0:
             continue
         try:
-            response = httpx.get(url, timeout=timeout, follow_redirects=True)
-            response.raise_for_status()
+            response = _get(url, timeout=timeout, follow_redirects=True)
             content_type = response.headers.get("content-type", "")
             if not content_type.startswith("image/") or not response.content:
                 raise ValueError(f"not an image ({content_type or 'no content-type'})")

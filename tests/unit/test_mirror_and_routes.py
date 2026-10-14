@@ -204,3 +204,93 @@ def test_out_of_area_vegetation_context_is_not_measured_not_false():
     veg = _detail(site).vegetation
     assert veg.in_analysis_area is False
     assert veg.inside_browning_patch is None
+
+
+# --- retries ---------------------------------------------------------------
+
+
+def _status_error(status):
+    request = httpx.Request("GET", "https://api.globe.gov/x")
+    return httpx.HTTPStatusError(
+        "boom", request=request, response=httpx.Response(status, request=request)
+    )
+
+
+class _Flaky:
+    """Fails with `errors` in order, then answers 200 with an empty feature list."""
+
+    def __init__(self, errors):
+        self.errors, self.calls = list(errors), 0
+
+    def __call__(self, url, **kw):
+        self.calls += 1
+        if self.errors:
+            exc = self.errors.pop(0)
+            if isinstance(exc, httpx.HTTPStatusError):
+                return _Raising(exc)
+            raise exc
+        return FakeResponse(b'{"features": []}', "application/json")
+
+
+class _Raising:
+    def __init__(self, exc):
+        self.exc = exc
+
+    def raise_for_status(self):
+        raise self.exc
+
+
+@pytest.fixture
+def retries(monkeypatch):
+    slept = []
+    monkeypatch.setattr(client, "RETRY_DELAYS", (0.5, 2.0))
+    monkeypatch.setattr(client.time, "sleep", slept.append)
+    return slept
+
+
+def test_transient_failures_are_retried_with_back_off(retries, monkeypatch):
+    fake = _Flaky([httpx.ReadTimeout("slow"), _status_error(503)])
+    monkeypatch.setattr(client.httpx, "get", fake)
+    response = client._get("https://api.globe.gov/x")
+    assert response.content == b'{"features": []}'
+    assert fake.calls == 3
+    assert retries == [0.5, 2.0]
+
+
+def test_gives_up_after_the_last_retry(retries, monkeypatch):
+    fake = _Flaky([httpx.ConnectError("down")] * 5)
+    monkeypatch.setattr(client.httpx, "get", fake)
+    with pytest.raises(client.GlobeUnavailableError, match="2024-01-01"):
+        client._fetch_chunk("2024-01-01", "2024-01-31", 5.0)
+    assert fake.calls == 3  # first try + two retries
+    assert retries == [0.5, 2.0]
+
+
+@pytest.mark.parametrize("status", [400, 403, 404])
+def test_deterministic_errors_are_not_retried(retries, monkeypatch, status):
+    fake = _Flaky([_status_error(status)] * 5)
+    monkeypatch.setattr(client.httpx, "get", fake)
+    with pytest.raises(httpx.HTTPStatusError):
+        client._get("https://api.globe.gov/x")
+    assert fake.calls == 1 and retries == []
+
+
+def test_rate_limiting_is_retried(retries, monkeypatch):
+    fake = _Flaky([_status_error(429)])
+    monkeypatch.setattr(client.httpx, "get", fake)
+    client._get("https://api.globe.gov/x")
+    assert fake.calls == 2
+
+
+def test_a_flaky_photo_is_recovered_not_dropped(retries, photo_dir, monkeypatch):
+    attempts = {"n": 0}
+
+    def get(url, **kw):
+        if url.endswith("North.jpg") and attempts["n"] < 1:
+            attempts["n"] += 1
+            raise httpx.ReadTimeout("slow")
+        return FakeResponse()
+
+    monkeypatch.setattr(client.httpx, "get", get)
+    saved, errors = client.mirror_photos(_site())
+    assert (saved, errors) == (6, [])
