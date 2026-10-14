@@ -17,6 +17,9 @@ the 2022 drought left Upcountry vegetation browned ahead of the 2023 fires.
 
 ## Run it
 
+Quickest: `./run.sh` (sets everything up on first run), then open http://localhost:8000.
+
+
 Needs Python 3.11+. Node.js is only needed to *change* the front end — the built
 site is committed, so the app runs without it.
 
