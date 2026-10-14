@@ -10,6 +10,7 @@ import struct
 import sys
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -130,6 +131,7 @@ def test_terrain_binary_matches_its_metadata():
     assert meta["spacing"] == "linear in latitude and longitude"
 
 
+@pytest.mark.needs_globe_cache
 def test_site_pins_carry_browning_and_fire_context():
     pins = api.get("/api/layers/sites").json()
     assert len(pins) == 19
@@ -150,6 +152,7 @@ def test_other_layers_serve():
         assert api.get(path).status_code == 200, path
 
 
+@pytest.mark.needs_globe_cache
 def test_observation_detail_includes_nearest_fire():
     obs = api.get("/api/sites/observation/93353").json()
     assert obs["fire"]["nearest_fire"] in {"Olinda", "Kula", "Pulehu"}

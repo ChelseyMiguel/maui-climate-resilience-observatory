@@ -4,6 +4,7 @@ changed them fails loudly instead of silently changing what the site says."""
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -128,6 +129,7 @@ def test_change_rasters_are_served_as_geotiff():
     assert api.get("/api/layers/raster/ndwi").status_code == 404
 
 
+@pytest.mark.needs_globe_cache
 def test_observations_carry_dates_for_the_year_filter():
     obs = api.get("/api/layers/observations").json()
     assert obs and all("date" in o for o in obs)

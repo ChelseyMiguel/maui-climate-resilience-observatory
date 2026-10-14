@@ -159,6 +159,7 @@ def test_503_with_actionable_message_when_globe_unreachable_and_uncached(monkeyp
     assert "unavailable and not cached" in response.json()["detail"]
 
 
+@pytest.mark.needs_globe_cache
 def test_observation_serves_local_photo_when_mirrored(photo_dir):
     obs = api.get("/api/sites/observation/93191").json()
     # Nothing mirrored yet: remote URLs, flagged as such.
@@ -176,6 +177,7 @@ def test_observation_serves_local_photo_when_mirrored(photo_dir):
     assert south["mirrored"] is False  # partial mirror: per-photo fallback
 
 
+@pytest.mark.needs_globe_cache
 def test_empty_photo_file_is_not_treated_as_mirrored(photo_dir):
     (photo_dir / "93191").mkdir(parents=True)
     (photo_dir / "93191" / "north.jpg").write_bytes(b"")  # zero-byte leftover
@@ -183,6 +185,7 @@ def test_empty_photo_file_is_not_treated_as_mirrored(photo_dir):
     assert obs["photos"]["North"]["mirrored"] is False
 
 
+@pytest.mark.needs_globe_cache
 def test_unknown_observation_and_area_are_404():
     assert api.get("/api/sites/observation/nope").status_code == 404
     assert api.get("/api/sites/search?area=atlantis").status_code == 404

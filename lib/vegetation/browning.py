@@ -24,7 +24,7 @@ from __future__ import annotations
 import csv
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
@@ -62,22 +62,46 @@ _MISSING = -9999.0
 Ring = list[tuple[float, float]]
 
 
+Box = tuple[float, float, float, float]  # min_x, min_y, max_x, max_y
+
+
+def _ring_box(ring: Ring) -> Box:
+    xs = [x for x, _ in ring]
+    ys = [y for _, y in ring]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _in_box(x: float, y: float, box: Box) -> bool:
+    return box[0] <= x <= box[2] and box[1] <= y <= box[3]
+
+
 @dataclass(frozen=True)
 class Polygon:
     """One outer boundary and the holes cut out of it."""
 
     outer: Ring
     holes: list[Ring]
+    # Bounding boxes, so a point is ray-cast against a ring only when it can
+    # possibly be inside it. The dominant browning patch has 256 holes; testing
+    # every one for every sample point was most of the cost of a site lookup.
+    _outer_box: Box = field(init=False, repr=False, compare=False)
+    _hole_boxes: list[Box] = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_outer_box", _ring_box(self.outer))
+        object.__setattr__(self, "_hole_boxes", [_ring_box(h) for h in self.holes])
 
     def contains(self, lon: float, lat: float) -> bool:
-        if not _point_in_ring(lon, lat, self.outer):
+        if not _in_box(lon, lat, self._outer_box) or not _point_in_ring(lon, lat, self.outer):
             return False
         # A point in a hole is NOT in the polygon. Browning patches are full of
         # these: 50 of 879 have interior holes (the 130.7 ha dominant patch has
         # 256), each an unbrowned island, so skipping this check would report
         # ground that did not brown as browned.
-        return not any(_point_in_ring(lon, lat, hole) for hole in self.holes)
-
+        return not any(
+            _in_box(lon, lat, box) and _point_in_ring(lon, lat, hole)
+            for box, hole in zip(self._hole_boxes, self.holes)
+        )
 
     def boundary_distance_m(self, lat: float, lon: float) -> float:
         """Metres to the nearest edge of this polygon, outer boundary or hole."""
@@ -302,6 +326,39 @@ def _index() -> dict | None:
     }
 
 
+def _box_distance_km_lower_bound(patch: BrowningPatch, lat: float, lon: float) -> float:
+    """A distance no greater than the true distance from a point to anything in the
+    patch's bounding box. Flat-earth with a deliberately low km-per-degree, so it
+    can only underestimate; used to rule patches out without touching their vertices."""
+    d_lat = max(patch.min_lat - lat, 0.0, lat - patch.max_lat)
+    d_lon = max(patch.min_lon - lon, 0.0, lon - patch.max_lon)
+    worst_lat = min(89.0, max(abs(lat), abs(patch.min_lat), abs(patch.max_lat)))
+    km_per_deg = 111.0 * 0.999
+    return math.hypot(d_lat * km_per_deg, d_lon * km_per_deg * math.cos(math.radians(worst_lat)))
+
+
+def nearest_patch(lat: float, lon: float) -> BrowningPatch | None:
+    """The patch with the smallest `distance_km`, found without scanning them all.
+
+    Patches are visited nearest-bounding-box first and the search stops once the
+    next box is already farther than the best patch found. Same answer as
+    `min(patches, key=distance_km)` (ties go to the earlier patch), a fraction of
+    the vertex distance calculations.
+    """
+    patches = load_patches()
+    order = sorted(
+        range(len(patches)), key=lambda i: _box_distance_km_lower_bound(patches[i], lat, lon)
+    )
+    best: tuple[float, int] | None = None
+    for i in order:
+        if best is not None and _box_distance_km_lower_bound(patches[i], lat, lon) > best[0]:
+            break
+        candidate = (patches[i].distance_km(lat, lon), i)
+        if best is None or candidate < best:
+            best = candidate
+    return patches[best[1]] if best else None
+
+
 # Cap on how far the sensitivity check shifts the footprint. Beyond this the
 # range just says "the GPS fix tells you almost nothing", which the accuracy
 # figure already says.
@@ -486,7 +543,7 @@ def _compute_context(lat: float, lon: float, accuracy_m: float | None) -> dict:
     else:
         # Pick the nearest patch by cheap vertex distance, then measure it
         # properly against its edges.
-        nearest = min(patches, key=lambda p: p.distance_km(lat, lon))
+        nearest = nearest_patch(lat, lon)
         edge_m = nearest.edge_distance_m(lat, lon)
         result.update(
             {

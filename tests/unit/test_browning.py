@@ -8,6 +8,8 @@ not drift silently.
 
 from __future__ import annotations
 
+import pytest
+
 from lib.vegetation import browning
 
 # --- ray casting -----------------------------------------------------------
@@ -111,6 +113,7 @@ def test_patches_match_the_published_analysis():
     assert round(max(p.area_ha for p in patches), 1) == 130.7
 
 
+@pytest.mark.needs_globe_cache
 def test_eleven_of_thirty_one_pukalani_observations_are_in_a_browned_patch():
     """The headline count. It was 13 before holes were respected."""
     from lib.globe_api import client
@@ -215,6 +218,7 @@ def test_confidence_is_floored_at_one_raster_pixel():
     assert browning._confidence(None, 100.0) == "unknown"
 
 
+@pytest.mark.needs_globe_cache
 def test_most_inside_observations_cannot_be_trusted_on_gps_alone():
     """The finding that retired the point-in-patch headline.
 
@@ -251,6 +255,7 @@ def test_footprint_fraction_is_zero_away_from_any_browning():
     assert browning.site_browned_fraction(20.85070, -156.31680) == 0.0
 
 
+@pytest.mark.needs_globe_cache
 def test_footprint_headline_across_pukalani_observations():
     """16 of 19 in-area observations have >=25% of their footprint browned."""
     import statistics
@@ -286,3 +291,58 @@ def test_zero_gps_error_gives_a_zero_width_range():
 def test_aoi_baseline_matches_the_manuscript():
     """A site's fraction only means something read against this."""
     assert browning.AOI_BROWNED_FRACTION == 0.427
+
+
+# --- spatial-index shortcuts must not change any answer ---------------------
+
+
+def _brute_force_contains(polygon, lon, lat):
+    """The original definition, with no bounding-box shortcuts."""
+    if not browning._point_in_ring(lon, lat, polygon.outer):
+        return False
+    return not any(browning._point_in_ring(lon, lat, hole) for hole in polygon.holes)
+
+
+def _sample_points(n=300, seed=7):
+    import random
+
+    index = browning._index()
+    rng = random.Random(seed)
+    return [
+        (
+            rng.uniform(index["min_lat"], index["max_lat"]),
+            rng.uniform(index["min_lon"], index["max_lon"]),
+        )
+        for _ in range(n)
+    ]
+
+
+def test_bounding_box_shortcut_agrees_with_brute_force_on_real_patches():
+    patches = browning.load_patches()
+    assert patches, "browning patches missing from data/research"
+    holey = [pg for p in patches for pg in p.polygons if pg.holes]
+    assert holey, "expected real patches with holes"
+    checked = 0
+    for lat, lon in _sample_points():
+        for polygon in holey[:40]:
+            assert polygon.contains(lon, lat) == _brute_force_contains(polygon, lon, lat)
+            checked += 1
+    # Points inside the dominant patch's holes are the case the shortcut could break.
+    big = max((pg for p in patches for pg in p.polygons), key=lambda pg: len(pg.holes))
+    for hole in big.holes[:50]:
+        lon = sum(x for x, _ in hole) / len(hole)
+        lat = sum(y for _, y in hole) / len(hole)
+        assert big.contains(lon, lat) == _brute_force_contains(big, lon, lat)
+    assert checked > 1000
+
+
+def test_nearest_patch_matches_exhaustive_search():
+    patches = browning.load_patches()
+    for lat, lon in _sample_points(n=40, seed=11):
+        expected = min(patches, key=lambda p: p.distance_km(lat, lon))
+        assert browning.nearest_patch(lat, lon) is expected
+
+
+def test_nearest_patch_is_none_without_patches(monkeypatch):
+    monkeypatch.setattr(browning, "load_patches", lambda: ())
+    assert browning.nearest_patch(20.8, -156.3) is None
