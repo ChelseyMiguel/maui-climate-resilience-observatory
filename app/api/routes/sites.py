@@ -8,7 +8,7 @@ goes through the client's local filtering over a cached date window.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -20,20 +20,48 @@ from lib.vegetation import browning, lcms
 router = APIRouter()
 
 
+def _window(start: str, end: str) -> tuple[date, date]:
+    """Validate a client-supplied date window (422 rather than a 500)."""
+    try:
+        lo, hi = date.fromisoformat(start), date.fromisoformat(end)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422, detail="`start` and `end` must be YYYY-MM-DD dates."
+        ) from exc
+    if lo > hi:
+        raise HTTPException(status_code=422, detail="`start` must not be after `end`.")
+    return lo, hi
+
+
+def _in_window(site: client.LandCoverSite, lo: date, hi: date) -> bool:
+    if site.measured_at is None:
+        # No date to compare: only part of an unfiltered (full-window) query.
+        return lo <= date.fromisoformat(DEFAULT_START) and hi >= date.fromisoformat(DEFAULT_END)
+    return lo <= site.measured_at.date() <= hi
+
+
+def _unavailable(exc: client.GlobeUnavailableError) -> HTTPException:
+    return HTTPException(status_code=503, detail=f"GLOBE data unavailable and not cached. {exc}")
+
+
 def _sites(start: str, end: str) -> list[client.LandCoverSite]:
     """Observations for the window, or a 503 that says what actually went wrong.
+
+    Always reads the one default window (cached, parsed once per process) and
+    narrows it here. Handing the caller's dates to the client would let any
+    visitor trigger an outbound GLOBE request per year of range and write a new
+    cache file per distinct window.
 
     The cache makes this a no-op at demo time; it only matters on a cold start
     with no network, where a bare 500 would give no hint that running
     `scripts/ingest_maui.py` once while online is the fix.
     """
+    lo, hi = _window(start, end)
     try:
-        return client.fetch_sites(start, end, bbox=REGION)
+        sites = client.fetch_sites(DEFAULT_START, DEFAULT_END, bbox=REGION)
     except client.GlobeUnavailableError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=f"GLOBE data unavailable and not cached. {exc}",
-        ) from exc
+        raise _unavailable(exc) from exc
+    return [s for s in sites if _in_window(s, lo, hi)]
 
 # ---------------------------------------------------------------------------
 # Study-area registry — named places the demo can jump straight to.
@@ -317,20 +345,20 @@ def search_sites(
             status_code=400, detail="Provide either `area` or both `lat` and `lon`."
         )
 
+    lo, hi = _window(start, end)
     try:
         sites = client.fetch_near(
             lat,
             lon,
             radius_km=radius_km,
-            start=start,
-            end=end,
+            start=DEFAULT_START,
+            end=DEFAULT_END,
             bbox=REGION,
             complete_only=complete_only,
         )
     except client.GlobeUnavailableError as exc:
-        raise HTTPException(
-            status_code=503, detail=f"GLOBE data unavailable and not cached. {exc}"
-        ) from exc
+        raise _unavailable(exc) from exc
+    sites = [s for s in sites if _in_window(s, lo, hi)]
     return [_summary(s) for s in sites[:limit]]
 
 
