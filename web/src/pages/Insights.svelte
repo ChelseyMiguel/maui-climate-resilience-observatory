@@ -4,6 +4,7 @@
   // instead of borrowing Pukalani's series. Drought is county-wide and labelled so.
   import { onMount } from 'svelte';
   import LineChart from '../components/LineChart.svelte';
+  import DroughtGreenness from '../components/DroughtGreenness.svelte';
   import { regionInsights } from '../lib/adapters.ts';
   import { toCsv, downloadCsv } from '../lib/csv.ts';
 
@@ -168,6 +169,10 @@
           in greenness can reflect rainfall, grazing, mowing or land use as well as drought.</p>
         <button class="btn ghost" on:click={exportComparison}>Download comparison CSV</button>
       </div>
+    {/if}
+
+    {#if veg.available}
+      <div class="card"><DroughtGreenness /></div>
     {/if}
 
     <div class="card">

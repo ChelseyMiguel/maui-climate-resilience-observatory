@@ -2,7 +2,7 @@
  * response into the typed interfaces in types.ts. To connect a new or real source,
  * add an adapter here — pages never fetch directly. */
 import type {
-  DroughtMapInfo, InfrastructureFeature, InfrastructureKind, InfrastructureLayerInfo,
+  DroughtGreenness, DroughtMapInfo, InfrastructureFeature, InfrastructureKind, InfrastructureLayerInfo,
   Observation, RegionInsights, TimeseriesPoint,
 } from './types.ts';
 
@@ -74,5 +74,16 @@ export async function regionInsights(key: string): Promise<RegionInsights> {
       ? { available: true, nearestFire: r.fire.nearest_fire, acres: r.fire.acres,
           overlapsRegion: r.fire.overlaps_region, distanceKm: r.fire.distance_km }
       : { available: false },
+  };
+}
+
+export async function droughtGreenness(): Promise<DroughtGreenness> {
+  const r = await getJson<any>('/api/layers/drought-greenness');
+  return {
+    indices: r.indices,
+    drySeason: r.dry_season.map((d: any) => ({
+      year: d.year, months: d.months, dsci: d.dsci, ndvi: d.ndvi, nbrMonths: d.nbr_months, nbr: d.nbr,
+    })),
+    notes: r.notes,
   };
 }

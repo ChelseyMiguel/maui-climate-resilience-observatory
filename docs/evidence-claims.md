@@ -143,3 +143,36 @@ Not safe to say yet:
   observations in more than one year. Needs the re-shoot or archived coverage.
 - ~~"The browning caused the fire."~~ — the analysis establishes fuel
   preconditioning, not ignition or causation.
+
+## OPEN ITEM — the drought–greenness correlation has two different numbers
+
+The brief and manuscript cite a DSCI–NDVI correlation of **r = −0.47**. The
+Region Insights page ("Drought and greenness, month by month") computes its own
+figure from the files in `data/research/` (`lib/relationships.py`, pinned in
+`tests/unit/test_relationships.py`):
+
+| Method on the shipped files | r | n |
+|---|---|---|
+| Monthly mean county DSCI vs. monthly NDVI, same month (**what the page shows**) | −0.69 | 61 months |
+| Same, NBR instead of NDVI | −0.77 | 61 |
+| Month-of-year cycle removed from both (exploratory, not in the app) | −0.64 | 61 |
+| May–September months only (exploratory, not in the app) | −0.76 | 25 |
+
+**None of these reproduces −0.47**, so the manuscript used a different pipeline
+(different time resolution, window, composite or spatial unit — not recorded in
+this repo). The page deliberately states only what it computes and never quotes
+−0.47.
+
+**Before the video or written answers:** find out how −0.47 was produced, then
+either (a) show that number with its own method, or (b) say the page's figure
+and the manuscript's differ because of X. Quoting both without a reason is the
+easiest way to lose a judge's trust. Either way this is a correlation of two
+coarse, autocorrelated series at different scales (county drought vs. a 1.5 km
+area) — not a cause, and not a forecast.
+
+What the data does support without a caveat about methods: in the May–September
+means, 2022 has both the highest county DSCI (249) and the lowest NDVI (0.327) of
+the five years, and 2023 is back to 122 / 0.421. The same-month link is gone by
+about three months apart (r ≈ −0.03 for NDVI), so this data shows drought and
+greenness moving together in the same month, not a lagged "preconditioning"
+effect; that claim would need a different test.

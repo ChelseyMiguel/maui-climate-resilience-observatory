@@ -110,3 +110,26 @@ export interface Observation {
   date: string | null;
   complete: boolean;
 }
+
+/** County drought against Pukalani vegetation, computed by lib/relationships.py. */
+export interface DroughtGreennessFit {
+  r: number | null;          // null when it cannot be computed (too few months, no variation)
+  n: number;
+  slope: number | null;
+  intercept: number | null;
+}
+
+export interface DroughtGreennessIndex {
+  points: { month: string; year: number; dsci: number; value: number }[];
+  fit: DroughtGreennessFit;
+  lags: { lag: number; r: number | null; n: number }[];
+}
+
+export interface DroughtGreenness {
+  indices: { ndvi: DroughtGreennessIndex; nbr: DroughtGreennessIndex };
+  drySeason: {
+    year: number; months: number; dsci: number; ndvi: number;
+    nbrMonths: number; nbr: number | null;
+  }[];
+  notes: string[];
+}
