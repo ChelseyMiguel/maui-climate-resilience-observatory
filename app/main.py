@@ -18,6 +18,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import layers, sites
+from app.middleware import PolicyHeaders, SelectiveGZip
 from lib.globe_api import client
 
 # Browsers refuse to execute ES modules served with a non-JS Content-Type, and
@@ -35,6 +36,9 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="GLOBE Site Reconstruction", version="0.1.0", lifespan=lifespan)
+# Last added is outermost: gzip wraps the policy headers, which wrap the routes.
+app.add_middleware(PolicyHeaders)
+app.add_middleware(SelectiveGZip)
 
 # The page is served as a plain static file rather than through a template
 # engine. It carries no server-side variables, and htm's inline-style syntax
