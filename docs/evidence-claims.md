@@ -56,6 +56,19 @@ Two true statements at two different scales, joined honestly.
 class at each GLOBE site at native 30 m. Once that CSV exists, the per-site
 claim becomes available and the scale caveat mostly goes away:
 
+**Running it** (needs you, online): paste the site list from
+`python scripts/export_sites_for_gee.py --area pukalani --complete-only` into the
+script, run it in the Earth Engine Code Editor, download `lcms_site_classes.csv`
+from Drive into `data/research/`, then
+`python scripts/crosscheck_lcms.py --csv data/research/lcms_site_classes.csv`.
+That compares each GLOBE observation's own label with LCMS at its site and year
+and prints every row, including the ones that could not be compared. The class
+crosswalk behind it is a judgment (`lib/crosscheck.py`): read it before quoting a
+result. Note the script was changed to export `*_name` label columns; the earlier
+version exported integer codes only, and the Python side refuses such a CSV.
+**The Earth Engine edit has not been run** (no access from the sandbox where it was
+written); if it errors in the Code Editor, the failing line will say why.
+
 > "LCMS classified this pixel as drought-stressed in 2022."
 
 That is the single highest-value thing the Earth Engine exports unlock.

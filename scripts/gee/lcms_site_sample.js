@@ -44,8 +44,10 @@ var lcms = ee.ImageCollection('USFS/GTAC/LCMS/v2024-10')
 print('LCMS years available:',
   lcms.aggregate_array('year').distinct().sort());
 
-// Class names come from the band's class_names/class_values properties, so the
-// exported CSV carries readable labels rather than raw integer codes.
+// sampleRegions returns the raw integer class codes. The class names live in the
+// image's <band>_class_names / <band>_class_values properties, so they are looked
+// up below and exported as <band>_name columns next to the codes. (The Python
+// side, lib/crosscheck.py, refuses a CSV that has only the codes.)
 var first = ee.Image(lcms.first());
 print('Change class names:', first.get('Change_class_names'));
 print('Land_Cover class names:', first.get('Land_Cover_class_names'));
@@ -67,14 +69,31 @@ var samples = ee.FeatureCollection(years.map(function (y) {
   });
 }).flatten());
 
-print('Sample rows (sites x years):', samples.size());
-print('First rows:', samples.limit(5));
+// Attach readable names. Uses the first image's class tables; the schema is the
+// same for every year of one LCMS version.
+function withName(band) {
+  var values = ee.List(first.get(band + '_class_values'));
+  var names = ee.List(first.get(band + '_class_names'));
+  var lookup = ee.Dictionary.fromLists(
+    values.map(function (v) { return ee.Number(v).format('%d'); }), names);
+  return function (f) {
+    return f.set(band + '_name', lookup.get(ee.Number(f.get(band)).format('%d'), 'unknown'));
+  };
+}
+var labelled = samples
+  .map(withName('Change'))
+  .map(withName('Land_Cover'))
+  .map(withName('Land_Use'));
+
+print('Sample rows (sites x years):', labelled.size());
+print('First rows:', labelled.limit(5));
 
 Export.table.toDrive({
-  collection: samples,
+  collection: labelled,
   description: 'lcms_site_classes',
   fileFormat: 'CSV',
-  selectors: ['site', 'year', 'Change', 'Land_Cover', 'Land_Use']
+  selectors: ['site', 'year', 'Change', 'Change_name', 'Land_Cover', 'Land_Cover_name',
+              'Land_Use', 'Land_Use_name']
 });
 
 // ---------- Visual check ----------
