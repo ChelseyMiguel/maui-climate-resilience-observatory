@@ -204,3 +204,40 @@ def test_viewer_and_api_use_the_same_non_answer_list():
     page = (Path(__file__).resolve().parents[2] / "app" / "templates" / "index.html").read_text()
     js_list = re.search(r"NON_ANSWER_NOTES = new Set\(\[(.*?)\]\)", page).group(1)
     assert set(re.findall(r'"([^"]*)"', js_list)) == set(client.NON_ANSWER_NOTES)
+
+
+def test_request_matches_the_documented_public_globe_api_contract(monkeypatch):
+    """The request shape every working GLOBE API consumer uses.
+
+    Cross-checked against IGES-Geospatial/globe-mosquitoes-notebook (a community
+    copy of GLOBE's own Python notebook, `call()` in mosquitoes.py): same base
+    path with its trailing slash, `protocols/startdate/enddate/geojson/sample`,
+    uppercase TRUE/FALSE, and a bare GET with no key, token or auth header.
+    See docs/globe-api-verification.md.
+    """
+    seen = {}
+
+    class Reply:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"features": []}
+
+    def fake_get(url, **kwargs):
+        seen["url"], seen["kwargs"] = url, kwargs
+        return Reply()
+
+    monkeypatch.setattr(client.httpx, "get", fake_get)
+    assert client._fetch_chunk("2024-01-01", "2024-12-31", 30.0) == []
+
+    assert seen["url"] == "https://api.globe.gov/search/v1/measurement/protocol/measureddate/"
+    assert seen["kwargs"]["params"] == {
+        "protocols": "land_covers",
+        "startdate": "2024-01-01",
+        "enddate": "2024-12-31",
+        "geojson": "TRUE",
+        "sample": "FALSE",
+    }
+    # Public read API: nothing identifying or secret goes with the request.
+    assert not {"headers", "auth", "cookies"} & set(seen["kwargs"])
