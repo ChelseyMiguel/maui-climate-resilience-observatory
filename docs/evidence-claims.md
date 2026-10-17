@@ -235,14 +235,30 @@ ESA WorldCover and Dynamic World, sampled at the 15 Pukalani-area sites:
   The notebook and `lcms_site_sample.js` now use the newer asset and filter by
   location; not yet re-run.
 
-### LCMS at the sites (`data/research/lcms_site_classes.csv`, re-run 2026-10)
+### LCMS at the sites (`data/research/lcms_site_classes.csv`, 2025-11 asset)
 
-The re-run worked (newer asset, filtered by location): 105 rows = 15 sites x
-2018-2024. **It holds class codes only**: the newer asset does not carry
-`<band>_class_names`, so names must come from the asset's own class table
-(notebook cell 4b) before anything is quoted. The old 5-class Change scheme does
-not fit the codes seen (12-15), so codes are not decoded from memory.
+105 rows = 15 sites x 2018-2024. The asset has no class-name tables, so codes were
+decoded from its own `*_Raw_Probability_*` band order and that decoding was
+**tested** (notebook cell 4c): each site-year's code equalled its most probable
+class in **105/105** for Land_Cover, so Land_Cover is decoded
+(`scripts/decode_lcms_codes.py`). Land_Use passed only **83%**, below the 95% bar,
+so it is **not decoded** and must not be described ("Developed" is plausible for
+code 2 but unproven). Change is not decoded.
 
-Pattern visible without names: Land_Cover is one code (10) at every site in
-every year; Land_Use is code 2 at 6 sites (including both sites WorldCover
-calls built-up) and code 5 elsewhere.
+LCMS calls every site Grass/Forb/Herb in every year.
+
+### Do the three satellite maps agree? (`scripts/compare_satellite_maps.py`)
+
+| Pair | Agree (of 15 sites) |
+|---|---|
+| LCMS vs ESA WorldCover | 13 in 2020, 13 in 2021 |
+| Dynamic World vs WorldCover | 8 in 2020, 6 in 2021 |
+| Dynamic World vs LCMS | 4-10 per year, 2018-2024 |
+
+Two maps (30 m LCMS, 10 m WorldCover) agree these are grassland sites; Dynamic
+World, the near-real-time 10 m product, often calls them built-up. These are
+parks, fields and roadsides, where a pixel mixes grass with pavement. Satellite
+land cover is not a dependable ground truth at this scale, which is the case for
+ground photos such as GLOBE's. The GLOBE-label check itself runs on the author's
+machine (it needs the GLOBE cache):
+`python scripts/crosscheck_lcms.py --csv data/research/lcms_site_classes.csv --landcover data/research/landcover_site_classes.csv`.
