@@ -1,4 +1,4 @@
-"""Do GLOBE citizen labels agree with an independent satellite land-cover map?
+"""Do GLOBE citizen labels agree with independent satellite land-cover maps?
 
 Each GLOBE observation carries the observer's own land-cover label (a MUC class,
 e.g. "Herbaceous/Grassland, Short Grass"). LCMS, a USDA Forest Service product
@@ -47,17 +47,24 @@ _GLOBE_RULES: tuple[tuple[str, frozenset[str]], ...] = (
     ("water", frozenset({"water"})),
 )
 
-# LCMS Land_Cover names are combinations ("Shrubs & Trees Mix"), so each
-# component keyword found adds to the set.
-_LCMS_RULES: tuple[tuple[str, str], ...] = (
+# Satellite class names: LCMS Land_Cover ("Shrubs & Trees Mix"), ESA WorldCover
+# ("Tree cover", "Built-up") and Dynamic World ("shrub_and_scrub"). Names can be
+# combinations, so each component keyword found adds to the set. Cropland reads
+# as grass: GLOBE "Cultivated" does too, and LCMS has no crop class at all.
+_SATELLITE_RULES: tuple[tuple[str, str], ...] = (
     ("tree", "tree"),
     ("shrub", "shrub"),
     ("grass", "grass"),
+    ("crop", "grass"),
     ("barren", "built_barren"),
+    ("bare", "built_barren"),
     ("impervious", "built_barren"),
+    ("built", "built_barren"),
     ("water", "water"),
 )
-_LCMS_OUTSIDE_SCHEME = ("non-processing", "snow")
+# Classes outside the coarse scheme (wetlands, mangroves, moss, snow and masks
+# carry no keyword above, or are excluded here) come back as None: unmapped.
+_SATELLITE_OUTSIDE_SCHEME = ("non-processing", "snow", "wetland", "flooded", "mangrove", "moss")
 
 NOTES = (
     (
@@ -81,18 +88,22 @@ def globe_classes(label: str | None) -> frozenset[str] | None:
     return None
 
 
-def lcms_classes(name: str | None) -> frozenset[str] | None:
-    """Coarse components of an LCMS Land_Cover name, or None if outside the scheme."""
+def satellite_classes(name: str | None) -> frozenset[str] | None:
+    """Coarse components of an LCMS, WorldCover or Dynamic World class name, or
+    None if it is outside the scheme."""
     text = (name or "").lower()
-    if not text or any(word in text for word in _LCMS_OUTSIDE_SCHEME):
+    if not text or any(word in text for word in _SATELLITE_OUTSIDE_SCHEME):
         return None
-    found = frozenset(component for needle, component in _LCMS_RULES if needle in text)
+    found = frozenset(component for needle, component in _SATELLITE_RULES if needle in text)
     return found or None
+
+
+lcms_classes = satellite_classes  # the name the LCMS-only version used
 
 
 def verdict(globe_label: str | None, lcms_name: str | None) -> str:
     """`agree`, `partial`, `disagree`, or `unmapped` when either side is unknown."""
-    globe, lcms = globe_classes(globe_label), lcms_classes(lcms_name)
+    globe, lcms = globe_classes(globe_label), satellite_classes(lcms_name)
     if globe is None or lcms is None:
         return "unmapped"
     if globe == lcms:
@@ -125,19 +136,38 @@ def load_lcms_csv(path: Path | str) -> dict[tuple[str, int], str]:
         }
 
 
+def load_landcover_csv(path: Path | str) -> dict[str, dict[tuple[str, int], str]]:
+    """product -> {(site, year): class name}, from `landcover_site_classes.csv`
+    (exported by scripts/gee/landcover_site_sample.js or the Colab notebook)."""
+    with Path(path).open(newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = {"site", "product", "year", "class_name"} - set(reader.fieldnames or ())
+        if missing:
+            raise ValueError(f"{path}: missing column(s): {', '.join(sorted(missing))}")
+        out: dict[str, dict[tuple[str, int], str]] = {}
+        for row in reader:
+            out.setdefault(row["product"].strip(), {})[(row["site"].strip(), int(row["year"]))] = (
+                row["class_name"].strip()
+            )
+        return out
+
+
 def crosscheck(
     observations: Iterable[LandCoverSite], lcms: Mapping[tuple[str, int], str]
 ) -> dict:
-    """Compare each observation's label with LCMS at its site in its year.
+    """Compare each observation's label with a satellite map at its site in its year.
 
-    The LCMS year is the observation's year, held to the years LCMS was sampled
-    (a 2025 visit is compared with 2024). Observations with no date, or whose
+    The map year is the observation's year, held to the years the map has
+    (WorldCover exists only for 2020-2021, so a 2023 visit is read against
+    2021; LCMS was sampled 2018-2024). Observations with no date, or whose
     site/year is not in the sample, are listed as `no_lcms_row`, never dropped.
     """
+    years = {year for _, year in lcms}
+    first, last = (min(years), max(years)) if years else (LCMS_FIRST_YEAR, LCMS_LAST_YEAR)
     rows = []
     for obs in observations:
         year = obs.measured_at.year if obs.measured_at else None
-        lcms_year = None if year is None else min(max(year, LCMS_FIRST_YEAR), LCMS_LAST_YEAR)
+        lcms_year = None if year is None else min(max(year, first), last)
         lcms_name = lcms.get((obs.site_name, lcms_year)) if lcms_year else None
         rows.append({
             "land_cover_id": obs.land_cover_id,
@@ -155,3 +185,11 @@ def crosscheck(
         "rows": rows,
         "notes": list(NOTES),
     }
+
+
+def crosscheck_products(
+    observations: Iterable[LandCoverSite], table: Mapping[str, Mapping[tuple[str, int], str]]
+) -> dict[str, dict]:
+    """`crosscheck` against each satellite map separately, keyed by product."""
+    observations = list(observations)
+    return {product: crosscheck(observations, rows) for product, rows in table.items()}

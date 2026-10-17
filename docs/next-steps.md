@@ -5,11 +5,12 @@ waits on the step before it. Do them top to bottom.
 
 | # | Step | Who | Unlocks |
 |---|---|---|---|
-| 1 | Run `scripts/gee/rainfall_monthly.js` in the Earth Engine Code Editor; save the export as `data/research/pukalani_rainfall_monthly.csv`; check `python -m lib.rainfall` prints numbers | you, ~20 min | A Rainfall card next to "Drought and greenness": do the four products agree here, and how many months after rain does greenness respond? |
-| 2 | Run `scripts/gee/lcms_site_sample.js` (sites from `scripts/export_sites_for_gee.py`); save `data/research/lcms_site_classes.csv`; run `scripts/crosscheck_lcms.py` | you, ~20 min | First real "do citizen labels agree with satellite land cover" figure |
+| 1 | Run `notebooks/gee_exports.ipynb` in Colab (all three exports at once), or `scripts/gee/rainfall_monthly.js` in the Earth Engine Code Editor; save the export as `data/research/pukalani_rainfall_monthly.csv`; check `python -m lib.rainfall` prints numbers | you, ~20 min | A Rainfall card next to "Drought and greenness": do the four products agree here, and how many months after rain does greenness respond? |
+| 2 | Save `lcms_site_classes.csv` and `landcover_site_classes.csv` (from the notebook, or `scripts/gee/lcms_site_sample.js` + `landcover_site_sample.js`) in `data/research/`; run `scripts/crosscheck_lcms.py --csv ... --landcover ...` | you, ~20 min | First real "do citizen labels agree with satellite land cover" figure, against three independent maps (LCMS, ESA WorldCover, Dynamic World). NLCD does not cover Hawaii. |
 | 3 | Find how the manuscript's r = -0.47 was computed | you | Every correlation on the site and in the video says one consistent thing |
 | 4 | 3D from open data: check whether the 2022-2023 NOAA/USGS Maui lidar covers the Pukalani study area, and its flight dates vs. 8 Aug 2023 | you or me (needs network) | A measured vegetation-height layer (surface minus ground) on the 3D map — the real-data version of what SfM could not give (docs/sfm-experiment.md) |
-| 5 | Record the video against the rubric (docs/video-script.md) | you | The artifact judges actually watch |
+| 5 | Drone SfM survey of one site — only if a legal, permitted flight is possible (docs/uas-sfm-plan.md) | you | A real 3D model and vegetation height at a GLOBE site; otherwise it is the 2.0 story |
+| 6 | Record the video against the rubric (docs/video-script.md) | you | The artifact judges actually watch |
 
 Not worth starting before Oct 26: photo-based ML, a full lidar point-cloud viewer,
 new GLOBE endpoints that are untested live (docs/globe-api-verification.md).

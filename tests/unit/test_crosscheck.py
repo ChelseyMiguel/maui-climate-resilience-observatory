@@ -149,3 +149,70 @@ def test_crosscheck_summarises_and_never_hides_what_it_skipped():
 def test_undated_observation_is_reported_not_guessed():
     result = crosscheck.crosscheck([_obs("1", "A", "null", "Closed Forest")], {("A", 2022): "Trees"})
     assert result["rows"][0]["verdict"] == "no_lcms_row"
+
+
+# --- other satellite maps: ESA WorldCover and Dynamic World --------------------
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        # ESA WorldCover v100/v200 class names
+        ("Tree cover", {"tree"}),
+        ("Shrubland", {"shrub"}),
+        ("Grassland", {"grass"}),
+        ("Cropland", {"grass"}),  # crops read as herbaceous, like GLOBE "Cultivated"
+        ("Built-up", {"built_barren"}),
+        ("Bare / sparse vegetation", {"built_barren"}),
+        ("Permanent water bodies", {"water"}),
+        # Dynamic World labels
+        ("trees", {"tree"}),
+        ("shrub_and_scrub", {"shrub"}),
+        ("crops", {"grass"}),
+        ("built", {"built_barren"}),
+        ("bare", {"built_barren"}),
+    ],
+)
+def test_other_map_names_share_the_same_coarse_scheme(name, expected):
+    assert crosscheck.satellite_classes(name) == frozenset(expected)
+
+
+@pytest.mark.parametrize(
+    "name", ["Herbaceous wetland", "Mangroves", "Moss and lichen", "flooded_vegetation", "snow_and_ice"]
+)
+def test_classes_the_scheme_does_not_cover_stay_unmapped(name):
+    assert crosscheck.satellite_classes(name) is None
+
+
+def test_landcover_csv_loads_by_product(tmp_path):
+    path = _write(
+        tmp_path,
+        "site,product,year,class_value,class_name\n"
+        "A,worldcover,2021,30,Grassland\n"
+        "A,dynamicworld,2022,2,grass\n",
+    )
+    assert crosscheck.load_landcover_csv(path) == {
+        "worldcover": {("A", 2021): "Grassland"},
+        "dynamicworld": {("A", 2022): "grass"},
+    }
+
+
+def test_landcover_csv_missing_columns_is_refused(tmp_path):
+    with pytest.raises(ValueError, match="class_name"):
+        crosscheck.load_landcover_csv(_write(tmp_path, "site,product,year\nA,worldcover,2021\n"))
+
+
+def test_years_are_held_to_what_each_product_has():
+    """WorldCover only exists for 2020 and 2021, so a 2023 visit is read against 2021."""
+    obs = [_obs("1", "A", "2023-07-01T10:00:00", "Herbaceous/Grassland, Short Grass")]
+    result = crosscheck.crosscheck(obs, {("A", 2020): "Tree cover", ("A", 2021): "Grassland"})
+    assert result["rows"][0]["lcms_year"] == 2021
+    assert result["rows"][0]["verdict"] == "agree"
+
+
+def test_crosscheck_products_runs_each_map_separately():
+    obs = [_obs("1", "A", "2021-07-01T10:00:00", "Herbaceous/Grassland, Short Grass")]
+    table = {"worldcover": {("A", 2021): "Grassland"}, "dynamicworld": {("A", 2021): "trees"}}
+    out = crosscheck.crosscheck_products(obs, table)
+    assert out["worldcover"]["summary"]["agree"] == 1
+    assert out["dynamicworld"]["summary"]["disagree"] == 1
