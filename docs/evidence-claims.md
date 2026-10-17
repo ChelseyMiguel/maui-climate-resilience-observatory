@@ -234,3 +234,15 @@ ESA WorldCover and Dynamic World, sampled at the 15 Pukalani-area sites:
   filtered to `study_area == 'HI'` returned no images; the asset is superseded).
   The notebook and `lcms_site_sample.js` now use the newer asset and filter by
   location; not yet re-run.
+
+### LCMS at the sites (`data/research/lcms_site_classes.csv`, re-run 2026-10)
+
+The re-run worked (newer asset, filtered by location): 105 rows = 15 sites x
+2018-2024. **It holds class codes only**: the newer asset does not carry
+`<band>_class_names`, so names must come from the asset's own class table
+(notebook cell 4b) before anything is quoted. The old 5-class Change scheme does
+not fit the codes seen (12-15), so codes are not decoded from memory.
+
+Pattern visible without names: Land_Cover is one code (10) at every site in
+every year; Land_Use is code 2 at 6 sites (including both sites WorldCover
+calls built-up) and code 5 elsewhere.
