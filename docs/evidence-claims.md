@@ -262,3 +262,32 @@ land cover is not a dependable ground truth at this scale, which is the case for
 ground photos such as GLOBE's. The GLOBE-label check itself runs on the author's
 machine (it needs the GLOBE cache):
 `python scripts/crosscheck_lcms.py --csv data/research/lcms_site_classes.csv --landcover data/research/landcover_site_classes.csv`.
+
+## DECISION NEEDED — which drought–greenness correlation to quote
+
+Same two series (county DSCI, study-area NDVI, Dec 2018–Dec 2023), different
+methods. Computed from `data/research/` on 2026-10-17:
+
+| Method | r | n | Use it? |
+|---|---|---|---|
+| Annual dry-season means | −0.99 | 5 | **No.** Five points; looks perfect, means little; a judge will rightly attack it |
+| Annual means | −0.92 | 5 | **No**, same reason |
+| NBR instead of NDVI, same month | −0.77 | 61 | Only if the claim is about NBR |
+| **Monthly, same month, Pearson** | **−0.69** | **61** | **Recommended**: what the site shows, tested, reproducible from the downloadable CSV |
+| Monthly, rank (Spearman) | −0.67 | 61 | Fine as a robustness check |
+| Weekly DSCI vs. that month's NDVI | −0.66 | 265 weeks | Inflates n (weeks share one NDVI value) |
+| Monthly, seasonal cycle removed | −0.63 | 61 | The strict version; good to mention |
+| Monthly, DSCI one month earlier | −0.42 | 61 | Closest to −0.47, but not it |
+| Manuscript | −0.47 | ? | Method not recorded in this repo |
+
+**Recommendation:** quote **r = −0.69 (monthly, same month, 61 months)** in the app,
+video and written answers, and add "−0.63 once the seasonal cycle is removed".
+Do not quote −0.47 next to it unless you can name its method. If the manuscript
+keeps −0.47, its methods section must say how it was computed.
+
+**Draft question for Dr. Low / Peder** (for you to send, in your words):
+> "The app recomputes the DSCI–NDVI correlation from our exported series and gets
+> r = −0.69 (monthly means, same month, n = 61), or −0.63 with the seasonal cycle
+> removed. The manuscript has −0.47. Do you remember how that one was computed
+> (which months, time step, lag, or spatial unit), so I can report them
+> consistently?"
