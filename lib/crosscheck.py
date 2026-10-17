@@ -128,7 +128,9 @@ def load_lcms_csv(path: Path | str) -> dict[tuple[str, int], str]:
             raise ValueError(
                 f"{path} has no Land_Cover_name column"
                 + (" (only the integer Land_Cover codes)" if "Land_Cover" in fields else "")
-                + ": re-run the updated scripts/gee/lcms_site_sample.js, which exports label columns."
+                + ": re-run the updated scripts/gee/lcms_site_sample.js, which exports label columns; "
+                "if the asset has no class-name tables, run cell 4b of notebooks/gee_exports.ipynb "
+                "and build the lookup from what it prints."
             )
         return {
             (row["site"].strip(), int(row["year"])): row["Land_Cover_name"].strip()
