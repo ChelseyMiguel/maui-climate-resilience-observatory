@@ -74,3 +74,84 @@ def test_lag_profile_finds_greenness_following_rain(tmp_path, monkeypatch):
 def test_notes_carry_the_scale_caveat(tmp_path):
     result = rainfall.summary(_csv(tmp_path, ["2020-01-01,1,31,1,1,1"]))
     assert "pixel" in " ".join(result["notes"]).lower()
+
+
+# --- accumulation and seasonality ------------------------------------------
+
+
+def test_accumulate_sums_whole_windows_only():
+    s = {"2020-01": 1.0, "2020-02": 2.0, "2020-03": 4.0, "2020-05": 8.0}
+    assert rainfall.accumulate(s, 2) == {"2020-02": 3.0, "2020-03": 6.0}  # no Apr: May has no window
+    assert rainfall.accumulate(s, 1) == s
+
+
+def test_anomalies_remove_the_calendar_month_mean():
+    s = {"2020-01": 10.0, "2021-01": 20.0, "2020-02": 5.0}
+    assert rainfall.anomalies(s) == {"2020-01": -5.0, "2021-01": 5.0, "2020-02": 0.0}
+
+
+# --- the real export (data/research/pukalani_rainfall_monthly.csv) ----------
+
+
+@pytest.fixture(scope="module")
+def real():
+    assert rainfall.RAIN_PATH.exists(), "rainfall CSV missing from data/research"
+    return rainfall.summary()
+
+
+def _window(rows, months, product):
+    return next(r for r in rows if r["months"] == months)["products"][product]
+
+
+def test_real_export_is_complete(real):
+    assert real["months"] == {"chirps": 84, "terraclimate": 84, "imerg": 84, "era5land": 84}
+
+
+def test_real_products_agree(real):
+    assert all(0.6 < a["r"] < 0.9 for a in real["agreement"])
+
+
+def test_real_two_to_three_months_of_rain_match_greenness_best(real):
+    w = real["windows_ndvi"]
+    for product in ("chirps", "terraclimate", "era5land"):
+        one = _window(w, 1, product)["r"]
+        best = max(_window(w, 2, product)["r"], _window(w, 3, product)["r"])
+        assert best > one + 0.1
+    assert _window(w, 2, "terraclimate")["r"] == pytest.approx(0.70, abs=0.01)
+
+
+def test_real_drought_index_behaves_like_three_months_of_rain(real):
+    w = real["windows_dsci"]
+    assert _window(w, 3, "terraclimate")["r"] == pytest.approx(-0.69, abs=0.01)
+    assert _window(w, 1, "terraclimate")["r"] == pytest.approx(-0.35, abs=0.01)
+
+
+def test_real_link_weakens_once_the_seasonal_cycle_is_removed(real):
+    raw = _window(real["windows_ndvi"], 3, "terraclimate")["r"]
+    strict = _window(real["windows_ndvi_deseasonalised"], 3, "terraclimate")["r"]
+    assert 0 < strict < raw
+
+
+# --- endpoint --------------------------------------------------------------
+
+
+def test_endpoint_serves_the_summary(real):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    response = TestClient(app).get("/api/layers/rainfall")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["months"] == real["months"] and len(body["monthly"]) == 84
+
+
+def test_endpoint_is_503_with_the_fix_when_missing(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    monkeypatch.setattr(rainfall, "RAIN_PATH", tmp_path / "nope.csv")
+    response = TestClient(app).get("/api/layers/rainfall")
+    assert response.status_code == 503
+    assert "gee_exports.ipynb" in response.json()["detail"]

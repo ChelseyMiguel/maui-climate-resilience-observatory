@@ -133,3 +133,20 @@ export interface DroughtGreenness {
   }[];
   notes: string[];
 }
+
+/** Monthly rain at the study area from four gridded products (lib/rainfall.py). */
+export type RainProduct = 'chirps' | 'terraclimate' | 'imerg' | 'era5land';
+
+export interface RainWindow {
+  months: number;          // rain summed over this many months
+  products: Record<RainProduct, { r: number | null; n: number }>;
+}
+
+export interface Rainfall {
+  monthly: ({ month: string } & Record<RainProduct, number | null>)[];
+  agreement: { a: RainProduct; b: RainProduct; r: number | null; n: number }[];
+  windowsNdvi: RainWindow[];
+  windowsNdviDeseasonalised: RainWindow[];
+  windowsDsci: RainWindow[];
+  notes: string[];
+}

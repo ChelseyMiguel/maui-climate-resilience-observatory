@@ -21,6 +21,8 @@ import calendar
 import csv
 import itertools
 import json
+import statistics
+from functools import lru_cache
 from pathlib import Path
 
 from lib import relationships
@@ -30,6 +32,8 @@ RAIN_PATH = browning.DATA_DIR / "pukalani_rainfall_monthly.csv"
 PRODUCTS = ("chirps", "terraclimate", "imerg", "era5land")
 _COLUMNS = ("date", "chirps_mm", "chirps_days", "terraclimate_mm", "imerg_mm", "era5land_mm")
 _MISSING = -9999.0
+# Rain summed over the last k months, compared with this month's greenness.
+WINDOWS = (1, 2, 3, 6, 12)
 
 NOTES = (
     (
@@ -39,6 +43,10 @@ NOTES = (
     (
         "A lag of k months pairs greenness with rain k months earlier. A correlation is "
         "not a cause, and neighbouring months are not independent."
+    ),
+    (
+        "Rain and greenness share a wet-winter, dry-summer cycle, which inflates their "
+        "correlation; the version with the seasonal cycle removed is the stricter test."
     ),
 )
 
@@ -64,6 +72,48 @@ def load(path: Path | str = RAIN_PATH) -> dict[str, dict[str, float]]:
         return out
 
 
+def accumulate(series: dict[str, float], months: int) -> dict[str, float]:
+    """Each month's total over it and the `months - 1` before it.
+
+    Only months whose whole window is present get a value, so a gap never
+    produces a short, falsely dry total.
+    """
+    out = {}
+    for month in series:
+        window = [relationships._shift(month, back) for back in range(months)]
+        if all(m in series for m in window):
+            out[month] = sum(series[m] for m in window)
+    return out
+
+
+def anomalies(series: dict[str, float]) -> dict[str, float]:
+    """Departure from that calendar month's mean: removes the shared seasonal cycle."""
+    by_month: dict[str, list[float]] = {}
+    for month, value in series.items():
+        by_month.setdefault(month[5:], []).append(value)
+    means = {k: statistics.fmean(v) for k, v in by_month.items()}
+    return {month: value - means[month[5:]] for month, value in series.items()}
+
+
+def _r(x: dict[str, float], y: dict[str, float]) -> dict:
+    fit = relationships.correlation(relationships.pair_months(x, y))
+    return {"r": fit["r"], "n": fit["n"]}
+
+
+def _windows(data: dict[str, dict[str, float]], target: dict[str, float], seasonal: bool) -> list[dict]:
+    """r of accumulated rain with `target`, per window and product."""
+    rows = []
+    for k in WINDOWS:
+        per = {}
+        for product in PRODUCTS:
+            rain = accumulate(data[product], k)
+            if not seasonal:
+                rain = anomalies(rain)
+            per[product] = _r(rain, target if seasonal else anomalies(target))
+        rows.append({"months": k, "products": per})
+    return rows
+
+
 def _lags(rain: dict[str, float], greenness: dict[str, float]) -> list[dict]:
     return [
         {"lag": k, **{key: val for key, val in relationships.correlation(
@@ -72,8 +122,9 @@ def _lags(rain: dict[str, float], greenness: dict[str, float]) -> list[dict]:
     ]
 
 
+@lru_cache(maxsize=4)
 def summary(path: Path | str = RAIN_PATH) -> dict:
-    """Product agreement, rain-vs-greenness lag profiles, and rain vs. county DSCI."""
+    """Product agreement, rain-vs-greenness by window and lag, and rain vs. county DSCI."""
     if not Path(path).exists():
         return {"available": False}
     data = load(path)
@@ -88,6 +139,15 @@ def summary(path: Path | str = RAIN_PATH) -> dict:
         "months": {p: len(data[p]) for p in PRODUCTS},
         "agreement": agreement,
         "vs_ndvi": {p: _lags(data[p], ndvi) for p in PRODUCTS},
+        # Rain over the last k months against this month's greenness, as measured
+        # and with each series' seasonal cycle removed (the stricter test).
+        "windows_ndvi": _windows(data, ndvi, seasonal=True),
+        "windows_ndvi_deseasonalised": _windows(data, ndvi, seasonal=False),
+        "windows_dsci": _windows(data, dsci, seasonal=True),
+        "monthly": [
+            {"month": m, **{p: data[p].get(m) for p in PRODUCTS}}
+            for m in sorted(set().union(*(data[p] for p in PRODUCTS)))
+        ],
         # Same-month rain against the county drought index: a sanity check that
         # the two describe the same dry spells, not a result in itself.
         "vs_dsci": {

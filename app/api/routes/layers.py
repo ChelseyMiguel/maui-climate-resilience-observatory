@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from app.api.routes.sites import DEFAULT_END, DEFAULT_START, REGION
-from lib import hazards, relationships
+from lib import hazards, rainfall, relationships
 from lib.globe_api import client
 from lib.vegetation import browning
 
@@ -83,6 +83,20 @@ def drought_greenness() -> dict:
             status_code=503,
             detail="drought-greenness series missing: need data/research/pukalani_ndvi_monthly.csv "
                    "and maui_dsci_weekly.csv (see scripts/fetch_drought.py)",
+        )
+    return data
+
+
+@router.get("/rainfall")
+def rainfall_summary() -> dict:
+    """Monthly rain at the study area from four products, how well they agree, and
+    how rain over the last 1-12 months relates to greenness (lib/rainfall.py)."""
+    data = rainfall.summary(rainfall.RAIN_PATH)
+    if not data["available"]:
+        raise HTTPException(
+            status_code=503,
+            detail="rainfall missing: export data/research/pukalani_rainfall_monthly.csv with "
+                   "notebooks/gee_exports.ipynb or scripts/gee/rainfall_monthly.js",
         )
     return data
 

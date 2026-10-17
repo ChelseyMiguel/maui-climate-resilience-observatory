@@ -38,11 +38,16 @@ var sites = ee.FeatureCollection([
 // ---------- LCMS ----------
 // Same product and version as the dashboard PDFs (v2024-10). LCMS is annual,
 // so each year is one image in the collection.
-var lcms = ee.ImageCollection('USFS/GTAC/LCMS/v2024-10')
-  .filter(ee.Filter.eq('study_area', 'HI'));   // Hawaii study area
+// USFS/GTAC/LCMS/v2024-10 is superseded, and filtering it by study_area 'HI'
+// returned no images. Use the newer asset (named in Google's deprecation notice)
+// and filter by LOCATION. If it prints 0 images, swap in the old ID to compare.
+var lcms = ee.ImageCollection('projects/gtac-data-publish/assets/LCMS/Product_Version/2025-11')
+  .filterBounds(sites);
+print('LCMS images over the sites (must be > 0):', lcms.size());
+print('Bands:', ee.Image(lcms.first()).bandNames());
 
 print('LCMS years available:',
-  lcms.aggregate_array('year').distinct().sort());
+  lcms.aggregate_array('system:time_start').map(function (t) { return ee.Date(t).get('year'); }).distinct().sort());
 
 // sampleRegions returns the raw integer class codes. The class names live in the
 // image's <band>_class_names / <band>_class_values properties, so they are looked
@@ -57,7 +62,8 @@ var years = ee.List.sequence(2018, 2024);
 
 var samples = ee.FeatureCollection(years.map(function (y) {
   y = ee.Number(y).int();
-  var img = ee.Image(lcms.filter(ee.Filter.eq('year', y)).first())
+  // mosaic(): a year can be split over several images.
+  var img = lcms.filterDate(ee.Date.fromYMD(y, 1, 1), ee.Date.fromYMD(y.add(1), 1, 1)).mosaic()
     .select(['Change', 'Land_Cover', 'Land_Use']);
 
   // 30 m is LCMS's native resolution — do not resample finer and imply

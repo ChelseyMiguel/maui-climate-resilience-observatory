@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import LineChart from '../components/LineChart.svelte';
   import DroughtGreenness from '../components/DroughtGreenness.svelte';
+  import RainGreenness from '../components/RainGreenness.svelte';
   import { regionInsights } from '../lib/adapters.ts';
   import { toCsv, downloadCsv } from '../lib/csv.ts';
 
@@ -173,6 +174,7 @@
 
     {#if veg.available}
       <div class="card"><DroughtGreenness /></div>
+      <div class="card"><RainGreenness /></div>
     {/if}
 
     <div class="card">

@@ -189,3 +189,48 @@ the five years, and 2023 is back to 122 / 0.421. The same-month link is gone by
 about three months apart (r ≈ −0.03 for NDVI), so this data shows drought and
 greenness moving together in the same month, not a lagged "preconditioning"
 effect; that claim would need a different test.
+
+## Rainfall (exported 2026-10, `data/research/pukalani_rainfall_monthly.csv`)
+
+Source: `notebooks/gee_exports.ipynb` / `scripts/gee/rainfall_monthly.js` — CHIRPS,
+TerraClimate, IMERG V07, ERA5-Land, each the one pixel (~4.6–11 km) containing
+the study-area centre, Jan 2018 – Dec 2024, all 84 months present. Computed by
+`lib/rainfall.py`, pinned in `tests/unit/test_rainfall.py`.
+
+Supported, with method attached:
+
+- The four products move together: r = 0.67–0.82 for every pair (monthly). They
+  disagree on amounts (IMERG highest), so **no product's millimetres are quoted**.
+- Rain summed over the **last 2–3 months** matches the study area's monthly NDVI
+  best: median r ≈ +0.66 across products, vs. ≈ +0.43 for one month.
+- The county drought index behaves like 3-month rain: r ≈ −0.67 (median) vs.
+  ≈ −0.3 for one month. That is why DSCI tracks greenness better than one
+  month's rain does.
+- **Strict version** (each series' month-of-year cycle removed): one month of
+  rain says almost nothing (median r ≈ +0.06); a **12-month** total is best
+  (≈ +0.49). Once ordinary seasons are subtracted, a wetter- or drier-than-usual
+  year is what shows in the vegetation.
+
+What this means for the −0.47 question: on the same data, reasonable method
+choices give drought/rain–greenness correlations anywhere from ≈ 0.06 to 0.70.
+A correlation is not quotable without its method.
+
+Not supported: any statement about rain *at Pukalani* in mm, and any causal or
+predictive claim.
+
+## Satellite land cover at the GLOBE sites (`data/research/landcover_site_classes.csv`)
+
+ESA WorldCover and Dynamic World, sampled at the 15 Pukalani-area sites:
+
+- The two maps agree on the coarse class at **8 of 15 sites in 2020 and 6 of 15
+  in 2021**. WorldCover calls 13 of 15 sites grassland in 2021; Dynamic World
+  calls 9 of them built-up. Dynamic World's yearly class changes at 8 of 15 sites.
+- Reading: these sites are parks, fields and roadsides, mixed at the 10 m pixel
+  scale, so satellite land cover is not a dependable ground truth here. That is
+  an argument *for* ground photos like GLOBE's, not against them.
+- The GLOBE-label comparison itself needs the local GLOBE cache:
+  `python scripts/crosscheck_lcms.py --landcover data/research/landcover_site_classes.csv`.
+- LCMS at the sites: the first export failed (`USFS/GTAC/LCMS/v2024-10`
+  filtered to `study_area == 'HI'` returned no images; the asset is superseded).
+  The notebook and `lcms_site_sample.js` now use the newer asset and filter by
+  location; not yet re-run.

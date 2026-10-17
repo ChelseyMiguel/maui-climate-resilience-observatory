@@ -81,7 +81,7 @@
         <line x1={x(`${yr}-01-01`)} x2={x(`${yr}-01-01`)} y1={T} y2={H - B} class="grid v" />
         <text x={x(`${yr}-01-01`)} y={H - 10} class="tick mid">{yr}</text>
       {/each}
-      {#if yLabel}<text x="12" y={T + 4} class="tick" transform="rotate(-90 12 {T + 4})" text-anchor="end">{yLabel}</text>{/if}
+      {#if yLabel}<text x="12" y={T + 4} class="tick ylabel" transform="rotate(-90 12 {T + 4})" text-anchor="end">{yLabel}</text>{/if}
 
       {#each visible as s}
         <path d={pathOf(s)} fill={s.area ? s.color : 'none'} fill-opacity={s.area ? 0.25 : 0}
@@ -139,4 +139,12 @@
   .tablewrap { max-height: 260px; overflow: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 6px; }
   .tablewrap table { font-size: .82rem; }
   .tablewrap th { position: sticky; top: 0; background: var(--paper-2); }
+  /* The 720-wide viewBox shrinks to about half on a phone, taking 11px labels to
+     about 6px. Larger user-unit sizes keep them near 10px there. */
+  @media (max-width: 640px) {
+    .tick, .marker-label { font-size: 20px; }
+    /* At that size the rotated unit label collides with the top tick; every
+       chart title already names the unit. */
+    .ylabel { display: none; }
+  }
 </style>
