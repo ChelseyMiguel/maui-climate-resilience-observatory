@@ -11,4 +11,4 @@ pypdf>=4.0.0
 
 # Dev
 pytest>=8.2.0
-ruff>=0.4.0
+ruff==0.16.8  # pinned: CI installs from here, and newer ruff adds rules (it failed CI at 0.17)
