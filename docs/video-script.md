@@ -34,6 +34,6 @@ Every number below is in `docs/evidence-claims.md`. Don't add numbers that aren'
 
 ## Upload checklist
 - [ ] Under 3:00
-- [ ] YouTube → Visibility **Unlisted**, made for kids: **No**
+- [ ] YouTube → Visibility **Public** (CAC requires a public YouTube or Vimeo video, 1–3 min; PROJECT_BRIEF.md and district pages such as larsen.house.gov and case.house.gov; confirm with your representative's office), made for kids: **No**
 - [ ] Title: "Rural Hawaiʻi Climate Resilience Observatory — Congressional App Challenge 2026"
 - [ ] Paste the YouTube link and the GitHub link into the CAC submission form before **Oct 26, 12:00 PM EDT**
