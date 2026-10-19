@@ -24,6 +24,11 @@
   // Optional real imagery (a canvas covering exactly the terrain bbox, linear in
   // lat/lon — see scripts/gee/imagery_before_after.js). Replaces the elevation tint.
   export let imagery = null;
+  // Optional pixel-level browning: { canvas, corners } from raster.renderBelow, with
+  // corners as [lon, lat] NW, NE, SE, SW. Replaces the patch polygons when given.
+  // The UTM pixel grid is drawn axis-aligned in lat/lon; over the 3 km raster the
+  // grid's rotation against true north moves edges by about one 10 m pixel.
+  export let change = null;
 
   const dispatch = createEventDispatcher();
   const CANVAS_W = 2048;
@@ -154,7 +159,14 @@
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(imagery || baseLayer, 0, 0, overlay.width, overlay.height);
 
-    if (show.browning && browning) {
+    if (show.browning && change) {
+      const [nw, , se] = change.corners;
+      const [x0, y0] = toCanvas(bbox, overlay.width, overlay.height, nw[0], nw[1]);
+      const [x1, y1] = toCanvas(bbox, overlay.width, overlay.height, se[0], se[1]);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(change.canvas, x0, y0, x1 - x0, y1 - y0);
+      ctx.imageSmoothingEnabled = true;
+    } else if (show.browning && browning) {
       // Holes in the patches are unbrowned ground: 'evenodd' leaves them unfilled.
       ctx.beginPath();
       for (const f of browning.features) tracePolygons(ctx, f.geometry);
@@ -347,7 +359,7 @@
   });
 
   // Reactive updates once the scene exists.
-  $: if (ready) { show; imagery; paintOverlay(); }
+  $: if (ready) { show; imagery; change; paintOverlay(); }
   $: if (ready) { exaggeration; applyExaggeration(); }
   $: if (ready) { sites; selectedId; show; renderPins(); }
 </script>

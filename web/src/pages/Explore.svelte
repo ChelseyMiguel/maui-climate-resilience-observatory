@@ -15,7 +15,9 @@
   import * as data from '../lib/adapters.ts';
   import { getTerrain } from '../lib/api.js';
   import { reliefDataUrl } from '../lib/relief.ts';
-  import { loadChangeRaster, BROWNING_THRESHOLD, rampColor } from '../lib/raster.ts';
+  import { loadChangeRaster, BROWNING_THRESHOLD, rampColor, renderBelow } from '../lib/raster.ts';
+  import { histogram, joinMonthly } from '../lib/series.js';
+  import SeriesPanel from '../components/SeriesPanel.svelte';
   import { drawIcon, iconSvg, KIND_LABEL } from '../lib/icons.ts';
 
   const YEARS = [2018, 2019, 2020, 2021, 2022, 2023, 2024];
@@ -31,6 +33,11 @@
 
   // Layer switches
   let veg = true, vegIndex = 'dndvi', vegPatches = false;
+  // 'ramp' shows the full diverging change; 'threshold' keeps only pixels below a
+  // user-set cut-off, so the browned area can be grown or shrunk on the map.
+  let vegMode = 'ramp', threshold = BROWNING_THRESHOLD, below = null, bins = [];
+  let dataOpen = false, seriesRows = [], seriesError = null, seriesLoaded = false;
+  let cursor = null;             // raster value under the pointer
   let drought = true;
   let community = true;
   let kinds = { fire_stations: true, ems_stations: true, hospitals: true, public_schools: true, private_schools: true };
@@ -107,15 +114,18 @@
         map.addSource(`raster-${id}`, { type: 'image', url: rasters[id].imageUrl, coordinates: rasters[id].meta.corners });
         map.addLayer({ id: `raster-${id}`, type: 'raster', source: `raster-${id}`, paint: { 'raster-resampling': 'nearest', 'raster-opacity': 0.92 } });
       }
+      below = renderBelow(rasters[vegIndex], threshold);
+      map.addSource('raster-below', { type: 'image', url: below.imageUrl, coordinates: rasters[vegIndex].meta.corners });
+      map.addLayer({ id: 'raster-below', type: 'raster', source: 'raster-below', paint: { 'raster-resampling': 'nearest', 'raster-opacity': 0.95 } });
       map.addSource('patches', { type: 'geojson', data: patchesFc });
       map.addLayer({ id: 'patches-line', type: 'line', source: 'patches', paint: { 'line-color': '#5c2f04', 'line-width': 0.8 } });
 
       map.addSource('study', { type: 'geojson', data: circle(studyArea.lat, studyArea.lon, studyArea.radius_m) });
-      map.addLayer({ id: 'study-line', type: 'line', source: 'study', paint: { 'line-color': '#1f2a24', 'line-width': 2, 'line-dasharray': [3, 2] } });
+      map.addLayer({ id: 'study-line', type: 'line', source: 'study', paint: { 'line-color': '#e4e8ea', 'line-width': 2, 'line-dasharray': [3, 2] } });
 
       map.addSource('regions', { type: 'geojson', data: regionsFc });
       map.addLayer({ id: 'regions-fill', type: 'fill', source: 'regions', paint: { 'fill-color': '#1f6f73', 'fill-opacity': 0.04 } });
-      map.addLayer({ id: 'regions-line', type: 'line', source: 'regions', paint: { 'line-color': '#1f6f73', 'line-width': 2, 'line-dasharray': [1, 1.5] } });
+      map.addLayer({ id: 'regions-line', type: 'line', source: 'regions', paint: { 'line-color': '#5fb7c2', 'line-width': 2, 'line-dasharray': [1, 1.5] } });
       for (const f of regionsFc.features) {
         const ring = f.geometry.type === 'Polygon' ? f.geometry.coordinates[0] : f.geometry.coordinates[0][0];
         const lon = ring.reduce((s, p) => s + p[0], 0) / ring.length, lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
@@ -129,7 +139,7 @@
 
       map.addSource('globe', { type: 'geojson', data: fc([]) });
       map.addLayer({ id: 'globe-points', type: 'circle', source: 'globe',
-        paint: { 'circle-radius': 5.5, 'circle-color': '#1f6f73', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
+        paint: { 'circle-radius': 5.5, 'circle-color': '#5fb7c2', 'circle-stroke-color': '#151a1e', 'circle-stroke-width': 2 } });
 
       for (const k of KINDS) map.addImage(`icon-${k}`, drawIcon(k), { pixelRatio: 2 });
       map.addSource('infra', { type: 'geojson', data: fc(infra.flat().map((f) => ({
@@ -145,6 +155,11 @@
         map.on('mouseleave', id, () => (map.getCanvas().style.cursor = ''));
       }
       map.on('click', onClick);
+      map.on('mousemove', (e) => {
+        const v = veg ? rasters[vegIndex].valueAt(e.lngLat.lat, e.lngLat.lng) : null;
+        cursor = v === null ? null : { v, lat: e.lngLat.lat, lon: e.lngLat.lng };
+      });
+      map.on('mouseout', () => (cursor = null));
 
       ready = true;
       loading = false;
@@ -185,8 +200,9 @@
 
   function applyAll() {
     if (!ready) return;
-    vis('raster-dndvi', veg && vegIndex === 'dndvi');
-    vis('raster-dnbr', veg && vegIndex === 'dnbr');
+    vis('raster-dndvi', veg && vegMode === 'ramp' && vegIndex === 'dndvi');
+    vis('raster-dnbr', veg && vegMode === 'ramp' && vegIndex === 'dnbr');
+    vis('raster-below', veg && vegMode === 'threshold');
     vis('patches-line', veg && vegPatches);
     vis('drought-fill', drought); vis('drought-line', drought);
     vis('fires-fill', fires); vis('fires-line', fires);
@@ -200,7 +216,36 @@
 
   $: if (ready) { year; applyYear(); }
   $: if (ready) { firesAllYears; applyFireFilter(); }
-  $: if (ready) { veg; vegIndex; vegPatches; drought; community; kinds; fires; regions; globe; study; applyAll(); }
+  // Re-render the threshold image at most once per frame while the slider moves.
+  let frame = 0;
+  function applyThreshold() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      below = renderBelow(rasters[vegIndex], threshold);
+      map.getSource('raster-below')?.updateImage({ url: below.imageUrl, coordinates: rasters[vegIndex].meta.corners });
+    });
+  }
+  $: if (ready) { threshold; vegIndex; applyThreshold(); }
+  $: bins = rasters[vegIndex] ? histogram(rasters[vegIndex].values) : [];
+  $: binMax = Math.max(1, ...bins.map((b) => b.count));
+
+  async function openData() {
+    dataOpen = !dataOpen;
+    if (!dataOpen || seriesLoaded) return;
+    seriesLoaded = true;
+    try {
+      const [dg, rain, weeks] = await Promise.all([
+        data.droughtGreenness().catch(() => null), data.rainfall().catch(() => null), data.droughtWeeks(),
+      ]);
+      seriesRows = joinMonthly({
+        ndvi: dg?.indices?.ndvi?.points ?? [], nbr: dg?.indices?.nbr?.points ?? [],
+        weeks, rain: rain?.monthly ?? [],
+      });
+    } catch (e) { seriesError = e.message; seriesLoaded = false; }
+  }
+  $: if (map && ready) { dataOpen; setTimeout(() => map.resize(), 0); }
+
+  $: if (ready) { veg; vegIndex; vegPatches; vegMode; drought; community; kinds; fires; regions; globe; study; applyAll(); }
 
   // ---------- feature card ----------
   function onClick(e) {
@@ -301,11 +346,40 @@
       <div class="sub" class:dim={!veg}>
         <label><input type="radio" bind:group={vegIndex} value="dndvi" disabled={!veg} /> dNDVI — greenness</label>
         <label><input type="radio" bind:group={vegIndex} value="dnbr" disabled={!veg} /> dNBR — moisture-sensitive</label>
-        <label><input type="checkbox" bind:checked={vegPatches} disabled={!veg} /> Outline browned patches</label>
-        <div class="ramp" aria-hidden="true">
-          {#each [-0.4, -0.2, -0.1, 0, 0.1, 0.2, 0.4] as v}<span style="background:{swatch(v)}"></span>{/each}
+        <label><input type="checkbox" bind:checked={vegPatches} disabled={!veg} /> Outline browned patches (−0.10)</label>
+        <div class="seg" role="radiogroup" aria-label="Vegetation display">
+          <label class:on={vegMode === 'ramp'}><input type="radio" bind:group={vegMode} value="ramp" disabled={!veg} />Full change</label>
+          <label class:on={vegMode === 'threshold'}><input type="radio" bind:group={vegMode} value="threshold" disabled={!veg} />Below a threshold</label>
         </div>
-        <div class="ramp-labels"><span>−0.4 loss</span><span>0</span><span>+0.4 gain</span></div>
+        {#if vegMode === 'ramp'}
+          <div class="ramp" aria-hidden="true">
+            {#each [-0.4, -0.2, -0.1, 0, 0.1, 0.2, 0.4] as v}<span style="background:{swatch(v)}"></span>{/each}
+          </div>
+          <div class="ramp-labels"><span>−0.4 loss</span><span>0</span><span>+0.4 gain</span></div>
+        {:else}
+          <label class="slider">Show pixels with {vegIndex === 'dndvi' ? 'dNDVI' : 'dNBR'} below
+            <output>{threshold.toFixed(2)}</output>
+            <input type="range" min="-0.4" max="0" step="0.01" bind:value={threshold} disabled={!veg} /></label>
+          <div class="ramp-labels"><span>−0.40 severe</span><span>−0.10 project threshold</span><span>0</span></div>
+          {#if below}
+            <dl class="kpi">
+              <div><dt>Area</dt><dd>{below.hectares.toFixed(1)} ha</dd></div>
+              <div><dt>Share</dt><dd>{((below.below / below.valid) * 100).toFixed(1)}%</dd></div>
+              <div><dt>Pixels</dt><dd>{below.below.toLocaleString()}</dd></div>
+            </dl>
+          {/if}
+        {/if}
+        <svg class="hist" viewBox="0 0 300 74" role="img"
+             aria-label="Histogram of {vegIndex === 'dndvi' ? 'dNDVI' : 'dNBR'} values in the study area; bars left of the line are below {vegMode === 'threshold' ? threshold.toFixed(2) : '−0.10'}">
+          {#each bins as b, i}
+            <rect x={i * 6} width="5" y={60 - (b.count / binMax) * 56} height={(b.count / binMax) * 56}
+                  fill={b.x0 + 0.01 < (vegMode === 'threshold' ? threshold : BROWNING_THRESHOLD) ? '#d08a3c' : '#4a555c'} />
+          {/each}
+          {#each [-0.6, -0.4, -0.2, 0, 0.2, 0.4] as t}
+            <text x={(t + 0.6) * 300} y="72" text-anchor={t === -0.6 ? 'start' : t === 0.4 ? 'end' : 'middle'}>{t.toFixed(1)}</text>
+          {/each}
+          <line x1={((vegMode === 'threshold' ? threshold : BROWNING_THRESHOLD) + 0.6) * 300} x2={((vegMode === 'threshold' ? threshold : BROWNING_THRESHOLD) + 0.6) * 300} y1="0" y2="62" stroke="#e4e8ea" stroke-dasharray="3 2" />
+        </svg>
         <p class="hint">Dry season 2022 minus 2019, 10 m, 1.5 km study area only.
           {#if vegShare !== undefined}<b>{(vegShare * 100).toFixed(1)}%</b> of pixels are below the −0.10 browning threshold.{/if}</p>
       </div>
@@ -386,13 +460,50 @@
 
   <div class="mapwrap">
     <div class="map" bind:this={container} role="region" aria-label="Map of Upcountry Maui"></div>
+    <div class="maptools">
+      <button aria-expanded={dataOpen} on:click={openData}>{dataOpen ? 'Hide data' : 'Data over time'}</button>
+    </div>
+    {#if cursor}
+      <div class="cursor" aria-hidden="true">
+        <span>{vegIndex === 'dndvi' ? 'dNDVI' : 'dNBR'}</span> <b class:neg={cursor.v < BROWNING_THRESHOLD}>{cursor.v >= 0 ? '+' : ''}{cursor.v.toFixed(3)}</b>
+        <span>{cursor.lat.toFixed(5)}, {cursor.lon.toFixed(5)}</span>
+      </div>
+    {/if}
     {#if loading}<div class="state">Loading terrain, vegetation rasters and layers…</div>{/if}
     {#if error}<div class="state err" role="alert">Couldn’t load the map: {error}</div>{/if}
   </div>
+  {#if dataOpen}
+    <div class="dock"><SeriesPanel rows={seriesRows} error={seriesError} {year} on:close={() => (dataOpen = false)} /></div>
+  {/if}
 </div>
 
 <style>
-  .explore { display: grid; grid-template-columns: 360px 1fr; height: 100%; position: relative; }
+  .explore { display: grid; grid-template-columns: 360px 1fr; grid-template-rows: 1fr auto; height: 100%; position: relative; }
+  aside { grid-row: 1 / 3; }
+  .dock { grid-column: 2; min-width: 0; }
+  .seg { display: flex; border: 1px solid var(--line); margin-top: 6px; }
+  .seg label { flex: 1; justify-content: center; padding: 3px 4px; font-size: .8rem; cursor: pointer; }
+  .seg label + label { border-left: 1px solid var(--line); }
+  .seg label.on { background: var(--paper-2); box-shadow: inset 0 -2px 0 var(--forest); }
+  .seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .seg label:focus-within { outline: 3px solid var(--focus); }
+  .slider { flex-direction: column; align-items: stretch !important; margin-top: 8px; font-size: .82rem; }
+  .slider output { font: 700 1rem var(--mono); color: var(--forest); }
+  .slider input { width: 100%; accent-color: var(--forest); }
+  .kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 8px 0 2px; border: 1px solid var(--line); }
+  .kpi div { padding: 4px 8px; }
+  .kpi div + div { border-left: 1px solid var(--line); }
+  .kpi dt { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; }
+  .kpi dd { font: 700 .95rem var(--mono); color: var(--ink); }
+  .hist { width: 100%; height: auto; margin-top: 8px; background: var(--paper); border: 1px solid var(--line); }
+  .hist text { fill: var(--muted); font: 8px var(--mono); }
+  .maptools { position: absolute; top: 10px; left: 10px; z-index: 2; }
+  .maptools button { background: var(--card); color: var(--ink); border: 1px solid var(--line); padding: .35em .8em; font-size: .85rem; font-weight: 600; }
+  .maptools button[aria-expanded='true'] { border-color: var(--forest); }
+  .cursor { position: absolute; left: 10px; bottom: 34px; z-index: 2; background: var(--card); border: 1px solid var(--line);
+            padding: 4px 8px; font: .78rem var(--mono); display: flex; gap: 8px; color: var(--muted); pointer-events: none; }
+  .cursor b { color: var(--teal); }
+  .cursor b.neg { color: var(--forest); }
   aside { overflow-y: auto; padding: 14px 16px 30px; background: var(--card); border-right: 1px solid var(--line); }
   aside h1 { font-size: 1.5rem; margin-bottom: 8px; }
   fieldset { border: 0; border-top: 1px solid var(--line); padding: 10px 0 4px; margin: 10px 0 0; }
@@ -409,7 +520,7 @@
   .years label:focus-within { outline: 3px solid var(--focus); outline-offset: 1px; }
   .hint { font-size: .8rem; color: var(--muted); margin: 4px 0 0; }
   .empty { font-size: .82rem; color: var(--amber); margin: 4px 0 0; }
-  .ramp { display: flex; height: 12px; border-radius: 3px; overflow: hidden; margin-top: 6px; border: 1px solid var(--line); }
+  .ramp { display: flex; height: 12px; overflow: hidden; margin-top: 6px; border: 1px solid var(--line); }
   .ramp span { flex: 1; }
   .ramp-labels { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); }
   .key { list-style: none; padding: 0; margin: 0; font-size: .85rem; }
@@ -418,9 +529,9 @@
   .sw { width: 14px; height: 12px; border-radius: 2px; display: inline-block; border: 1px solid rgba(0,0,0,.2); flex: none; }
   .sw.line { height: 0; border: 0; border-top: 3px solid; width: 16px; border-radius: 0; }
   .sw.line.fire { border-color: #b3261e; }
-  .sw.line.region { border-top: 3px dotted #1f6f73; }
-  .sw.line.dash { border-top: 3px dashed #1f2a24; }
-  .sw.dot { width: 12px; height: 12px; border-radius: 50%; background: #1f6f73; border: 2px solid #fff; box-shadow: 0 0 0 1px #1f6f73; }
+  .sw.line.region { border-top: 3px dotted #5fb7c2; }
+  .sw.line.dash { border-top: 3px dashed #e4e8ea; }
+  .sw.dot { width: 12px; height: 12px; border-radius: 50%; background: #5fb7c2; border: 2px solid #151a1e; box-shadow: 0 0 0 1px #5fb7c2; }
   .kind { font-size: .86rem; }
   .linkish { background: none; border: 0; color: var(--teal); text-decoration: underline; padding: 4px 0; text-align: left; font-size: .88rem; }
   .cardout { margin-top: 14px; }
@@ -433,7 +544,8 @@
   dd { margin: 0; }
   .meta { font-size: .82rem; margin: 4px 0; }
   .feature .btn { margin-top: 8px; font-size: .88rem; }
-  .mapwrap { position: relative; }
+  .mapwrap { position: relative; min-height: 0; }
+  aside { min-height: 0; }
   .map { position: absolute; inset: 0; }
   .state { position: absolute; inset: 0; display: grid; place-items: center; background: var(--paper); color: var(--muted); }
   .state.err { color: var(--fire); }
@@ -444,6 +556,7 @@
   }
   @media (max-width: 860px) {
     .explore { grid-template-columns: 1fr; }
+    .dock { grid-column: 1; }
     aside { position: absolute; z-index: 3; inset: 44px 0 0 0; display: none; border-right: 0; }
     aside.open { display: block; }
     .toggle { display: block; position: absolute; z-index: 4; top: 8px; left: 8px; background: var(--card);

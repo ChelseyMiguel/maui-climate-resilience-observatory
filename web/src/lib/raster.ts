@@ -90,3 +90,34 @@ export async function loadChangeRaster(id: 'dndvi' | 'dnbr'): Promise<LoadedRast
     },
   };
 }
+
+/** Severity ramp for the threshold view: pale tan just under the threshold to
+ * deep brown at -0.4 and below. Lightness falls monotonically with loss. */
+function severityColor(v: number, threshold: number): [number, number, number] {
+  const t = Math.max(0, Math.min(1, (threshold - v) / Math.max(0.05, threshold + 0.4)));
+  const lo = [246, 196, 120], hi = [120, 52, 6];
+  return lo.map((c, k) => Math.round(c + (hi[k] - c) * t)) as [number, number, number];
+}
+
+export interface ThresholdView { imageUrl: string; canvas: HTMLCanvasElement; below: number; valid: number; hectares: number }
+
+/** Only the pixels below `threshold`, as an image for the same corners, plus counts. */
+export function renderBelow(r: LoadedRaster, threshold: number): ThresholdView {
+  const { width, height, pixelMetres } = r.meta;
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d')!;
+  const img = ctx.createImageData(width, height);
+  let valid = 0, below = 0;
+  for (let i = 0; i < r.values.length; i++) {
+    const v = r.values[i];
+    if (Number.isNaN(v)) continue;
+    valid++;
+    if (v >= threshold) continue;
+    below++;
+    img.data.set([...severityColor(v, threshold), 245], i * 4);
+  }
+  ctx.putImageData(img, 0, 0);
+  return { imageUrl: canvas.toDataURL('image/png'), canvas, below, valid, hectares: (below * pixelMetres * pixelMetres) / 10000 };
+}
+

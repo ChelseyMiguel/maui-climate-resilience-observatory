@@ -6,11 +6,15 @@
   import Terrain3D from '../lib/Terrain3D.svelte';
   import Timeline from '../lib/Timeline.svelte';
   import { loadAll } from '../lib/api.js';
+  import { loadChangeRaster, renderBelow, BROWNING_THRESHOLD } from '../lib/raster.ts';
 
   let data = null, error = null, map;
   let selected = null;
   let show = { browning: true, fires: true, sites: true, study: true };
   let exaggeration = 2;
+  // Pixel-level browning from the dNDVI raster, cut at a user-set threshold. Falls
+  // back to the −0.10 patch polygons if the raster can't load.
+  let dndvi = null, threshold = BROWNING_THRESHOLD, change = null;
 
   // Imagery
   let imageryInfo = null, imageryChoice = 'tint', imageryCanvas = null, imageryCache = {}, imageryError = null;
@@ -19,6 +23,7 @@
     try {
       data = await loadAll();
       imageryInfo = await (await fetch('/api/layers/imagery')).json();
+      dndvi = await loadChangeRaster('dndvi').catch(() => null);
     } catch (e) { error = e.message; }
   });
 
@@ -40,6 +45,16 @@
       }
       imageryCanvas = imageryCache[choice];
     } catch (e) { imageryError = e.message; imageryChoice = 'tint'; imageryCanvas = null; }
+  }
+
+  let frame = 0;
+  $: if (dndvi) {
+    threshold;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      const v = renderBelow(dndvi, threshold);
+      change = { canvas: v.canvas, corners: dndvi.meta.corners, hectares: v.hectares, share: v.below / v.valid };
+    });
   }
 
   // ---------- guided tour ----------
@@ -108,12 +123,17 @@
   <div class="layout">
     <section class="stage">
       <Terrain3D bind:this={map} terrain={data.terrain} browning={data.browning} fires={data.fires}
-        sites={data.sites} studyArea={data.studyArea} {show} {exaggeration} imagery={imageryCanvas}
+        sites={data.sites} studyArea={data.studyArea} {show} {exaggeration} imagery={imageryCanvas} {change}
         selectedId={selected?.site_id} on:select={(e) => { selected = e.detail; stopTour(); }} />
 
       <div class="controls">
         <button class="tourbtn" on:click={() => startTour(true)}>▶ Play the guided tour</button>
         <label><input type="checkbox" bind:checked={show.browning} /> <span class="sw brown"></span>Browned 2019→2022</label>
+        {#if change}
+          <label class="exag">dNDVI below <b class="num">{threshold.toFixed(2)}</b>
+            <input type="range" min="-0.4" max="0" step="0.01" bind:value={threshold} disabled={!show.browning} /></label>
+          <p class="note num">{change.hectares.toFixed(1)} ha · {(change.share * 100).toFixed(1)}% of the study area</p>
+        {/if}
         <label><input type="checkbox" bind:checked={show.fires} /> <span class="sw fire"></span>Fire perimeters</label>
         <label><input type="checkbox" bind:checked={show.sites} /> <span class="sw site"></span>GLOBE sites</label>
         {#if data.sitesError}<p class="note">GLOBE sites couldn’t load; the rest of the view is unaffected.</p>{/if}

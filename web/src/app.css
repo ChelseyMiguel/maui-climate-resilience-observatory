@@ -75,6 +75,8 @@ th { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: 
 html { color-scheme: dark; }
 /* MapLibre chrome to match the panels. */
 .maplibregl-ctrl-attrib, .maplibregl-ctrl-group, .maplibregl-ctrl-scale { background: var(--card) !important; color: var(--ink-2); border: 1px solid var(--line); border-radius: 2px !important; box-shadow: none !important; }
-.maplibregl-ctrl-attrib a { color: var(--ink-2); }
+.maplibregl-ctrl-attrib a, .maplibregl-ctrl-attrib-inner, .maplibregl-ctrl-scale { color: var(--ink-2) !important; }
+.maplibregl-ctrl-scale { border-top: 0; }
 .maplibregl-ctrl-group button + button { border-top: 1px solid var(--line) !important; }
 .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1); }
+input[type=range], input[type=checkbox], input[type=radio] { accent-color: var(--forest); }
