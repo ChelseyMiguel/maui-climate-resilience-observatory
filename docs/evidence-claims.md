@@ -263,7 +263,7 @@ ground photos such as GLOBE's. The GLOBE-label check itself runs on the author's
 machine (it needs the GLOBE cache):
 `python scripts/crosscheck_lcms.py --csv data/research/lcms_site_classes.csv --landcover data/research/landcover_site_classes.csv`.
 
-## DECISION NEEDED — which drought–greenness correlation to quote
+## RESOLVED (2026-10-19) — which drought–greenness correlation to quote
 
 Same two series (county DSCI, study-area NDVI, Dec 2018–Dec 2023), different
 methods. Computed from `data/research/` on 2026-10-17:
@@ -278,7 +278,7 @@ methods. Computed from `data/research/` on 2026-10-17:
 | Weekly DSCI vs. that month's NDVI | −0.66 | 265 weeks | Inflates n (weeks share one NDVI value) |
 | Monthly, seasonal cycle removed | −0.63 | 61 | The strict version; good to mention |
 | Monthly, DSCI one month earlier | −0.42 | 61 | Closest to −0.47, but not it |
-| Manuscript | −0.47 | ? | Method not recorded in this repo |
+| **Manuscript method: monthly DSCI vs. NDVI *anomaly z-score*** (z = (NDVI − 2019–21 mean for that calendar month) / its SD) | **−0.47** | **61** | **Reproduced exactly** from data/research (r = −0.467; Mar/Apr 2022 z = −7.4 / −11.3, as published) |
 
 **Recommendation:** quote **r = −0.69 (monthly, same month, 61 months)** in the app,
 video and written answers, and add "−0.63 once the seasonal cycle is removed".
@@ -291,3 +291,26 @@ keeps −0.47, its methods section must say how it was computed.
 > removed. The manuscript has −0.47. Do you remember how that one was computed
 > (which months, time step, lag, or spatial unit), so I can report them
 > consistently?"
+
+### Resolution
+
+The manuscript (Miguel, Nelson, Low & Soeffing 2026, JEOGA, revised) correlates
+monthly DSCI with the monthly NDVI **anomaly** z-score against a 2019–2021
+climatology: **r = −0.47 (95% CI −0.64 to −0.24, n = 61, p = 0.0002), strongest
+at lag 0.** Recomputed from the shipped files with that method it is r = −0.467
+with the same March/April 2022 z-scores the paper reports, so the number is
+confirmed. The app's "Drought and greenness" card shows **−0.69**, drought vs.
+*raw* NDVI. Both are correct for their own question.
+
+**Quote −0.47 with its method** in the video, slides and written answers (it is
+the published, peer-reviewed-track number). If a judge points at the −0.69 on
+screen: "that one uses raw greenness; the published analysis uses greenness
+anomalies against each month's normal."
+
+## From the manuscript (Miguel et al. 2026, JEOGA, revised)
+
+- 70,280 valid 10 m pixels in the AOI; **30,037 (42.7%)** browned (ΔNDVI < −0.10), 2019→2022 dry seasons.
+- Largest patch **130.7 ha ≈ 44%** of the browned area.
+- DSCI vs. NDVI anomaly: r = −0.47 (above). Signal also in NBR.
+- **48% of the LCMS vegetation-loss area** was also browned (partial overlap).
+- The paper states the results **do not show that the browned areas burned**.
