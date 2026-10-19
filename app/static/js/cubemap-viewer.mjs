@@ -345,7 +345,7 @@ const VIEW_DIRS = {
  * viewer is looking, and exposes face() so the HUD buttons can snap to a
  * direction. Heading comes from the controls' own change events rather than a
  * per-frame loop, so it updates exactly when the view does. */
-function ViewDriver({ apiRef, onView }) {
+function ViewDriver({ apiRef, onView, onUserStart }) {
   const { camera, controls, invalidate } = useThree();
 
   useEffect(() => {
@@ -357,6 +357,9 @@ function ViewDriver({ apiRef, onView }) {
       onView(heading, pitch);
     };
     controls.addEventListener("change", report);
+    // "start" fires only when a person grabs the view (not for auto-rotate or
+    // the N/E/S/W jumps), which is exactly when a pan should stop.
+    if (onUserStart) controls.addEventListener("start", onUserStart);
     apiRef.current = {
       face(name) {
         const d = VIEW_DIRS[name];
@@ -370,15 +373,16 @@ function ViewDriver({ apiRef, onView }) {
     report();
     return () => {
       controls.removeEventListener("change", report);
+      if (onUserStart) controls.removeEventListener("start", onUserStart);
       apiRef.current = null;
     };
-  }, [controls, camera, invalidate]);
+  }, [controls, camera, invalidate, onUserStart]);
 
   return null;
 }
 
 /* Which way you are facing, jump buttons, and the field-of-view toggle. */
-function ViewHud({ apiRef, view, missing, trueFov, onToggleFov }) {
+function ViewHud({ apiRef, view, missing, trueFov, onToggleFov, spinning, onToggleSpin, onFullscreen }) {
   const { heading, pitch } = view;
   const looking = lookingLabel(heading, pitch);
   const btn = (name, label) => html`
@@ -398,6 +402,12 @@ function ViewHud({ apiRef, view, missing, trueFov, onToggleFov }) {
               title=${`Draws each photo at the angle it really covers. Assumes a ~${ASSUMED_LONG_SIDE_FOV_DEG}° phone camera (no EXIF available).`}>
         ${trueFov ? "True field of view" : "Fill cube"}
       </button>
+      <span className="hud-sep"></span>
+      <button className="hud-btn" aria-pressed=${spinning} onClick=${onToggleSpin}
+              title="Slowly pan around the site (space). Dragging stops it.">
+        ${spinning ? "❚❚ Stop" : "⟳ Look around"}
+      </button>
+      <button className="hud-btn" onClick=${onFullscreen} title="Full screen (for presenting or recording)">⛶</button>
     </div>`;
 }
 
@@ -477,15 +487,49 @@ function MiniMap({ observation, heading }) {
 
 /* Hooks live here, not in CubeMapViewer, so that component can return early for
  * the empty state without breaking the rules of hooks. */
+// OrbitControls' auto-rotate speed: 2 = one full turn in ~30 s at 60 fps, slow
+// enough to read each photo. Positive sweeps N → E → S → W here (checked in a
+// browser: heading rises 0° → 90° → …).
+const SPIN_SPEED = 2;
+
+/* Keys that jump to a photo, as on the HUD buttons. */
+const KEY_FACES = { n: "North", e: "East", s: "South", w: "West", u: "Upward", d: "Downward" };
+
 function LoadedViewer({ observation }) {
   const apiRef = useRef(null);
+  const stageRef = useRef(null);
   const [view, setView] = useState({ heading: 0, pitch: 0 });
   const [trueFov, setTrueFov] = useState(false);
+  // A slow automatic pan, for presenting the site (and for screen recordings).
+  // Any drag stops it, so it never fights the person holding the mouse.
+  const [spinning, setSpinning] = useState(false);
+  // Stable identity, so ViewDriver attaches its "start" listener once.
+  const stopSpin = useRef(() => setSpinning(false));
   const onView = (heading, pitch) =>
     setView((v) => (v.heading === heading && v.pitch === pitch ? v : { heading, pitch }));
 
+  useEffect(() => {
+    const onKey = (e) => {
+      const t = e.target;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t && (t.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].includes(t.tagName))) return;
+      const face = KEY_FACES[e.key.toLowerCase()];
+      if (face) { setSpinning(false); apiRef.current && apiRef.current.face(face); e.preventDefault(); }
+      else if (e.key === " ") { setSpinning((v) => !v); e.preventDefault(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const toggleFullscreen = () => {
+    const el = stageRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (el.requestFullscreen) el.requestFullscreen();
+  };
+
   return html`
-    <div className="viewer-stage">
+    <div className="viewer-stage" ref=${stageRef}>
       <${Canvas} camera=${{ position: [0, 0, 0.1], fov: 75 }} dpr=${[1, 2]}>
         <${CubeFaces} photos=${observation.photos} trueFov=${trueFov} key=${observation.land_cover_id} />
         <${OrbitControls}
@@ -495,15 +539,19 @@ function LoadedViewer({ observation }) {
           minDistance=${0.01}
           maxDistance=${1.2}
           rotateSpeed=${-0.35}
-          enableDamping=${true} />
-        <${ViewDriver} apiRef=${apiRef} onView=${onView} />
+          enableDamping=${true}
+          autoRotate=${spinning}
+          autoRotateSpeed=${SPIN_SPEED} />
+        <${ViewDriver} apiRef=${apiRef} onView=${onView} onUserStart=${stopSpin.current} />
       <//>
       <${HeadingBadge} observation=${observation} />
       <${MiniMap} observation=${observation} heading=${view.heading} />
       <${ViewHud} apiRef=${apiRef} view=${view}
                   missing=${observation.missing_directions || []}
-                  trueFov=${trueFov} onToggleFov=${() => setTrueFov((v) => !v)} />
-      <div className="viewer-hint">drag to look around · scroll to zoom</div>
+                  trueFov=${trueFov} onToggleFov=${() => setTrueFov((v) => !v)}
+                  spinning=${spinning} onToggleSpin=${() => setSpinning((v) => !v)}
+                  onFullscreen=${toggleFullscreen} />
+      <div className="viewer-hint">drag to look around · scroll to zoom · keys N E S W U D · space to pan</div>
     </div>`;
 }
 

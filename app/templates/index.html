@@ -121,6 +121,9 @@
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
     background: rgba(16, 22, 26, 0.82); border: 1px solid var(--line); border-radius: 10px;
     padding: 6px 10px; backdrop-filter: blur(6px); max-width: calc(100% - 28px);
+    /* left: 50% leaves only half the stage for shrink-to-fit sizing, which wrapped
+       the bar onto two lines; size it to its content instead (still capped). */
+    width: max-content;
   }
   .hud-heading { font-size: 12px; color: var(--muted); min-width: 92px; }
   .hud-heading b { color: var(--text); }
@@ -273,6 +276,15 @@ function BrownedChip({ fraction }) {
    behaves normally instead of snapping back to the linked observation. */
 let pendingObs = new URLSearchParams(window.location.search).get("obs");
 
+/* The API's own detail is precise but technical; lead with what a visitor can do. */
+function friendlyError(message) {
+  if (/unavailable and not cached|GLOBE API request failed/i.test(message)) {
+    return "GLOBE observations aren't cached on this computer, and the GLOBE server couldn't be reached. " +
+           "Run scripts/ingest_maui.py once while online, then reload.";
+  }
+  return `Couldn't load: ${message}`;
+}
+
 function Sidebar() {
   const [areas, setAreas] = useState([]);
   const [area, setArea] = useState("pukalani");
@@ -353,7 +365,7 @@ function Sidebar() {
           ${completeOnly ? "6/6 photos only" : "all observations"}
         </button>
       </div>
-      ${error ? html`<div className="obs-error" role="alert">Couldn't load: ${error}</div>` : null}
+      ${error ? html`<div className="obs-error" role="alert">${friendlyError(error)}</div>` : null}
       <div className="obs-meta">
         ${loading ? "loading…"
           : `${groups.length} site${groups.length === 1 ? "" : "s"} · ${results.length} observation${results.length === 1 ? "" : "s"}`}
