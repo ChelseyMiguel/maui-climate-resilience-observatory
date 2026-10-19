@@ -42,6 +42,8 @@
   let fireFeatures = [];
   let droughtCats = [];          // categories present in the loaded year's map
   let obsThisYear = 0, firesThisYear = [];
+  // GLOBE pins are optional: if they cannot load, every other layer still must.
+  let obsError = null;
   let selected = null;           // the feature card
   let ready = false;
 
@@ -61,7 +63,8 @@
   onMount(async () => {
     try {
       const [t, sa, cat, di, obs, regionsFc, firesFc, patchesFc, dndvi, dnbr, ...infra] = await Promise.all([
-        getTerrain(), data.studyArea(), data.infrastructureCatalog(), data.droughtMaps(), data.observations(),
+        getTerrain(), data.studyArea(), data.infrastructureCatalog(), data.droughtMaps(),
+        data.observations().catch((e) => { obsError = e.message; return []; }),
         data.regionsGeoJson(), data.firesGeoJson(), data.browningGeoJson(),
         loadChangeRaster('dndvi'), loadChangeRaster('dnbr'),
         ...KINDS.map((k) => data.infrastructure(k)),
@@ -348,7 +351,8 @@
           <p class="hint indent">{firesThisYear.length ? `${year}: ${firesThisYear.join(', ')}` : `No mapped perimeters in ${year}.`}</p>
         {/if}
         <label><input type="checkbox" bind:checked={globe} /> <span class="sw dot"></span> GLOBE sites observed in {year}</label>
-        {#if globe && !obsThisYear}<p class="empty indent">No GLOBE observations in this area in {year}.</p>{/if}
+        {#if obsError}<p class="empty indent">GLOBE observations couldn’t load (needs the GLOBE cache or a connection to api.globe.gov). The other layers are unaffected.</p>
+        {:else if globe && !obsThisYear}<p class="empty indent">No GLOBE observations in this area in {year}.</p>{/if}
         <label><input type="checkbox" bind:checked={regions} /> <span class="sw line region"></span> Pukalani, Makawao, Kula</label>
         <label><input type="checkbox" bind:checked={study} /> <span class="sw line dash"></span> Study area (1.5 km)</label>
         <button class="linkish" on:click={focusStudyArea} disabled={!ready}>Zoom to the study area</button>

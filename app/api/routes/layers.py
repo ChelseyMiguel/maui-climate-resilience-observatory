@@ -116,13 +116,12 @@ def drought_weeks() -> list[dict]:
 def ndvi_baseline() -> dict:
     """25 years of dry-season Landsat NDVI for the study area, each year against the
     2000-2018 normal (lib/landsat_baseline.py)."""
+    # Optional analysis: "not produced yet" is a normal answer (200), not an error,
+    # so the page that asks for it never logs a failed request.
     data = landsat_baseline.summary(landsat_baseline.PATH)
     if not data["available"]:
-        raise HTTPException(
-            status_code=503,
-            detail="Landsat baseline missing: run section 6 of notebooks/gee_exports.ipynb and save "
-                   "data/research/pukalani_landsat_ndvi_dryseason.csv",
-        )
+        data["how"] = ("run section 6 of notebooks/gee_exports.ipynb and save "
+                       "data/research/pukalani_landsat_ndvi_dryseason.csv")
     return data
 
 

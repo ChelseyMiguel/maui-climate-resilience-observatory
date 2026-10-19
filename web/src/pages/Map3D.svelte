@@ -116,6 +116,7 @@
         <label><input type="checkbox" bind:checked={show.browning} /> <span class="sw brown"></span>Browned 2019→2022</label>
         <label><input type="checkbox" bind:checked={show.fires} /> <span class="sw fire"></span>Fire perimeters</label>
         <label><input type="checkbox" bind:checked={show.sites} /> <span class="sw site"></span>GLOBE sites</label>
+        {#if data.sitesError}<p class="note">GLOBE sites couldn’t load; the rest of the view is unaffected.</p>{/if}
         <label><input type="checkbox" bind:checked={show.study} /> <span class="sw study"></span>Study area</label>
         <label class="exag">Relief ×{exaggeration}<input type="range" min="1" max="4" step="0.5" bind:value={exaggeration} /></label>
         <fieldset class="imagery">
@@ -223,4 +224,5 @@
     .layout { grid-template-columns: 1fr; grid-template-rows: 62vh auto; }
     .controls { width: auto; right: 12px; }
   }
+  .note { font-size: .78rem; color: var(--amber); margin: 0 0 4px 22px; }
 </style>

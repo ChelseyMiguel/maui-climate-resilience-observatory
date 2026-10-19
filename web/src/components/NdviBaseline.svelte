@@ -8,7 +8,7 @@
 
   let data = null, hover = null, showTable = false;
   onMount(async () => {
-    try { data = await ndviBaseline(); } catch { data = null; }
+    try { const r = await ndviBaseline(); data = r.available ? r : null; } catch { data = null; }
   });
 
   const W = 640, H = 260, L = 50, R = 16, T = 16, B = 34, Y0 = 2000, Y1 = 2024;

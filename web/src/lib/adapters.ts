@@ -107,6 +107,7 @@ export interface BaselineYear {
   z: number | null; rank_lowest: number | null; few_scenes: boolean;
 }
 export interface NdviBaseline {
+  available: boolean;
   normal: { years: [number, number]; mean: number; sd: number; n: number };
   years_with_data: number; rows: BaselineYear[]; notes: string[];
 }

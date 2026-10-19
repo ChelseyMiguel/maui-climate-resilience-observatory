@@ -24,13 +24,15 @@ export async function getTerrain() {
 }
 
 export async function loadAll() {
+  let sitesError = null;
   const [terrain, browning, fires, sites, studyArea, drought] = await Promise.all([
     getTerrain(),
     getJson('/api/layers/browning'),
     getJson('/api/layers/fires'),
-    getJson('/api/layers/sites'),
+    // GLOBE pins are optional: without them the terrain, browning and fires still show.
+    getJson('/api/layers/sites').catch((e) => { sitesError = e.message; return []; }),
     getJson('/api/layers/study-area'),
     getJson('/api/layers/drought'),
   ]);
-  return { terrain, browning, fires, sites, studyArea, drought };
+  return { terrain, browning, fires, sites, studyArea, drought, sitesError };
 }

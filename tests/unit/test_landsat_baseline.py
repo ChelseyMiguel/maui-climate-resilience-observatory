@@ -59,11 +59,14 @@ def test_too_little_normal_data_is_unavailable(tmp_path):
     assert s["available"] is False
 
 
-def test_endpoint_reports_missing_with_the_fix(tmp_path, monkeypatch):
+def test_endpoint_reports_missing_as_data_not_an_error(tmp_path, monkeypatch):
+    """No CSV yet is a normal state: 200 with available=False and how to make it,
+    so the Insights page never logs a failed request."""
     from fastapi.testclient import TestClient
 
     from app.main import app
 
     monkeypatch.setattr(lb, "PATH", tmp_path / "nope.csv")
     r = TestClient(app).get("/api/layers/ndvi-baseline")
-    assert r.status_code == 503 and "gee_exports.ipynb" in r.json()["detail"]
+    assert r.status_code == 200
+    assert r.json()["available"] is False and "gee_exports.ipynb" in r.json()["how"]
