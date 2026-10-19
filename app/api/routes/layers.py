@@ -101,6 +101,17 @@ def rainfall_summary() -> dict:
     return data
 
 
+@router.get("/drought-weeks")
+def drought_weeks() -> list[dict]:
+    """Weekly Maui County drought, 2017-12 to 2024-12: DSCI plus the cumulative share
+    of the county in D0..D4, for the week-by-week drought calendar."""
+    weeks = hazards.drought_weeks()
+    if not weeks:
+        raise HTTPException(status_code=503,
+                            detail="drought categories missing: data/research/maui_drought_categories_weekly.csv")
+    return list(weeks)
+
+
 @router.get("/study-area")
 def study_area() -> dict:
     """The 1.5 km circle every browning analysis in this project covers."""

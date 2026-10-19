@@ -1,4 +1,5 @@
 <script>
+  import DroughtCalendar from '../components/DroughtCalendar.svelte';
   // Every figure on this page is sourced; nothing is a forecast.
   const FACTS = [
     { value: '2022', label: 'Maui County’s worst drought year of 2018–2024: the highest average drought index, and 20 weeks of D4 “exceptional” drought',
@@ -68,6 +69,10 @@
     The study area itself did not burn — the nearest perimeter, Olinda, is about 1.5 km outside it. Browning is
     shown as the landscape the fires burned near, not as the cause of any fire.
   </p>
+</section>
+
+<section class="wrap">
+  <div class="card"><DroughtCalendar /></div>
 </section>
 
 <section class="wrap">

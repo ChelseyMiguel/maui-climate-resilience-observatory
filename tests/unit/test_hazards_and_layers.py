@@ -186,3 +186,32 @@ def test_old_viewer_deep_links_redirect():
 def test_redirect_encodes_the_observation_id():
     response = api.get("/?obs=a b&c", follow_redirects=False)
     assert response.headers["location"] == "/viewer?obs=a%20b"
+
+
+# --- drought calendar ------------------------------------------------------
+
+
+def test_drought_weeks_are_cumulative_and_sum_to_the_official_dsci():
+    from lib import hazards
+
+    weeks = hazards.drought_weeks()
+    assert len(weeks) == 367
+    official = dict(hazards.drought_series())
+    for w in weeks:
+        assert w["d0"] >= w["d1"] >= w["d2"] >= w["d3"] >= w["d4"]
+        assert abs(w["dsci"] - official[w["date"]]) <= 1
+
+
+def test_drought_weeks_2022_has_twenty_exceptional_weeks():
+    from lib import hazards
+
+    assert sum(1 for w in hazards.drought_weeks() if w["date"].startswith("2022") and w["d4"] > 0) == 20
+
+
+def test_drought_weeks_endpoint():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    rows = TestClient(app).get("/api/layers/drought-weeks").json()
+    assert len(rows) == 367 and set(rows[0]) == {"date", "dsci", "d0", "d1", "d2", "d3", "d4"}

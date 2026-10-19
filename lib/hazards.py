@@ -117,6 +117,23 @@ def exceptional_drought_weeks() -> dict[str, dict]:
     return out
 
 
+@lru_cache(maxsize=1)
+def drought_weeks() -> tuple[dict, ...]:
+    """Every week's county drought: DSCI and the share of Maui County in each category.
+
+    The category columns are CUMULATIVE (d1 = share in D1 or worse), which is why
+    their sum is the DSCI: checked for all 367 weeks in tests.
+    """
+    if not CATEGORIES_PATH.exists():
+        return ()
+    with CATEGORIES_PATH.open() as handle:
+        rows = []
+        for r in csv.DictReader(handle):
+            cats = {k: float(r[k]) for k in ("d0", "d1", "d2", "d3", "d4")}
+            rows.append({"date": r["date"], "dsci": round(sum(cats.values())), **cats})
+        return tuple(rows)
+
+
 def drought_summary() -> dict:
     """Annual means and the week of the 8 Aug 2023 fires, for the timeline."""
     series = drought_series()

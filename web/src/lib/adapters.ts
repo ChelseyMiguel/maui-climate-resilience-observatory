@@ -96,3 +96,7 @@ export async function rainfall(): Promise<Rainfall> {
     windowsDsci: r.windows_dsci, notes: r.notes,
   };
 }
+
+/** Weekly Maui County drought: DSCI and the cumulative share in D0..D4 (lib/hazards.py). */
+export interface DroughtWeek { date: string; dsci: number; d0: number; d1: number; d2: number; d3: number; d4: number }
+export const droughtWeeks = () => getJson<DroughtWeek[]>('/api/layers/drought-weeks');
