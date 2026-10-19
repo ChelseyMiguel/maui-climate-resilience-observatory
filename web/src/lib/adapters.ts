@@ -100,3 +100,14 @@ export async function rainfall(): Promise<Rainfall> {
 /** Weekly Maui County drought: DSCI and the cumulative share in D0..D4 (lib/hazards.py). */
 export interface DroughtWeek { date: string; dsci: number; d0: number; d1: number; d2: number; d3: number; d4: number }
 export const droughtWeeks = () => getJson<DroughtWeek[]>('/api/layers/drought-weeks');
+
+/** 25 years of dry-season Landsat NDVI vs the 2000-2018 normal (lib/landsat_baseline.py). */
+export interface BaselineYear {
+  year: number; ndvi: number | null; n_scenes: number; sensors: string;
+  z: number | null; rank_lowest: number | null; few_scenes: boolean;
+}
+export interface NdviBaseline {
+  normal: { years: [number, number]; mean: number; sd: number; n: number };
+  years_with_data: number; rows: BaselineYear[]; notes: string[];
+}
+export const ndviBaseline = () => getJson<NdviBaseline>('/api/layers/ndvi-baseline');

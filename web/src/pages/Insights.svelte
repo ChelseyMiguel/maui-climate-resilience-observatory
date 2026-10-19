@@ -6,6 +6,7 @@
   import LineChart from '../components/LineChart.svelte';
   import DroughtGreenness from '../components/DroughtGreenness.svelte';
   import RainGreenness from '../components/RainGreenness.svelte';
+  import NdviBaseline from '../components/NdviBaseline.svelte';
   import { regionInsights } from '../lib/adapters.ts';
   import { toCsv, downloadCsv } from '../lib/csv.ts';
 
@@ -175,6 +176,7 @@
     {#if veg.available}
       <div class="card"><DroughtGreenness /></div>
       <div class="card"><RainGreenness /></div>
+      <NdviBaseline />
     {/if}
 
     <div class="card">

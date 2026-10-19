@@ -25,3 +25,11 @@ Sources to check: NOAA InPort "2022 - 2023 NOAA USGS Lidar: Hawaii (Kahoolawe,
 Lanai, Maui, Molokai, Oahu)" (point cloud, LAS/LAZ, plus a companion DEM), and
 USGS 3DEP point clouds on AWS (public Entwine Point Tiles). Coverage of Upcountry
 and the flight dates are not yet confirmed.
+
+## Added 2026-10-19
+
+- **Site Viewer:** "What satellites call this spot" — LCMS, WorldCover and Dynamic World at the site vs. the observer's label.
+- **Overview:** week-by-week drought calendar, 2018-2024.
+- **Waiting on you:** run **section 6** of `notebooks/gee_exports.ipynb` (25 years of dry-season Landsat NDVI)
+  and save `data/research/pukalani_landsat_ndvi_dryseason.csv`. The "Was 2022 unusual?" card on Region
+  Insights appears by itself once that file exists; until then it stays hidden.

@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from app.api.routes.sites import DEFAULT_END, DEFAULT_START, REGION
-from lib import hazards, rainfall, relationships
+from lib import hazards, landsat_baseline, rainfall, relationships
 from lib.globe_api import client
 from lib.vegetation import browning
 
@@ -110,6 +110,20 @@ def drought_weeks() -> list[dict]:
         raise HTTPException(status_code=503,
                             detail="drought categories missing: data/research/maui_drought_categories_weekly.csv")
     return list(weeks)
+
+
+@router.get("/ndvi-baseline")
+def ndvi_baseline() -> dict:
+    """25 years of dry-season Landsat NDVI for the study area, each year against the
+    2000-2018 normal (lib/landsat_baseline.py)."""
+    data = landsat_baseline.summary(landsat_baseline.PATH)
+    if not data["available"]:
+        raise HTTPException(
+            status_code=503,
+            detail="Landsat baseline missing: run section 6 of notebooks/gee_exports.ipynb and save "
+                   "data/research/pukalani_landsat_ndvi_dryseason.csv",
+        )
+    return data
 
 
 @router.get("/study-area")
