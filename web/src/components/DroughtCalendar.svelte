@@ -18,8 +18,8 @@
   const CELL = 12, GAP = 2, STEP = CELL + GAP, L = 44, T = 22;
   const W = L + 53 * STEP + 8, H = T + YEARS.length * STEP + 6;
 
-  // Light paper-amber to deep brown: lightness falls monotonically.
-  const LO = [244, 234, 214], HI = [107, 50, 4];
+  // Panel grey to bright amber: lightness rises monotonically with DSCI.
+  const LO = [34, 39, 44], HI = [242, 156, 52];
   const colour = (v) => {
     const t = Math.max(0, Math.min(1, v / MAX));
     return `rgb(${LO.map((c, i) => Math.round(c + (HI[i] - c) * t)).join(',')})`;
@@ -120,11 +120,11 @@
   figcaption { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
   .title { font-weight: 700; color: var(--forest); font-size: 1.05rem; }
   .sub { color: var(--ink-2); font-size: .9rem; }
-  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
   .tick { fill: var(--muted); font-size: 10px; }
   .tick.end { text-anchor: end; }
   .tick.strong { fill: var(--ink); font-weight: 700; }
-  .d4 { fill: #fff; }
+  .d4 { fill: #111; }
   .fire { fill: none; stroke: var(--fire); stroke-width: 2; }
   .hover { fill: none; stroke: var(--ink); stroke-width: 1.5; }
   .readout { min-height: 1.6em; font-size: .85rem; margin-top: 4px; }
@@ -133,7 +133,7 @@
   .ramp i { display: block; width: 160px; height: 10px; border-radius: 3px; }
   .ends { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); }
   .key { display: inline-flex; align-items: center; gap: 6px; }
-  .tablebtn { background: none; border: 1px solid var(--line); border-radius: 6px; padding: .25em .7em; font-size: .82rem; }
+  .tablebtn { background: none; border: 1px solid var(--line); border-radius: 2px; padding: .25em .7em; font-size: .82rem; }
   table { margin-top: 6px; font-size: .85rem; }
   tr.hl { background: var(--paper-2); font-weight: 600; }
   .err { color: var(--fire); }

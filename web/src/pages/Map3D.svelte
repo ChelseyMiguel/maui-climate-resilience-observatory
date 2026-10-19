@@ -197,11 +197,11 @@
   .close { position: absolute; top: 4px; right: 8px; border: 0; background: none; font-size: 1.3rem; color: var(--muted); }
   .fires { list-style: none; padding: 0; margin: 0 0 8px; }
   .fires li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed var(--line); }
-  .callout { background: #fbe9e7; border-left: 3px solid var(--fire); padding: 8px 10px; border-radius: 4px; font-size: .92rem; }
+  .callout { background: #2a1715; border-left: 3px solid var(--fire); padding: 8px 10px; border-radius: 2px; font-size: .92rem; }
   .controls { position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; flex-direction: column; gap: 4px; width: 230px;
-    background: rgba(255, 253, 248, .94); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .85rem; }
+    background: var(--card); border: 1px solid var(--line); border-radius: 2px; padding: 10px 12px; font-size: .85rem; }
   .controls label { display: flex; gap: 6px; align-items: center; }
-  .tourbtn { background: var(--forest); color: #fff; border: 0; border-radius: 7px; padding: .45em .8em; font-weight: 700; margin-bottom: 4px; }
+  .tourbtn { background: var(--forest); color: #111; border: 0; border-radius: 2px; padding: .45em .8em; font-weight: 700; margin-bottom: 4px; }
   .exag { flex-direction: column; align-items: flex-start !important; margin-top: 4px; }
   .imagery { border: 0; border-top: 1px solid var(--line); margin: 6px 0 0; padding: 6px 0 0; }
   .imagery legend { font-weight: 700; color: var(--forest); padding: 0; }
@@ -210,11 +210,11 @@
   .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
   .sw.brown { background: #e89646; } .sw.fire { border: 2px solid #ff3b30; } .sw.site { background: #ff9f43; border-radius: 50%; } .sw.study { border: 2px dashed #555; }
   .caption { position: absolute; right: 16px; bottom: 40px; z-index: 3; width: min(420px, calc(100% - 32px));
-    background: rgba(255, 253, 248, .97); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+    background: var(--card); border: 1px solid var(--line); border-radius: 2px; padding: 16px 18px; }
   .caption h2 { font-size: 1.3rem; margin: 2px 0 6px; }
   .caption p { font-size: .95rem; }
   .tournav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .tournav button { border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: .3em .7em; font-size: .88rem; }
+  .tournav button { border: 1px solid var(--line); background: var(--card); border-radius: 2px; padding: .3em .7em; font-size: .88rem; }
   .keys { font-size: .75rem; color: var(--muted); margin: 6px 0 0; }
   .caption .btn { font-size: .9rem; }
   .hint-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: .75rem; color: #9fb1b8; pointer-events: none; }

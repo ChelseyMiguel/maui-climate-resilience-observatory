@@ -127,22 +127,22 @@
 <style>
   .rg { display: grid; gap: 12px; }
   h2 { margin: 0; }
-  .stat { margin: 0; background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 4px; }
+  .stat { margin: 0; background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 2px; }
   .chart { margin: 0; }
   figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 14px; margin-bottom: 4px; }
   .title { font-weight: 700; color: var(--forest); }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
   .seg button { border: 0; background: var(--card); padding: .35em .8em; font-weight: 600; color: var(--ink-2); font-size: .85rem; }
   .seg button + button { border-left: 1px solid var(--line); }
-  .seg button.on { background: var(--forest); color: #fff; }
-  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
-  .grid { stroke: #e7e0d1; }
+  .seg button.on { background: var(--forest); color: #111; }
+  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  .grid { stroke: #252c31; }
   .zero { stroke: var(--ink-2); stroke-width: 1.5; }
   .tick { fill: var(--muted); font-size: 11px; }
   .axis { fill: var(--ink-2); font-size: 11.5px; }
   .end { text-anchor: end; }
   .mid { text-anchor: middle; }
-  .bar { fill: #9fc3c4; }
+  .bar { fill: #3e7f88; }
   .bar.best { fill: var(--teal); }
   .whisker { stroke: var(--ink); stroke-width: 1.5; }
   .caveats { margin: 0; padding-left: 1.2em; color: var(--ink-2); }

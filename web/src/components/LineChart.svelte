@@ -123,8 +123,8 @@
   .title { font-weight: 700; color: var(--forest); }
   .keys { display: flex; flex-wrap: wrap; gap: 12px; font-size: .85rem; color: var(--ink-2); }
   .key { display: inline-flex; align-items: center; gap: 6px; }
-  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
-  .grid { stroke: #e7e0d1; }
+  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  .grid { stroke: #252c31; }
   .grid.v { stroke-dasharray: 2 3; }
   .tick { fill: var(--muted); font-size: 11px; }
   .tick.end { text-anchor: end; }
@@ -134,9 +134,9 @@
   .cursor { stroke: var(--ink-2); stroke-width: 1; }
   .readout { min-height: 1.6em; font-size: .82rem; display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; }
   .readout i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
-  .empty { padding: 30px; text-align: center; color: var(--amber); border: 1px dashed var(--line); border-radius: 8px; }
-  .tablebtn { margin-top: 4px; background: none; border: 1px solid var(--line); border-radius: 6px; padding: .25em .7em; font-size: .82rem; }
-  .tablewrap { max-height: 260px; overflow: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 6px; }
+  .empty { padding: 30px; text-align: center; color: var(--amber); border: 1px dashed var(--line); border-radius: 2px; }
+  .tablebtn { margin-top: 4px; background: none; border: 1px solid var(--line); border-radius: 2px; padding: .25em .7em; font-size: .82rem; }
+  .tablewrap { max-height: 260px; overflow: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 2px; }
   .tablewrap table { font-size: .82rem; }
   .tablewrap th { position: sticky; top: 0; background: var(--paper-2); }
   /* The 720-wide viewBox shrinks to about half on a phone, taking 11px labels to

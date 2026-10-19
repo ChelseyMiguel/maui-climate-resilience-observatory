@@ -83,7 +83,7 @@
     const b = terrain.meta.bbox;
     map = new maplibregl.Map({
       container,
-      style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#dfe7e3' } }] },
+      style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#1a1f24' } }] },
       bounds: [[b.west, b.south], [b.east, b.north]],
       maxBounds: [[b.west - 0.1, b.south - 0.1], [b.east + 0.1, b.north + 0.1]],
       attributionControl: { compact: true, customAttribution:
@@ -403,8 +403,8 @@
   .dim { opacity: .5; }
   .indent { margin-left: 22px; }
   .years { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-  .years label { border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-size: .85rem; cursor: pointer; }
-  .years label.on { background: var(--forest); color: #fff; border-color: var(--forest); }
+  .years label { border: 1px solid var(--line); border-radius: 2px; padding: 2px 8px; font-size: .85rem; cursor: pointer; }
+  .years label.on { background: var(--forest); color: #111; border-color: var(--forest); }
   .years input { position: absolute; opacity: 0; width: 1px; height: 1px; }
   .years label:focus-within { outline: 3px solid var(--focus); outline-offset: 1px; }
   .hint { font-size: .8rem; color: var(--muted); margin: 4px 0 0; }
@@ -427,7 +427,7 @@
   .feature { position: relative; padding: 14px 16px; }
   .feature h2 { font-size: 1.2rem; margin: 2px 0 6px; }
   .close { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 1.3rem; color: var(--muted); }
-  .rv { background: var(--paper-2); padding: 6px 8px; border-radius: 6px; font-size: .9rem; }
+  .rv { background: var(--paper-2); padding: 6px 8px; border-radius: 2px; font-size: .9rem; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: .86rem; margin: 6px 0; }
   dt { color: var(--muted); text-transform: capitalize; }
   dd { margin: 0; }
@@ -435,11 +435,11 @@
   .feature .btn { margin-top: 8px; font-size: .88rem; }
   .mapwrap { position: relative; }
   .map { position: absolute; inset: 0; }
-  .state { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(247,243,234,.85); color: var(--muted); }
+  .state { position: absolute; inset: 0; display: grid; place-items: center; background: var(--paper); color: var(--muted); }
   .state.err { color: var(--fire); }
   .toggle { display: none; }
   :global(.region-label) {
-    font: 700 13px/1 var(--serif); color: #1f6f73; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+    font: 700 13px/1 var(--serif); color: #5fb7c2; text-shadow: 0 0 3px #000, 0 0 3px #000;
     pointer-events: none; letter-spacing: .02em;
   }
   @media (max-width: 860px) {
@@ -447,6 +447,6 @@
     aside { position: absolute; z-index: 3; inset: 44px 0 0 0; display: none; border-right: 0; }
     aside.open { display: block; }
     .toggle { display: block; position: absolute; z-index: 4; top: 8px; left: 8px; background: var(--card);
-              border: 1px solid var(--line); border-radius: 8px; padding: .4em .8em; font-weight: 600; }
+              border: 1px solid var(--line); border-radius: 2px; padding: .4em .8em; font-weight: 600; }
   }
 </style>

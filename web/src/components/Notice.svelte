@@ -13,8 +13,8 @@
 <style>
   .notice {
     display: flex; flex-wrap: wrap; gap: .25em .6em; align-items: baseline;
-    background: #fdf1e7; border: 1px solid #e7c7a6; border-left: 4px solid var(--amber);
-    color: #5a3a12; padding: .7em 1em; border-radius: 8px; font-size: .92rem;
+    background: #1f1a12; border: 1px solid #4a3b22; border-left: 4px solid var(--amber);
+    color: #e8d3b0; padding: .7em 1em; border-radius: 2px; font-size: .92rem;
   }
   .notice a { color: #6b3d06; font-weight: 600; }
   .compact { padding: .45em .8em; font-size: .82rem; }

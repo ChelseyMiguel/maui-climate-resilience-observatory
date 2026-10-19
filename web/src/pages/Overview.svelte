@@ -122,7 +122,7 @@
 </section>
 
 <style>
-  .hero { background: linear-gradient(180deg, var(--card), var(--paper)); border-bottom: 1px solid var(--line); padding: 56px 0 40px; }
+  .hero { background: var(--card); border-bottom: 1px solid var(--line); padding: 56px 0 40px; }
   .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items: center; }
   .lede { font-size: 1.15rem; color: var(--ink-2); max-width: 38em; }
   .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
@@ -130,10 +130,10 @@
   section.wrap { margin-top: 32px; }
   .facts { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0 10px; }
   .facts li { display: flex; flex-direction: column; gap: 4px; }
-  .facts b { font-family: var(--serif); font-size: 1.8rem; color: var(--forest); }
+  .facts b { font-size: 1.8rem; color: var(--forest); }
   .cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
   .feature { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
-  .feature:hover { border-color: var(--forest); transform: translateY(-2px); }
+  .feature:hover { border-color: var(--forest); }
   .feature p { color: var(--ink-2); font-size: .95rem; flex: 1; }
   .ico svg { width: 30px; height: 30px; fill: none; stroke: var(--teal); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .go { color: var(--teal); font-weight: 600; font-size: .9rem; }

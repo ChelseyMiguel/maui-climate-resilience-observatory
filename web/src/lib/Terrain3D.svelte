@@ -364,6 +364,6 @@
   .tip {
     position: absolute; pointer-events: none; white-space: nowrap;
     background: rgba(15, 23, 27, 0.92); border: 1px solid #2c3a41; color: #e8eff0;
-    font-size: 12px; padding: 4px 8px; border-radius: 6px;
+    font-size: 12px; padding: 4px 8px; border-radius: 2px;
   }
 </style>

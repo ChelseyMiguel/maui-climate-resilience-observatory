@@ -93,15 +93,15 @@
 <style>
   .nb { display: grid; gap: 10px; }
   h2 { margin: 0; }
-  .stat { margin: 0; background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 4px; }
+  .stat { margin: 0; background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 2px; }
   .chart { margin: 0; }
-  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
-  .band { fill: #d9e8e3; }
+  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  .band { fill: #1d3236; }
   .mean { stroke: var(--teal); stroke-width: 1.5; stroke-dasharray: 5 4; }
   .sensor { stroke: var(--muted); stroke-dasharray: 2 3; }
-  .line { fill: none; stroke: #b8beb9; stroke-width: 1.5; }
+  .line { fill: none; stroke: #6e7a80; stroke-width: 1.5; }
   .pt { stroke: var(--card); stroke-width: 2; }
-  .pt.normal { fill: #6b766f; }
+  .pt.normal { fill: #8a959c; }
   .pt.study { fill: var(--teal); }
   .pt.y2022 { fill: var(--amber); }
   .pt.few { fill-opacity: .35; stroke: #6b766f; stroke-width: 1.2; }
@@ -113,8 +113,8 @@
   .keys { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--ink-2); }
   .keys span { display: inline-flex; align-items: center; gap: 5px; }
   .caveats { margin: 0; padding-left: 1.2em; color: var(--ink-2); }
-  .tablebtn { width: fit-content; background: none; border: 1px solid var(--line); border-radius: 6px; padding: .25em .7em; font-size: .82rem; }
-  .tablewrap { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .tablebtn { width: fit-content; background: none; border: 1px solid var(--line); border-radius: 2px; padding: .25em .7em; font-size: .82rem; }
+  .tablewrap { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 2px; }
   tr.hl { background: var(--paper-2); font-weight: 600; }
   @media (max-width: 640px) { .tick { font-size: 19px; } }
 </style>
