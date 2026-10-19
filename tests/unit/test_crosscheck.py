@@ -216,3 +216,40 @@ def test_crosscheck_products_runs_each_map_separately():
     out = crosscheck.crosscheck_products(obs, table)
     assert out["worldcover"]["summary"]["agree"] == 1
     assert out["dynamicworld"]["summary"]["disagree"] == 1
+
+
+# --- one site, all maps (real committed CSVs) --------------------------------
+
+
+def test_site_with_all_three_maps():
+    out = crosscheck.site_satellite_classes("04QGJ763065", 2022, "Herbaceous/Grassland, Short Grass")
+    assert out["available"] is True
+    by = {m["product"]: m for m in out["maps"]}
+    assert set(by) == {"lcms", "worldcover", "dynamicworld"}
+    assert by["lcms"]["class_name"] == "Grass Forb Herb" and by["lcms"]["verdict"] == "agree"
+    assert by["worldcover"]["year"] == 2021  # nearest year WorldCover has
+    assert by["dynamicworld"]["year"] == 2022
+    assert by["dynamicworld"]["class_name"] == "built"  # the disagreement the panel exists to show
+    assert out["maps_agree"] is False
+
+
+def test_nearest_year_prefers_the_later_one_on_a_tie():
+    out = crosscheck.site_satellite_classes("04QGJ763065", None, None)
+    assert {m["product"]: m["year"] for m in out["maps"]}["worldcover"] == 2021
+
+
+def test_unsampled_site_is_unavailable():
+    assert crosscheck.site_satellite_classes("04QXX000000", 2022, "Closed Forest")["available"] is False
+
+
+def test_observation_detail_carries_the_satellite_block(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    obs = _obs("x1", "04QGJ792079", "2021-06-01T10:00:00", "Urban, Roads and Parking")
+    monkeypatch.setattr(client, "fetch_sites", lambda *a, **k: [obs])
+    body = TestClient(app).get("/api/sites/observation/x1").json()
+    sat = body["satellite"]
+    assert sat["available"] and len(sat["maps"]) == 3
+    assert {m["product"]: m["verdict"] for m in sat["maps"]}["worldcover"] == "agree"  # Built-up vs Urban

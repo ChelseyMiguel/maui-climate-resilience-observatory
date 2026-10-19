@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import csv
 from collections.abc import Iterable, Mapping
+from functools import lru_cache
 from pathlib import Path
 
 from lib.globe_api.client import LandCoverSite
@@ -195,3 +196,61 @@ def crosscheck_products(
     """`crosscheck` against each satellite map separately, keyed by product."""
     observations = list(observations)
     return {product: crosscheck(observations, rows) for product, rows in table.items()}
+
+
+# ---------------------------------------------------------------------------
+# One site, all maps: what the Site Viewer shows next to the photos
+# ---------------------------------------------------------------------------
+
+RESEARCH = Path(__file__).resolve().parents[1] / "data" / "research"
+MAPS = (
+    ("lcms", "LCMS (USDA Forest Service)", "30 m"),
+    ("worldcover", "ESA WorldCover", "10 m"),
+    ("dynamicworld", "Dynamic World (Google)", "10 m"),
+)
+
+
+@lru_cache(maxsize=1)
+def _site_tables() -> dict[str, dict[tuple[str, int], str]]:
+    """Every satellite map sampled at the GLOBE sites, from the committed CSVs."""
+    tables: dict[str, dict[tuple[str, int], str]] = {}
+    landcover = RESEARCH / "landcover_site_classes.csv"
+    if landcover.exists():
+        tables.update(load_landcover_csv(landcover))
+    lcms = RESEARCH / "lcms_site_classes.csv"
+    if lcms.exists():
+        try:
+            tables["lcms"] = load_lcms_csv(lcms)
+        except ValueError:
+            pass  # a codes-only export cannot be compared; leave LCMS out
+    return tables
+
+
+def site_satellite_classes(site: str, year: int | None, observer_label: str | None) -> dict:
+    """What each satellite map calls this GLOBE site, nearest the visit year.
+
+    Each map is read in the year closest to the observation (WorldCover only has
+    2020 and 2021), and each class is compared with the observer's own label.
+    Sites outside the sampled set return `available: False`.
+    """
+    tables = _site_tables()
+    rows = []
+    for key, name, resolution in MAPS:
+        years = sorted(y for s, y in tables.get(key, {}) if s == site)
+        if not years:
+            continue
+        chosen = years[-1] if year is None else min(years, key=lambda y: (abs(y - year), -y))
+        class_name = tables[key][(site, chosen)]
+        rows.append({
+            "product": key, "name": name, "resolution": resolution, "year": chosen,
+            "class_name": class_name, "verdict": verdict(observer_label, class_name),
+        })
+    coarse = {satellite_classes(r["class_name"]) for r in rows}
+    return {
+        "available": bool(rows),
+        "site": site,
+        "observer_label": observer_label,
+        "maps": rows,
+        # Do the satellite maps even agree with each other here?
+        "maps_agree": (len(coarse) == 1 and None not in coarse) if rows else None,
+    }

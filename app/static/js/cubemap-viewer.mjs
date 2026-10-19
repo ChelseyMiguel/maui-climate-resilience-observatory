@@ -191,9 +191,51 @@ function HeadingBadge({ observation }) {
           Nearest Aug 2023 fire: ${observation.fire.nearest_fire},
           ${observation.fire.inside_perimeter ? " inside its perimeter" : ` ${observation.fire.distance_km} km away`}
         </div>` : null}
+      <${SatellitePanel} satellite=${observation.satellite} />
       ${observation.vegetation && observation.vegetation.in_analysis_area
         ? html`<${NdviSparkline} />`
         : null}
+    </div>`;
+}
+
+/* What three satellite land-cover maps call this spot, next to what the
+ * observer standing here recorded. At parks and roadsides a 10-30 m pixel mixes
+ * grass with pavement, and the maps often disagree with each other; the photos
+ * around you are the ground truth they lack. Agreement is shown as a symbol AND
+ * a word, never colour alone. */
+const VERDICT = {
+  agree: ["✓", "matches the observer"],
+  partial: ["≈", "partly matches"],
+  disagree: ["✗", "differs from the observer"],
+  unmapped: ["–", "not comparable"],
+};
+
+function SatellitePanel({ satellite }) {
+  if (!satellite || !satellite.available) return null;
+  const hasObserver = Boolean(satellite.observer_label);
+  return html`
+    <div className="sat">
+      <div className="sat-title">What satellites call this spot</div>
+      ${hasObserver
+        ? html`<div className="sat-sub">Observer recorded: <b>${satellite.observer_label}</b></div>`
+        : null}
+      <ul className="sat-list">
+        ${satellite.maps.map((m) => {
+          const [mark, words] = VERDICT[m.verdict] || VERDICT.unmapped;
+          return html`
+            <li key=${m.product} className=${"sat-row sat-" + m.verdict}>
+              <span className="sat-mark" aria-hidden="true">${hasObserver ? mark : "·"}</span>
+              <span className="sat-name">${m.name} <span className="sat-res">${m.resolution}, ${m.year}</span></span>
+              <span className="sat-class">${m.class_name.replace(/_/g, " ")}</span>
+              ${hasObserver ? html`<span className="sr-only">${words}</span>` : null}
+            </li>`;
+        })}
+      </ul>
+      <div className="sat-note">
+        ${satellite.maps_agree === false
+          ? "The satellite maps disagree here. A pixel 10–30 m across can mix grass with pavement; the photos around you show what is actually on the ground."
+          : "Satellite pixels are 10–30 m; this site is a 100 m square."}
+      </div>
     </div>`;
 }
 
