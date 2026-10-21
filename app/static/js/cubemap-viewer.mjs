@@ -465,7 +465,7 @@ function MiniMap({ observation, heading }) {
   return html`
     <figure className="minimap" aria-label=${label} role="img">
       <svg viewBox=${`0 0 ${size} ${size}`} width=${size} height=${size}>
-        <defs><clipPath id="miniclip"><rect width=${size} height=${size} rx="8" /></clipPath></defs>
+        <defs><clipPath id="miniclip"><rect width=${size} height=${size} /></clipPath></defs>
         <g clipPath="url(#miniclip)">
           <rect width=${size} height=${size} fill="#16211f" />
           ${firePaths.map((d, i) => html`<path key=${i} d=${d} fill="rgba(229,57,53,0.32)" stroke="#ff5a4f" strokeWidth="1.2" />`)}

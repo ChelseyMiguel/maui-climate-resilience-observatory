@@ -29,3 +29,12 @@ test("join keeps every month and uses null for gaps", () => {
   assert.equal(rows[1].ndvi, null);
   assert.equal(toCsv(rows, ["month", "ndvi", "dsci"]), "month,ndvi,dsci\n2022-03,0.4123,\n2022-04,,7\n");
 });
+
+import { brushResult } from "../../web/src/lib/series.js";
+test("brush: a drag zooms, a click picks the map year", () => {
+  const m = ["2017-12", "2018-01", "2018-02", "2018-03", "2018-04"];
+  assert.deepEqual(brushResult(m, 3, 1), { from: "2018-01", to: "2018-03" });
+  assert.deepEqual(brushResult(m, 2, 3), { year: 2018 });
+  assert.deepEqual(brushResult(m, 0, 0), {});          // 2017 is not a map year
+  assert.deepEqual(brushResult(m, -5, 99), { from: "2017-12", to: "2018-04" });
+});

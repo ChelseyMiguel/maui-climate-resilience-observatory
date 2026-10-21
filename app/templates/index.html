@@ -4,8 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>GLOBE Site Reconstruction</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f4c5c'/%3E%3Cpath d='M4 24 12 11l5 7 3-4 8 10z' fill='%23f2f7f5'/%3E%3Ccircle cx='23' cy='9' r='3' fill='%23f4a259'/%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230f4c5c'/%3E%3Cpath d='M4 24 12 11l5 7 3-4 8 10z' fill='%23f2f7f5'/%3E%3Ccircle cx='23' cy='9' r='3' fill='%23f4a259'/%3E%3C/svg%3E" />
 <style>
+  *, *::before, *::after { border-radius: 0 !important; }
   :root {
     --bg: #10161a;
     --panel: #182126;
@@ -39,7 +40,7 @@
     background: var(--panel);
     color: var(--text);
     border: 1px solid var(--line);
-    border-radius: 2px;
+    border-radius: 0;
     padding: 6px 10px;
     font: inherit;
   }
@@ -48,7 +49,7 @@
   .obs {
     padding: 10px;
     border: 1px solid var(--line);
-    border-radius: 2px;
+    border-radius: 0;
     margin-bottom: 8px;
     cursor: pointer;
     background: var(--panel);
@@ -57,17 +58,17 @@
   .obs.active { border-color: var(--accent); background: #1c2a26; }
   .obs-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .obs-name { font-weight: 600; font-size: 13px; }
-  .chip { flex: none; font-size: 10px; padding: 1px 7px; border-radius: 2px; white-space: nowrap; }
+  .chip { flex: none; font-size: 10px; padding: 1px 7px; border-radius: 0; white-space: nowrap; }
   .chip-browned { background: #3a2a1d; color: #e0955f; }
   .chip-ok { background: #1c2a26; color: var(--accent); }
   .chip-muted { background: #202b31; color: var(--muted); }
   .visits { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-  .visit { padding: 1px 7px; font-size: 10px; border-radius: 2px; color: var(--muted); }
+  .visit { padding: 1px 7px; font-size: 10px; border-radius: 0; color: var(--muted); }
   .visit-active { border-color: var(--accent); color: var(--text); }
   .obs-meta { color: var(--muted); font-size: 12px; }
   .obs-flag { color: #d9a441; font-size: 11px; }
   .obs-error { color: #e0644f; font-size: 12px; margin: 6px 0; padding: 6px 8px;
-    border: 1px solid #5a2a24; border-radius: 2px; background: #2a1b19; }
+    border: 1px solid #5a2a24; border-radius: 0; background: #2a1b19; }
   .stage-wrap { position: relative; }
   .viewer-stage { position: absolute; inset: 0; }
   .viewer-stage canvas { display: block; }
@@ -79,7 +80,7 @@
     position: absolute; top: 14px; left: 14px;
     background: #151a1e;
     border: 1px solid var(--line);
-    border-radius: 2px;
+    border-radius: 0;
     padding: 10px 12px;
     max-width: 340px;
   }
@@ -87,7 +88,7 @@
   .viewer-badge-collapsed { padding: 6px 34px 6px 12px; font-size: 12px; }
   .badge-toggle {
     position: absolute; top: 6px; right: 6px; width: 22px; height: 22px;
-    padding: 0; line-height: 1; border-radius: 2px; font-size: 14px;
+    padding: 0; line-height: 1; border-radius: 0; font-size: 14px;
     background: transparent; color: var(--muted);
   }
   .badge-toggle:hover { color: var(--text); }
@@ -108,7 +109,7 @@
   .veg-gps { font-style: italic; }
   .fire-line { color: #ff8a80; }
   .minimap { position: absolute; right: 14px; top: 14px; margin: 0; z-index: 2;
-    background: #151a1e; border: 1px solid var(--line); border-radius: 2px; padding: 6px; }
+    background: #151a1e; border: 1px solid var(--line); border-radius: 0; padding: 6px; }
   .minimap svg { display: block; }
   .minimap figcaption { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; }
   .minimap .mk { display: inline-block; width: 10px; height: 8px; margin-left: 4px; }
@@ -118,7 +119,7 @@
   .viewer-hud {
     position: absolute; left: 50%; bottom: 38px; transform: translateX(-50%);
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
-    background: #151a1e; border: 1px solid var(--line); border-radius: 2px;
+    background: #151a1e; border: 1px solid var(--line); border-radius: 0;
     /* left: 50% leaves only half the stage for shrink-to-fit sizing, which wrapped
        the bar onto two lines; size it to its content instead (still capped). */
     width: max-content;

@@ -29,6 +29,9 @@
   // The UTM pixel grid is drawn axis-aligned in lat/lon; over the 3 km raster the
   // grid's rotation against true north moves edges by about one 10 m pixel.
   export let change = null;
+  // Optional (lon, lat) => tooltip text for the ground under the pointer, so the
+  // page can report raster values without this component knowing about them.
+  export let probe = null;
 
   const dispatch = createEventDispatcher();
   const CANVAS_W = 2048;
@@ -278,11 +281,26 @@
     return hit ? hit.object.userData.pin : null;
   }
 
+  /** lon/lat of the terrain surface under the pointer, or null (sky). */
+  function pickGround(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    raycaster.setFromCamera(new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1), camera);
+    const hit = raycaster.intersectObject(mesh)[0];
+    if (!hit) return null;
+    return { lon: proj.lon0 + hit.point.x / proj.kx, lat: proj.lat0 - hit.point.z / proj.ky };
+  }
+
   function onPointerMove(event) {
     const pin = pickPin(event);
     renderer.domElement.style.cursor = pin ? 'pointer' : 'grab';
-    if (!pin) { hover = null; return; }
     const rect = renderer.domElement.getBoundingClientRect();
+    if (!pin) {
+      const g = probe && pickGround(event);
+      const text = g ? probe(g.lon, g.lat) : null;
+      hover = text ? { x: event.clientX - rect.left, y: event.clientY - rect.top, text } : null;
+      return;
+    }
     const f = pin.browned_fraction;
     hover = {
       x: event.clientX - rect.left, y: event.clientY - rect.top,
@@ -294,7 +312,9 @@
     // A click, not the end of a drag-to-orbit.
     if (!downAt || Math.hypot(event.clientX - downAt[0], event.clientY - downAt[1]) > 5) return;
     const pin = pickPin(event);
-    if (pin) dispatch('select', pin);
+    if (pin) { dispatch('select', pin); return; }
+    const g = pickGround(event);
+    if (g) dispatch('inspect', g);
   }
 
   /** Swing the view to a lat/lon, e.g. when a site is picked from the list. */
@@ -375,7 +395,7 @@
   .map3d :global(canvas) { display: block; cursor: grab; }
   .tip {
     position: absolute; pointer-events: none; white-space: nowrap;
-    background: rgba(15, 23, 27, 0.92); border: 1px solid #2c3a41; color: #e8eff0;
-    font-size: 12px; padding: 4px 8px; border-radius: 2px;
+    background: #0f171b; border: 1px solid #2c3a41; font-family: var(--mono); color: #e8eff0;
+    font-size: 12px; padding: 4px 8px; border-radius: 0;
   }
 </style>

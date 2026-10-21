@@ -74,14 +74,14 @@
         <text x={L - 8} y={T + i * STEP + CELL - 2} class="tick end" class:strong={y === worst.year}>{y}</text>
       {/each}
       {#each cells as c (c.date)}
-        <rect x={c.x} y={c.y} width={CELL} height={CELL} rx="2" fill={colour(c.dsci)} />
+        <rect x={c.x} y={c.y} width={CELL} height={CELL} fill={colour(c.dsci)} />
         {#if c.d4 > 0}<circle cx={c.x + CELL / 2} cy={c.y + CELL / 2} r="2.2" class="d4" pointer-events="none" />{/if}
       {/each}
       {#if fireCell}
-        <rect x={fireCell.x - 1.5} y={fireCell.y - 1.5} width={CELL + 3} height={CELL + 3} rx="3" class="fire" pointer-events="none" />
+        <rect x={fireCell.x - 1.5} y={fireCell.y - 1.5} width={CELL + 3} height={CELL + 3} class="fire" pointer-events="none" />
       {/if}
       {#if hover}
-        <rect x={hover.x - 1} y={hover.y - 1} width={CELL + 2} height={CELL + 2} rx="3" class="hover" pointer-events="none" />
+        <rect x={hover.x - 1} y={hover.y - 1} width={CELL + 2} height={CELL + 2} class="hover" pointer-events="none" />
       {/if}
     </svg>
     </div>
@@ -97,8 +97,8 @@
     <div class="legend">
       <span class="ramp" aria-hidden="true"><i style="background:linear-gradient(90deg,{colour(0)},{colour(MAX)})"></i>
         <span class="ends"><span>0 no drought</span><span>{MAX}</span></span></span>
-      <span class="key"><svg width="14" height="14" aria-hidden="true"><rect width="14" height="14" rx="2" fill={colour(300)} /><circle cx="7" cy="7" r="2.2" class="d4" /></svg>any exceptional (D4) drought that week</span>
-      <span class="key"><svg width="16" height="16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" class="fire" /></svg>Aug 8, 2023 fires</span>
+      <span class="key"><svg width="14" height="14" aria-hidden="true"><rect width="14" height="14" fill={colour(300)} /><circle cx="7" cy="7" r="2.2" class="d4" /></svg>any exceptional (D4) drought that week</span>
+      <span class="key"><svg width="16" height="16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" class="fire" /></svg>Aug 8, 2023 fires</span>
     </div>
 
     <p class="small">{worst.year} stands out: the highest average drought index of these seven years
@@ -120,7 +120,7 @@
   figcaption { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
   .title { font-weight: 700; color: var(--forest); font-size: 1.05rem; }
   .sub { color: var(--ink-2); font-size: .9rem; }
-  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 0; }
   .tick { fill: var(--muted); font-size: 10px; }
   .tick.end { text-anchor: end; }
   .tick.strong { fill: var(--ink); font-weight: 700; }
@@ -130,10 +130,10 @@
   .readout { min-height: 1.6em; font-size: .85rem; margin-top: 4px; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; font-size: .82rem; color: var(--ink-2); margin: 4px 0 8px; }
   .ramp { display: inline-flex; flex-direction: column; gap: 2px; }
-  .ramp i { display: block; width: 160px; height: 10px; border-radius: 3px; }
+  .ramp i { display: block; width: 160px; height: 10px; border-radius: 0; }
   .ends { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); }
   .key { display: inline-flex; align-items: center; gap: 6px; }
-  .tablebtn { background: none; border: 1px solid var(--line); border-radius: 2px; padding: .25em .7em; font-size: .82rem; }
+  .tablebtn { background: none; border: 1px solid var(--line); border-radius: 0; padding: .25em .7em; font-size: .82rem; }
   table { margin-top: 6px; font-size: .85rem; }
   tr.hl { background: var(--paper-2); font-weight: 600; }
   .err { color: var(--fire); }

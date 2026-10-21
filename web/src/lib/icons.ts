@@ -31,11 +31,12 @@ export function drawIcon(kind: InfrastructureKind): ImageData {
     g.rect(7, 7, s - 14, s - 14); g.fillStyle = '#0b5cad'; g.fill(); g.stroke();
     g.fillStyle = '#ffffff'; g.font = 'bold 22px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('H', m, m + 1);
-  } else if (kind === 'public_schools') {      // filled circle
-    g.arc(m, m, 14, 0, Math.PI * 2); g.fillStyle = '#23472f'; g.fill(); g.stroke();
-  } else {                                     // private school: ring
-    g.arc(m, m, 13, 0, Math.PI * 2); g.fillStyle = '#ffffff'; g.fill();
-    g.lineWidth = 6; g.strokeStyle = '#23472f'; g.stroke();
+  } else if (kind === 'public_schools') {      // filled diamond
+    g.moveTo(m, m - 16); g.lineTo(m + 16, m); g.lineTo(m, m + 16); g.lineTo(m - 16, m); g.closePath();
+    g.fillStyle = '#2f7d4a'; g.fill(); g.stroke();
+  } else {                                     // private school: outlined diamond
+    g.moveTo(m, m - 13); g.lineTo(m + 13, m); g.lineTo(m, m + 13); g.lineTo(m - 13, m); g.closePath();
+    g.fillStyle = '#ffffff'; g.fill(); g.lineWidth = 6; g.strokeStyle = '#2f7d4a'; g.stroke();
   }
   return g.getImageData(0, 0, s, s);
 }
@@ -46,7 +47,8 @@ export function iconSvg(kind: InfrastructureKind): string {
     case 'fire_stations': return '<polygon points="11,2 20,19 2,19" fill="#b3261e" stroke="#fff" stroke-width="1.5"/>';
     case 'ems_stations': return '<path d="M8 3h6v5h5v6h-5v5H8v-5H3V8h5z" fill="#0b5cad" stroke="#fff" stroke-width="1.2"/>';
     case 'hospitals': return '<rect x="3" y="3" width="16" height="16" fill="#0b5cad"/><text x="11" y="15.5" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" font-family="sans-serif">H</text>';
-    case 'public_schools': return '<circle cx="11" cy="11" r="7.5" fill="#23472f" stroke="#fff" stroke-width="1.5"/>';
-    default: return '<circle cx="11" cy="11" r="6.5" fill="#fff" stroke="#23472f" stroke-width="3"/>';
+    // Schools are diamonds (public filled, private outlined): no round symbols.
+    case 'public_schools': return '<polygon points="11,2 20,11 11,20 2,11" fill="#2f7d4a" stroke="#fff" stroke-width="1.5"/>';
+    default: return '<polygon points="11,3.5 18.5,11 11,18.5 3.5,11" fill="#fff" stroke="#2f7d4a" stroke-width="3"/>';
   }
 }

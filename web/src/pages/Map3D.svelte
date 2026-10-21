@@ -6,7 +6,12 @@
   import Terrain3D from '../lib/Terrain3D.svelte';
   import Timeline from '../lib/Timeline.svelte';
   import { loadAll } from '../lib/api.js';
-  import { loadChangeRaster, renderBelow, BROWNING_THRESHOLD } from '../lib/raster.ts';
+  import { get } from 'svelte/store';
+  import { loadChangeRaster, renderThreshold } from '../lib/raster.ts';
+  import { classify, RESEARCH_THRESHOLD } from '../lib/threshold.js';
+  import { analysis } from '../lib/state.js';
+  import { createSampler } from '../lib/terrarium.js';
+  import { sampleElevation } from '../lib/geo.js';
 
   let data = null, error = null, map;
   let selected = null;
@@ -14,7 +19,29 @@
   let exaggeration = 2;
   // Pixel-level browning from the dNDVI raster, cut at a user-set threshold. Falls
   // back to the −0.10 patch polygons if the raster can't load.
-  let dndvi = null, threshold = BROWNING_THRESHOLD, change = null;
+  // The threshold is shared with the Map Explorer (lib/state.js).
+  let dndvi = null, threshold = get(analysis).threshold, classes = true, change = null;
+  $: analysis.update((s) => ({ ...s, threshold }));
+  let inspected = null;          // a clicked ground point
+  const sampler = createSampler();
+  let samplerDown = false;
+  async function elevationAt(lon, lat) {
+    if (!samplerDown) {
+      try { return { z: await sampler.at(lon, lat), source: 'AWS Terrain Tiles z14 (~9 m)' }; } catch { samplerDown = true; }
+    }
+    return { z: sampleElevation(data.terrain.grid, data.terrain.meta, lon, lat) ?? NaN, source: 'local 68 m DEM grid' };
+  }
+  const probe = (lon, lat) => {
+    const c = dndvi?.cellAt(lat, lon);
+    return c ? `dNDVI ${c.value >= 0 ? '+' : ''}${c.value.toFixed(3)} · ${classify(c.value, threshold)} · ${lat.toFixed(5)}, ${lon.toFixed(5)}` : null;
+  };
+  async function inspect({ lon, lat }) {
+    const c = dndvi?.cellAt(lat, lon);
+    const point = { lon, lat, cell: c, elevation: null };
+    inspected = point; selected = null; stopTour();
+    const el = await elevationAt(lon, lat);
+    if (inspected === point) inspected = { ...point, elevation: el };
+  }
 
   // Imagery
   let imageryInfo = null, imageryChoice = 'tint', imageryCanvas = null, imageryCache = {}, imageryError = null;
@@ -49,11 +76,11 @@
 
   let frame = 0;
   $: if (dndvi) {
-    threshold;
+    threshold; classes;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
-      const v = renderBelow(dndvi, threshold);
-      change = { canvas: v.canvas, corners: dndvi.meta.corners, hectares: v.hectares, share: v.below / v.valid };
+      const v = renderThreshold(dndvi, threshold, classes ? 'classes' : 'below', change?.canvas);
+      change = { canvas: v.canvas, corners: dndvi.meta.corners, hectares: v.hectares, share: v.below / v.valid, below: v.below };
     });
   }
 
@@ -123,8 +150,9 @@
   <div class="layout">
     <section class="stage">
       <Terrain3D bind:this={map} terrain={data.terrain} browning={data.browning} fires={data.fires}
-        sites={data.sites} studyArea={data.studyArea} {show} {exaggeration} imagery={imageryCanvas} {change}
-        selectedId={selected?.site_id} on:select={(e) => { selected = e.detail; stopTour(); }} />
+        sites={data.sites} studyArea={data.studyArea} {show} {exaggeration} imagery={imageryCanvas} {change} {probe}
+        selectedId={selected?.site_id} on:select={(e) => { selected = e.detail; inspected = null; stopTour(); }}
+        on:inspect={(e) => inspect(e.detail)} />
 
       <div class="controls">
         <button class="tourbtn" on:click={() => startTour(true)}>▶ Play the guided tour</button>
@@ -132,7 +160,10 @@
         {#if change}
           <label class="exag">dNDVI below <b class="num">{threshold.toFixed(2)}</b>
             <input type="range" min="-0.4" max="0" step="0.01" bind:value={threshold} disabled={!show.browning} /></label>
-          <p class="note num">{change.hectares.toFixed(1)} ha · {(change.share * 100).toFixed(1)}% of the study area</p>
+          <p class="note num">{change.below.toLocaleString()} px · {change.hectares.toFixed(1)} ha · {(change.share * 100).toFixed(1)}%</p>
+          <label class="sub"><input type="checkbox" bind:checked={classes} /> Show stable (grey) and greening (teal)</label>
+          {#if threshold !== RESEARCH_THRESHOLD}<button class="linkish" on:click={() => (threshold = RESEARCH_THRESHOLD)}>Reset to −0.10</button>{/if}
+          <a class="linkish" href="/explore">Same threshold in the 2D Map Explorer →</a>
         {/if}
         <label><input type="checkbox" bind:checked={show.fires} /> <span class="sw fire"></span>Fire perimeters</label>
         <label><input type="checkbox" bind:checked={show.sites} /> <span class="sw site"></span>GLOBE sites</label>
@@ -169,10 +200,28 @@
           <p class="keys">← → to step · Esc to end</p>
         </div>
       {/if}
-      <div class="hint-bar">drag to orbit · right-drag to pan · scroll to zoom · click a pin</div>
+      <div class="hint-bar">drag to orbit · right-drag to pan · scroll to zoom · click a pin or the ground to inspect</div>
     </section>
 
     <aside>
+      {#if inspected}
+        <section class="card site">
+          <button class="close" on:click={() => (inspected = null)} aria-label="Close">×</button>
+          <h2>{inspected.cell ? 'dNDVI pixel' : 'Ground point'}</h2>
+          <dl class="px">
+            {#if inspected.cell}
+              <dt>dNDVI</dt><dd>{inspected.cell.value >= 0 ? '+' : ''}{inspected.cell.value.toFixed(4)}</dd>
+              <dt>Class at {threshold.toFixed(2)}</dt><dd>{classify(inspected.cell.value, threshold)}</dd>
+              <dt>Pixel</dt><dd>row {inspected.cell.row}, col {inspected.cell.col} (10 m)</dd>
+              <dt>Period</dt><dd>dry season 2022 − 2019</dd>
+            {/if}
+            <dt>Lat, lon</dt><dd>{inspected.lat.toFixed(5)}, {inspected.lon.toFixed(5)}</dd>
+            <dt>Elevation</dt><dd>{inspected.elevation ? (Number.isFinite(inspected.elevation.z) ? `${inspected.elevation.z.toFixed(1)} m` : '—') : '…'}</dd>
+          </dl>
+          {#if !inspected.cell}<p class="muted small">Outside the 1.5 km change raster — no vegetation value here.</p>{/if}
+          {#if inspected.elevation}<p class="muted small">Elevation: {inspected.elevation.source}. Location is read from the 68 m terrain mesh, so it can be off by up to ~1 grid cell on steep slopes.</p>{/if}
+        </section>
+      {/if}
       {#if selected}
         <section class="card site">
           <button class="close" on:click={() => (selected = null)} aria-label="Close">×</button>
@@ -217,24 +266,25 @@
   .close { position: absolute; top: 4px; right: 8px; border: 0; background: none; font-size: 1.3rem; color: var(--muted); }
   .fires { list-style: none; padding: 0; margin: 0 0 8px; }
   .fires li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed var(--line); }
-  .callout { background: #2a1715; border-left: 3px solid var(--fire); padding: 8px 10px; border-radius: 2px; font-size: .92rem; }
+  .callout { background: #2a1715; border-left: 3px solid var(--fire); padding: 8px 10px; border-radius: 0; font-size: .92rem; }
   .controls { position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; flex-direction: column; gap: 4px; width: 230px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 2px; padding: 10px 12px; font-size: .85rem; }
+    background: var(--card); border: 1px solid var(--line); border-radius: 0; padding: 10px 12px; font-size: .85rem; }
   .controls label { display: flex; gap: 6px; align-items: center; }
-  .tourbtn { background: var(--forest); color: #111; border: 0; border-radius: 2px; padding: .45em .8em; font-weight: 700; margin-bottom: 4px; }
+  .tourbtn { background: var(--forest); color: #111; border: 0; border-radius: 0; padding: .45em .8em; font-weight: 700; margin-bottom: 4px; }
   .exag { flex-direction: column; align-items: flex-start !important; margin-top: 4px; }
-  .imagery { border: 0; border-top: 1px solid var(--line); margin: 6px 0 0; padding: 6px 0 0; }
+  .imagery { border: 0; border-top: 1px solid var(--line); margin: 6px 0 0; padding: 6px 0 0; min-width: 0; }
+  .imagery code { white-space: normal; word-break: break-all; }
   .imagery legend { font-weight: 700; color: var(--forest); padding: 0; }
   .hint { font-size: .76rem; color: var(--muted); margin: 4px 0 0; }
   .hint.err { color: var(--fire); }
-  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-  .sw.brown { background: #e89646; } .sw.fire { border: 2px solid #ff3b30; } .sw.site { background: #ff9f43; border-radius: 50%; } .sw.study { border: 2px dashed #555; }
+  .sw { width: 12px; height: 12px; border-radius: 0; display: inline-block; }
+  .sw.brown { background: #e89646; } .sw.fire { border: 2px solid #ff3b30; } .sw.site { background: #ff9f43; border-radius: 0; } .sw.study { border: 2px dashed #555; }
   .caption { position: absolute; right: 16px; bottom: 40px; z-index: 3; width: min(420px, calc(100% - 32px));
-    background: var(--card); border: 1px solid var(--line); border-radius: 2px; padding: 16px 18px; }
+    background: var(--card); border: 1px solid var(--line); border-radius: 0; padding: 16px 18px; }
   .caption h2 { font-size: 1.3rem; margin: 2px 0 6px; }
   .caption p { font-size: .95rem; }
   .tournav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .tournav button { border: 1px solid var(--line); background: var(--card); border-radius: 2px; padding: .3em .7em; font-size: .88rem; }
+  .tournav button { border: 1px solid var(--line); background: var(--card); border-radius: 0; padding: .3em .7em; font-size: .88rem; }
   .keys { font-size: .75rem; color: var(--muted); margin: 6px 0 0; }
   .caption .btn { font-size: .9rem; }
   .hint-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: .75rem; color: #9fb1b8; pointer-events: none; }
@@ -244,5 +294,9 @@
     .layout { grid-template-columns: 1fr; grid-template-rows: 62vh auto; }
     .controls { width: auto; right: 12px; }
   }
+  .px { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: .84rem; margin: 6px 0; }
+  .px dt { color: var(--muted); } .px dd { margin: 0; font-family: var(--mono); }
+  .linkish { background: none; border: 0; color: var(--teal); text-decoration: underline; padding: 2px 0; text-align: left; font-size: .8rem; }
+  .sub { font-size: .8rem; }
   .note { font-size: .78rem; color: var(--amber); margin: 0 0 4px 22px; }
 </style>

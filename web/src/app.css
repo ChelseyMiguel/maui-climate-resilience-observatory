@@ -36,10 +36,10 @@ h3 { font-size: 1.1rem; }
 p { margin: 0 0 1em; }
 a { color: var(--teal); text-underline-offset: 2px; }
 a:hover { color: var(--ink); }
-code { font-size: .9em; background: var(--paper-2); padding: .1em .35em; border-radius: 4px; }
+code { font-size: .9em; background: var(--paper-2); padding: .1em .35em; border-radius: 0; }
 button, select, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 0; }
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
@@ -52,7 +52,7 @@ button { cursor: pointer; }
 .muted { color: var(--muted); }
 .small { font-size: .875rem; }
 .btn {
-  display: inline-flex; align-items: center; gap: .4em; padding: .55em 1em; border-radius: 2px;
+  display: inline-flex; align-items: center; gap: .4em; padding: .55em 1em; border-radius: 0;
   border: 1px solid var(--forest); background: var(--forest); color: #111; text-decoration: none; font-weight: 600;
 }
 .btn:hover { background: var(--forest-2); color: #111; }
@@ -60,7 +60,7 @@ button { cursor: pointer; }
 .btn.ghost:hover { background: var(--paper-2); }
 .tag {
   display: inline-block; font: 600 .7rem/1.6 var(--sans); letter-spacing: .04em; text-transform: uppercase;
-  padding: 0 .5em; border-radius: 4px; border: 1px solid currentColor;
+  padding: 0 .5em; border-radius: 0; border: 1px solid currentColor;
 }
 .tag.analysis { color: var(--teal); }
 .tag.public { color: var(--forest-2); }
@@ -74,9 +74,21 @@ th { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: 
 .num, .facts b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 html { color-scheme: dark; }
 /* MapLibre chrome to match the panels. */
-.maplibregl-ctrl-attrib, .maplibregl-ctrl-group, .maplibregl-ctrl-scale { background: var(--card) !important; color: var(--ink-2); border: 1px solid var(--line); border-radius: 2px !important; box-shadow: none !important; }
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-group, .maplibregl-ctrl-scale { background: var(--card) !important; color: var(--ink-2); border: 1px solid var(--line); border-radius: 0 !important; box-shadow: none !important; }
 .maplibregl-ctrl-attrib a, .maplibregl-ctrl-attrib-inner, .maplibregl-ctrl-scale { color: var(--ink-2) !important; }
 .maplibregl-ctrl-scale { border-top: 0; }
 .maplibregl-ctrl-group button + button { border-top: 1px solid var(--line) !important; }
 .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1); }
 input[type=range], input[type=checkbox], input[type=radio] { accent-color: var(--forest); }
+
+/* Square corners everywhere, including third-party widgets (MapLibre controls,
+ * popups) and the browser's own form controls. */
+*, *::before, *::after { border-radius: 0 !important; }
+input[type=range] { -webkit-appearance: none; appearance: none; height: 18px; background: transparent; }
+input[type=range]::-webkit-slider-runnable-track { height: 4px; background: var(--line); }
+input[type=range]::-moz-range-track { height: 4px; background: var(--line); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 16px; margin-top: -6px; background: var(--forest); border: 1px solid #111; }
+input[type=range]::-moz-range-thumb { width: 10px; height: 16px; background: var(--forest); border: 1px solid #111; border-radius: 0; }
+input[type=range]:disabled::-webkit-slider-thumb { background: var(--muted); }
+select { border-radius: 0; }
+.maplibregl-popup-content { background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: none; padding: 8px 10px; }

@@ -127,15 +127,15 @@
 <style>
   .rg { display: grid; gap: 12px; }
   h2 { margin: 0; }
-  .stat { margin: 0; background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 2px; }
+  .stat { margin: 0; background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 0; }
   .chart { margin: 0; }
   figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 14px; margin-bottom: 4px; }
   .title { font-weight: 700; color: var(--forest); }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 0; overflow: hidden; }
   .seg button { border: 0; background: var(--card); padding: .35em .8em; font-weight: 600; color: var(--ink-2); font-size: .85rem; }
   .seg button + button { border-left: 1px solid var(--line); }
   .seg button.on { background: var(--forest); color: #111; }
-  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 0; }
   .grid { stroke: #252c31; }
   .zero { stroke: var(--ink-2); stroke-width: 1.5; }
   .tick { fill: var(--muted); font-size: 11px; }

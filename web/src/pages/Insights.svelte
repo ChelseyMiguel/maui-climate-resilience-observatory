@@ -197,15 +197,15 @@
   .head { padding-top: 34px; }
   .lede { color: var(--ink-2); max-width: 44em; }
   .controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-top: 10px; }
-  .tabs { display: flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+  .tabs { display: flex; border: 1px solid var(--line); border-radius: 0; overflow: hidden; }
   .tabs button { border: 0; background: var(--card); padding: .5em 1.1em; font-weight: 600; color: var(--ink-2); }
   .tabs button + button { border-left: 1px solid var(--line); }
   .tabs button.on { background: var(--forest); color: #111; }
-  select { border: 1px solid var(--line); border-radius: 2px; padding: .3em .5em; background: var(--card); }
+  select { border: 1px solid var(--line); border-radius: 0; padding: .3em .5em; background: var(--card); }
   .body { display: grid; gap: 16px; margin-top: 20px; }
-  .note { background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 2px; font-size: .92rem; }
+  .note { background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 0; font-size: .92rem; }
   .method { margin-top: 8px; }
-  .emptystate { border: 1px dashed var(--line); border-radius: 2px; padding: 18px; background: var(--paper); }
+  .emptystate { border: 1px dashed var(--line); border-radius: 0; padding: 18px; background: var(--paper); }
   .pick { display: flex; gap: 14px; margin: 8px 0 12px; }
   .btn.ghost { margin-top: 10px; font-size: .9rem; }
   .err { color: var(--fire); }

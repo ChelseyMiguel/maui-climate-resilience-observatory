@@ -44,3 +44,12 @@ export function toCsv(rows, columns = COLUMNS) {
   const cell = (v) => (v === null || v === undefined ? '' : String(v));
   return [columns.join(','), ...rows.map((r) => columns.map((c) => cell(r[c])).join(','))].join('\n') + '\n';
 }
+
+/** Brush result on a monthly axis: a zoom range when the drag spans 2+ months,
+ * otherwise the clicked month's year (the map's year selector). */
+export function brushResult(months, i0, i1, years = [2018, 2019, 2020, 2021, 2022, 2023, 2024]) {
+  const a = Math.max(0, Math.min(i0, i1)), b = Math.min(months.length - 1, Math.max(i0, i1));
+  if (b - a >= 2) return { from: months[a], to: months[b] };
+  const y = +months[b]?.slice(0, 4);
+  return years.includes(y) ? { year: y } : {};
+}

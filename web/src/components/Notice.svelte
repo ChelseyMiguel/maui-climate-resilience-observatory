@@ -14,7 +14,7 @@
   .notice {
     display: flex; flex-wrap: wrap; gap: .25em .6em; align-items: baseline;
     background: #1f1a12; border: 1px solid #4a3b22; border-left: 4px solid var(--amber);
-    color: #e8d3b0; padding: .7em 1em; border-radius: 2px; font-size: .92rem;
+    color: #e8d3b0; padding: .7em 1em; border-radius: 0; font-size: .92rem;
   }
   .notice a { color: #6b3d06; font-weight: 600; }
   .compact { padding: .45em .8em; font-size: .82rem; }

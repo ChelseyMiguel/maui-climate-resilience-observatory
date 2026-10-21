@@ -86,7 +86,7 @@
   .page { padding-top: 34px; }
   .lede { color: var(--ink-2); max-width: 46em; font-size: 1.08rem; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
-  .formula { font-family: var(--serif); font-size: 1.15rem; color: var(--forest); background: var(--paper-2); padding: 6px 10px; border-radius: 2px; display: inline-block; }
+  .formula { font-family: var(--serif); font-size: 1.15rem; color: var(--forest); background: var(--paper-2); padding: 6px 10px; border-radius: 0; display: inline-block; }
   .section { margin-top: 36px; }
   .caveats { padding-left: 1.2em; max-width: 52em; }
   .caveats li { margin: 6px 0; }

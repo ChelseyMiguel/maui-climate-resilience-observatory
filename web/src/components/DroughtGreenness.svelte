@@ -228,17 +228,17 @@
 <style>
   .dg { display: grid; gap: 14px; }
   h2, h3 { margin: 0; }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; width: fit-content; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 0; overflow: hidden; width: fit-content; }
   .seg button { border: 0; background: var(--card); padding: .45em 1em; font-weight: 600; color: var(--ink-2); }
   .seg button + button { border-left: 1px solid var(--line); }
   .seg button.on { background: var(--forest); color: #111; }
-  .stat { margin: 0; background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 2px; }
+  .stat { margin: 0; background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 0; }
   .chart { margin: 0; }
   figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin-bottom: 4px; }
   .title { font-weight: 700; color: var(--forest); }
   .keys { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .85rem; color: var(--ink-2); }
   .key { display: inline-flex; align-items: center; gap: 5px; }
-  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  svg[role='img'] { width: 100%; height: auto; display: block; background: var(--card); border: 1px solid var(--line); border-radius: 0; }
   .grid { stroke: #252c31; stroke-width: 1; }
   .grid.v { stroke-dasharray: 2 3; }
   .zero { stroke: var(--ink-2); stroke-width: 1.5; }
@@ -255,15 +255,15 @@
   .bar { fill: var(--teal); }
   .barlabel { fill: var(--ink); font-size: 11px; font-weight: 700; }
   .readout { min-height: 1.6em; font-size: .85rem; margin-top: 4px; }
-  .tablebtn { margin-top: 4px; background: none; border: 1px solid var(--line); border-radius: 2px; padding: .25em .7em; font-size: .82rem; }
-  .tablewrap { max-height: 260px; overflow: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 2px; }
+  .tablebtn { margin-top: 4px; background: none; border: 1px solid var(--line); border-radius: 0; padding: .25em .7em; font-size: .82rem; }
+  .tablewrap { max-height: 260px; overflow: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 0; }
   .tablewrap table { font-size: .82rem; }
   .tablewrap th { position: sticky; top: 0; background: var(--paper-2); }
   .dry h3 { font: 700 1rem var(--sans); color: var(--forest); margin-bottom: 4px; }
   .dry table { width: 100%; }
   .dry th, .dry td { text-align: left; padding: .35em .5em; }
   .dry tr.hl { background: var(--paper-2); box-shadow: inset 3px 0 0 var(--amber); font-weight: 600; }
-  .inbar { display: inline-block; width: 90px; height: 8px; background: var(--paper-2); border-radius: 2px; vertical-align: middle; margin-right: 6px; overflow: hidden; }
+  .inbar { display: inline-block; width: 90px; height: 8px; background: var(--paper-2); border-radius: 0; vertical-align: middle; margin-right: 6px; overflow: hidden; }
   .inbar i { display: block; height: 100%; }
   .inbar .amber { background: var(--amber); }
   .inbar .green { background: var(--forest-2); }

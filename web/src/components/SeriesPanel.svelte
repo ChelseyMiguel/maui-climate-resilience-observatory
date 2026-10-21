@@ -4,7 +4,7 @@
   // drought index to greenness by eye. One crosshair reads every panel at once.
   // Each panel keeps its own units; nothing is rescaled onto a shared axis.
   import { createEventDispatcher } from 'svelte';
-  import { COLUMNS, toCsv } from '../lib/series.js';
+  import { COLUMNS, toCsv, brushResult } from '../lib/series.js';
 
   export let rows = [];          // joinMonthly() output
   export let year = null;        // the Map Explorer's year, shaded on the chart
@@ -29,6 +29,8 @@
   let from = '', to = '';
   $: if (months.length && !from) { from = months[0]; to = months[months.length - 1]; }
   $: view = rows.filter((r) => r.month >= from && r.month <= to);
+  // A zoom shrinks the series; drop a hover index that now points past its end.
+  $: if (hover !== null && hover >= view.length) hover = null;
 
   const W = 1000, L = 52, R = 14, PH = 64, GAP = 30, TOP = 18, AX = 22;
   $: H = TOP + PANELS.length * (PH + GAP) - GAP + AX;
@@ -66,13 +68,26 @@
   $: fireIdx = view.findIndex((r) => r.month === '2023-08');
   $: yearTicks = view.map((r, i) => (r.month.endsWith('-01') ? i : -1)).filter((i) => i >= 0);
 
-  let hover = null;
+  let hover = null, brush = null;   // brush: [startIndex, endIndex] while dragging
   let svgEl;
-  function move(e) {
+  function indexAt(e) {
     const pt = svgEl.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
     const sx = pt.matrixTransform(svgEl.getScreenCTM().inverse()).x;
-    const i = Math.round(((sx - L) / (W - L - R)) * n);
-    hover = i >= 0 && i < view.length ? i : null;
+    return Math.max(0, Math.min(view.length - 1, Math.round(((sx - L) / (W - L - R)) * n)));
+  }
+  function move(e) {
+    const i = indexAt(e);
+    hover = i;
+    if (brush) brush = [brush[0], i];
+  }
+  function down(e) { if (e.button === 0) { brush = [indexAt(e), indexAt(e)]; svgEl.setPointerCapture(e.pointerId); } }
+  // Drag across months to zoom to them; click a month to set the map's year.
+  function up() {
+    if (!brush) return;
+    const res = brushResult(view.map((r) => r.month), brush[0], brush[1]);
+    brush = null;
+    if (res.from) { from = res.from; to = res.to; }
+    else if (res.year) dispatch('pickyear', res.year);
   }
   function key(e) {
     if (e.key === 'ArrowRight') hover = Math.min(view.length - 1, (hover ?? -1) + 1);
@@ -145,7 +160,7 @@
       <!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
       <svg bind:this={svgEl} viewBox="0 0 {W} {H}" role="img" tabindex="0"
            aria-label="NDVI and NBR, drought index and rainfall by month, {from} to {to}. Arrow keys step through months."
-           on:mousemove={move} on:mouseleave={() => (hover = null)} on:keydown={key}>
+           on:pointermove={move} on:pointerdown={down} on:pointerup={up} on:mouseleave={() => (hover = null)} on:keydown={key}>
         <rect class="bg" x="0" y="0" width={W} height={H} />
         {#if yearIdx.length}
           <rect class="yr" x={x(yearIdx[0]) - 3} y={TOP} width={Math.max(6, x(yearIdx[yearIdx.length - 1]) - x(yearIdx[0]) + 6)} height={H - TOP - AX} />
@@ -176,20 +191,23 @@
           <line class="g" x1={x(i)} x2={x(i)} y1={H - AX} y2={H - AX + 4} />
           <text class="xt" x={x(i)} y={H - 6}>{view[i].month.slice(0, 4)}</text>
         {/each}
-        {#if hover !== null}
+        {#if brush}
+          <rect class="brush" x={x(Math.min(...brush))} y={TOP} width={Math.max(1, x(Math.max(...brush)) - x(Math.min(...brush)))} height={H - TOP - AX} />
+        {/if}
+        {#if hover !== null && view[hover]}
           <line class="cross" x1={x(hover)} x2={x(hover)} y1={TOP} y2={H - AX} />
         {/if}
       </svg>
 
       <div class="read" aria-live="polite">
-        {#if hover !== null}
+        {#if hover !== null && view[hover]}
           {@const r = view[hover]}
           <b>{r.month}</b>
           {#each PANELS as p}{#each p.series as s}{#if on[s.col]}
             <span><i style="background:{s.color}"></i>{s.label} {r[s.col] === null ? '—' : p.fmt(r[s.col])}</span>
           {/if}{/each}{/each}
         {:else}
-          <span class="muted">Hover or use the arrow keys to read every series for one month. Shaded: {year}.</span>
+          <span class="muted">Hover or use the arrow keys to read every month. Drag to zoom to a period; click a month to set the map’s year (shaded: {year}).</span>
         {/if}
       </div>
     </div>
@@ -221,6 +239,8 @@
   .fire { stroke: var(--fire); stroke-width: 1.4; }
   .fl { fill: var(--fire); font-size: 10px; text-anchor: end; }
   .cross { stroke: var(--ink); stroke-width: 1; }
+  .brush { fill: var(--forest); fill-opacity: .18; stroke: var(--forest); }
+  svg[role='img'] { cursor: crosshair; touch-action: none; }
   .read { min-height: 1.7em; display: flex; flex-wrap: wrap; gap: 4px 14px; font: .78rem var(--mono); margin-top: 4px; }
   .read i { display: inline-block; width: 9px; height: 9px; margin-right: 4px; }
   .note { font-size: .72rem; color: var(--muted); margin: 4px 0 0; }

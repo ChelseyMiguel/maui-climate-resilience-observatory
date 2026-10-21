@@ -96,10 +96,10 @@
   .brand b { font-family: var(--serif); font-size: 1.05rem; }
   .brand small { color: var(--muted); font-size: .75rem; }
   nav { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
-  nav a { padding: .4em .7em; border-radius: 2px; color: var(--ink-2); text-decoration: none; font-size: .92rem; }
+  nav a { padding: .4em .7em; border-radius: 0; color: var(--ink-2); text-decoration: none; font-size: .92rem; }
   nav a:hover { background: var(--paper-2); color: var(--forest); }
   nav a[aria-current='page'] { background: none; color: var(--ink); box-shadow: inset 0 -2px 0 var(--forest); }
-  .menu { display: none; margin-left: auto; border: 1px solid var(--line); background: var(--card); border-radius: 2px; padding: .35em .8em; }
+  .menu { display: none; margin-left: auto; border: 1px solid var(--line); background: var(--card); border-radius: 0; padding: .35em .8em; }
   .noticebar { padding-bottom: 10px; }
   main { outline: none; }
   main.fullBleed { height: calc(100vh - 57px); }
