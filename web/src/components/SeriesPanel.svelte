@@ -26,8 +26,9 @@
   let on = Object.fromEntries(PANELS.flatMap((p) => p.series.map((s) => [s.col, true])));
 
   $: months = rows.map((r) => r.month);
-  let from = '', to = '';
-  $: if (months.length && !from) { from = months[0]; to = months[months.length - 1]; }
+  // Bindable, so the Map Explorer can share the period with the Analysis workspace.
+  export let from = '', to = '';
+  $: if (months.length && (!months.includes(from) || !months.includes(to))) { from = months[0]; to = months[months.length - 1]; }
   $: view = rows.filter((r) => r.month >= from && r.month <= to);
   // A zoom shrinks the series; drop a hover index that now points past its end.
   $: if (hover !== null && hover >= view.length) hover = null;

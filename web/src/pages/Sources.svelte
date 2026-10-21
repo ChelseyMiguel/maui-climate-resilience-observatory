@@ -17,7 +17,7 @@
   <div class="tablewrap card">
     <table>
       <thead>
-        <tr><th>Dataset</th><th>Provider</th><th>Resolution</th><th>Coverage</th><th>Period</th><th>Currency</th><th>Licence</th></tr>
+        <tr><th>Dataset</th><th>Type</th><th>Provider</th><th>Resolution</th><th>Coverage</th><th>Period</th><th>Currency</th><th>Licence</th></tr>
       </thead>
       <tbody>
         {#each DATASETS as d}
@@ -27,7 +27,9 @@
               <span class="tag {d.provenance === 'project-analysis' ? 'analysis' : 'public'}">
                 {d.provenance === 'project-analysis' ? 'Author’s analysis' : 'Verified public'}</span>
               {#if d.caveat}<p class="cav">{d.caveat}</p>{/if}
+              {#if d.linkChecked === false}<p class="cav">Link added Oct 2026, not yet re-checked.</p>{/if}
             </td>
+            <td class="kind">{d.kind ?? '—'}</td>
             <td>{d.provider}</td><td>{d.spatialResolution}</td><td>{d.coverage}</td>
             <td>{d.temporal}</td><td>{d.currency}</td><td>{d.license}</td>
           </tr>
@@ -69,4 +71,6 @@
   table { min-width: 900px; font-size: .9rem; }
   .cav { margin: 4px 0 0; font-size: .8rem; color: var(--muted); }
   .section { margin-top: 32px; }
+  .kind { font-size: .78rem; color: var(--teal); white-space: nowrap; }
+  @media (max-width: 760px) { table { min-width: 0; } }
 </style>

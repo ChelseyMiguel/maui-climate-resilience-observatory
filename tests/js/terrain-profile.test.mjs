@@ -50,3 +50,12 @@ test("profile sampling and slope statistics", () => {
   assert.equal(s.maxSlopePct, 10);
   assert.equal(slopeStats([{ d: 0, z: NaN }]), null);
 });
+
+test("batch sampling matches point sampling", async () => {
+  // Each tile gets a different offset, so a wrong tile lookup would show.
+  const load = async (href) => { const [, x, y] = href.match(/(\d+)\/(\d+)\.png$/); return Float32Array.from({ length: 65536 }, (_, i) => (i % 256) + 1000 * (+x % 3) + 100 * (+y % 3)); };
+  const s = createSampler({ zoom: 14, load });
+  const pts = [[-156.3449, 20.8387], [-156.3301, 20.8501], [-156.36, 20.825]];
+  const many = await s.many(pts);
+  for (let i = 0; i < pts.length; i++) assert.ok(Math.abs(many[i] - await s.at(...pts[i])) < 1e-3, `point ${i}`);
+});

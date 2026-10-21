@@ -58,6 +58,22 @@
     <div class="card"><h3>Preparedness</h3><p>What communities and agencies do in advance. Official sources only: <a href="https://www.mauicounty.gov/190/Emergency-Preparedness" target="_blank" rel="noopener noreferrer">Maui County Emergency Preparedness</a>.</p></div>
   </div>
 
+  <h2 class="section">Interactive analysis methods</h2>
+  <p class="small muted">How the Map Explorer, 3D views and Analysis workspace compute what they show. None of these change the study’s inputs: the AOI, pixel mask, raster grid and the 2019 vs 2022 dry-season comparison are used exactly as exported.</p>
+  <table class="methods">
+    <thead><tr><th>Quantity</th><th>How it is computed</th><th>Check</th></tr></thead>
+    <tbody>
+      <tr><td>Browned pixels at a threshold</td><td>Count of valid (non-NaN) 10 m pixels with value strictly below the threshold, compared in 32-bit float as stored in the GeoTIFF. Area = pixels × 0.01 ha.</td><td>At −0.10: 30,037 of 70,280 (42.7%), tested against the committed raster</td></tr>
+      <tr><td>Stable / greening classes</td><td>Stable: between −|t| and +|t|. Greening: above +|t|. The greening cut-off mirrors the browning one; it is a display choice, not part of the study.</td><td>Classes partition all 70,280 pixels (tested)</td></tr>
+      <tr><td>NDVI anomaly z</td><td>(monthly study-area NDVI − 2019–2021 mean for that calendar month) ÷ sample SD of those three values</td><td>Reproduces the manuscript: r = −0.467 vs DSCI, n = 61; Mar/Apr 2022 z = −7.4 / −11.3 (tested from the CSVs)</td></tr>
+      <tr><td>Lagged correlation</td><td>Pearson r between monthly-mean county DSCI k months earlier and the NDVI anomaly; only months present in both series (gaps shrink n, nothing is filled)</td><td>Matches <code>lib/relationships.py</code> pairing</td></tr>
+      <tr><td>Rainfall anomaly</td><td>Sum of k months of one product at the study-area-centre pixel, minus the 2018–2024 mean of the same calendar months. A month is skipped unless all k months exist.</td><td>Coarse pixel (5–11 km) — area regime, not a point measurement</td></tr>
+      <tr><td>Pixel elevation, profiles</td><td>Bilinear interpolation of AWS Terrain Tiles (terrarium, z14, ~9 m) at each 10 m pixel centre or transect sample; pixel centres converted from UTM 4N (EPSG:32604) to WGS84. If tiles are unreachable, the local 68 m grid is used and the figure says so.</td><td>Decoding and interpolation tested; tiles not re-gridded</td></tr>
+      <tr><td>Browning density</td><td>Share below the threshold in 100 m × 100 m blocks (10 × 10 pixels); blocks with under half their pixels valid are left blank</td><td>Aggregation only — no smoothing or interpolation</td></tr>
+      <tr><td>3D</td><td>Height is terrain elevation only, optionally exaggerated and labelled. NDVI change is shown by colour; it is never drawn as height (it is a spectral index, not plant height).</td><td>—</td></tr>
+    </tbody>
+  </table>
+
   <h2 class="section">Verified vs. simulated layers</h2>
   <table>
     <thead><tr><th>Layer</th><th>Status</th></tr></thead>
@@ -95,4 +111,6 @@
   .repro { margin: 0; padding-left: 1.2em; }
   .repro li { margin: 4px 0; }
   @media (max-width: 900px) { .grid, .defs { grid-template-columns: 1fr; } }
+  .methods td:first-child { white-space: nowrap; font-weight: 600; }
+  .methods td { font-size: .86rem; }
 </style>

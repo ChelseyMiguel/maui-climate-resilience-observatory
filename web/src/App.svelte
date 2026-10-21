@@ -13,17 +13,18 @@
     '/explore': () => import('./pages/Explore.svelte'),
     '/insights': () => import('./pages/Insights.svelte'),
     '/map': () => import('./pages/Map3D.svelte'),
+    '/analysis': () => import('./pages/Analysis.svelte'),
     '/methods': () => import('./pages/Methods.svelte'),
     '/sources': () => import('./pages/Sources.svelte'),
     '/about': () => import('./pages/About.svelte'),
   };
   const NAV = [
     ['/', 'Overview'], ['/explore', 'Map Explorer'], ['/insights', 'Region Insights'],
-    ['/map', '3D View'], ['/viewer', 'Site Viewer'], ['/methods', 'Methods'],
+    ['/map', '3D View'], ['/analysis', 'Analysis'], ['/viewer', 'Site Viewer'], ['/methods', 'Methods'],
     ['/sources', 'Sources'], ['/about', 'About'],
   ];
   const TITLES = {
-    '/': 'Overview', '/explore': 'Map Explorer', '/insights': 'Region Insights', '/map': '3D View',
+    '/': 'Overview', '/explore': 'Map Explorer', '/insights': 'Region Insights', '/map': '3D View', '/analysis': 'Analysis Workspace',
     '/methods': 'Methods & Transparency', '/sources': 'Data Sources', '/about': 'About',
   };
 

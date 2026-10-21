@@ -22,7 +22,7 @@ _IMMUTABLE_PREFIXES = ("/static/site/assets/", "/static/vendor/esm/")
 
 # Pages must always be re-checked: after a rebuild they point at new hashed files.
 REVALIDATE = "no-cache"
-_PAGES = frozenset({"/", "/viewer", "/explore", "/insights", "/map", "/methods", "/sources", "/about"})
+_PAGES = frozenset({"/", "/viewer", "/explore", "/insights", "/map", "/analysis", "/methods", "/sources", "/about"})
 
 # Datasets served from files that only change when someone re-runs a fetch script.
 DATASET = "public, max-age=300"

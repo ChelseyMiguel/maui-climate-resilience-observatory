@@ -161,7 +161,7 @@ def test_observation_detail_includes_nearest_fire():
 
 def test_observatory_pages_are_served_once_built():
     built = (ROOT / "app" / "static" / "site" / "index.html").exists()
-    for path in ("/", "/explore", "/insights", "/map", "/methods", "/sources", "/about"):
+    for path in ("/", "/explore", "/insights", "/map", "/analysis", "/methods", "/sources", "/about"):
         response = api.get(path)
         if built:
             assert response.status_code == 200, path

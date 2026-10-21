@@ -18,8 +18,9 @@ export default defineConfig(({ command }) => ({
     // Pages are code-split (see App.svelte), so the Overview loads ~60 kB. The
     // two big chunks are the map libraries themselves — MapLibre on the Explorer
     // (~1.1 MB, ~290 kB gzipped) and three.js on the 3D view — which splitting
-    // cannot shrink further. They load only on the pages that need them.
-    chunkSizeWarningLimit: 1200,
+    // cannot shrink further. They load only on the pages that need them. The
+    // largest is plotly.js (~4.6 MB, ~1.4 MB gzipped), fetched only on /analysis.
+    chunkSizeWarningLimit: 4800,
   },
   server: {
     proxy: {

@@ -44,7 +44,8 @@
   // Shared with the 3D view and the Analysis workspace.
   const shared = get(analysis);
   let year = shared.year, threshold = shared.threshold, vegIndex = shared.index;
-  $: analysis.update((s) => ({ ...s, year, threshold, index: vegIndex }));
+  let seriesFrom = shared.from ?? '', seriesTo = shared.to ?? '';
+  $: analysis.update((s) => ({ ...s, year, threshold, index: vegIndex, from: seriesFrom || null, to: seriesTo || null }));
 
   // Layer switches
   let veg = true, vegPatches = false;
@@ -769,7 +770,7 @@
       on:close={() => { profile = null; transect = []; tool = null; map.getSource('transect').setData(fc([])); }} /></div>
   {/if}
   {#if dataOpen}
-    <div class="dock"><SeriesPanel rows={seriesRows} error={seriesError} {year} on:close={() => (dataOpen = false)}
+    <div class="dock"><SeriesPanel rows={seriesRows} error={seriesError} {year} bind:from={seriesFrom} bind:to={seriesTo} on:close={() => (dataOpen = false)}
       on:pickyear={(e) => (year = e.detail)} /></div>
   {/if}
 </div>
@@ -840,7 +841,7 @@
                   background: var(--forest); color: #111; font-weight: 700; transform: translateY(-50%); }
   .side { position: absolute; bottom: 40px; z-index: 3; background: var(--card); border: 1px solid var(--line); padding: 3px 8px; font-size: .76rem; max-width: 45%; }
   .side.left { left: 10px; } .side.right { right: 10px; }
-  .toolbar { position: absolute; top: 10px; left: 10px; z-index: 4; display: flex; gap: 6px; flex-wrap: wrap; }
+  .toolbar { position: absolute; top: 10px; left: 10px; z-index: 4; display: flex; gap: 6px; flex-wrap: wrap; max-width: calc(100% - 64px); }
   .toolbar button, .subbar button { background: var(--card); color: var(--ink); border: 1px solid var(--line); padding: .35em .8em; font-size: .84rem; font-weight: 600; }
   .toolbar button.on { border-color: var(--forest); box-shadow: inset 0 -2px 0 var(--forest); }
   .toolbar button:disabled { color: var(--muted); }
@@ -869,6 +870,6 @@
     .toggle { display: block; position: absolute; z-index: 7; top: 8px; right: 8px; background: var(--card);
               border: 1px solid var(--line); padding: .4em .8em; font-weight: 600; }
     .toolbar { top: 52px; }
-    .subbar { top: 92px; max-width: calc(100% - 20px); }
+    .subbar { top: 132px; max-width: calc(100% - 20px); }
   }
 </style>

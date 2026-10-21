@@ -92,3 +92,7 @@ input[type=range]::-moz-range-thumb { width: 10px; height: 16px; background: var
 input[type=range]:disabled::-webkit-slider-thumb { background: var(--muted); }
 select { border-radius: 0; }
 .maplibregl-popup-content { background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: none; padding: 8px 10px; }
+/* SVG rects drawn by libraries (e.g. Plotly's colorbar scrollbar) get no rounding either. */
+svg rect { rx: 0 !important; ry: 0 !important; }
+/* On narrow screens a wide table scrolls inside itself instead of widening the page. */
+@media (max-width: 760px) { table { display: block; overflow-x: auto; max-width: 100%; } }

@@ -203,6 +203,7 @@
   .tabs button.on { background: var(--forest); color: #111; }
   select { border: 1px solid var(--line); border-radius: 0; padding: .3em .5em; background: var(--card); }
   .body { display: grid; gap: 16px; margin-top: 20px; }
+  .body > :global(*) { min-width: 0; }
   .note { background: var(--paper-2); border-left: 3px solid var(--teal); padding: 8px 12px; border-radius: 0; font-size: .92rem; }
   .method { margin-top: 8px; }
   .emptystate { border: 1px dashed var(--line); border-radius: 0; padding: 18px; background: var(--paper); }

@@ -36,7 +36,31 @@ export function createSampler({ zoom = SAMPLE_ZOOM, url = TERRARIUM_URL, load = 
     const [a, b, c, d] = await Promise.all([get(x0, y0), get(x0 + 1, y0), get(x0, y0 + 1), get(x0 + 1, y0 + 1)]);
     return a * (1 - tx) * (1 - ty) + b * tx * (1 - ty) + c * (1 - tx) * ty + d * tx * ty;
   }
-  return { at, zoom };
+  /** Elevations for many [lon, lat] points: loads each needed tile once, then
+   * interpolates synchronously. Rejects if any tile can't load. */
+  async function many(points) {
+    const need = new Map();
+    const pos = points.map(([lon, lat]) => {
+      const [fx, fy] = tileXY(lon, lat, zoom);
+      const px = fx * 256 - 0.5, py = fy * 256 - 0.5;
+      const x0 = Math.floor(px), y0 = Math.floor(py);
+      for (const [gx, gy] of [[x0, y0], [x0 + 1, y0 + 1]]) need.set(`${Math.floor(gx / 256)}/${Math.floor(gy / 256)}`, [Math.floor(gx / 256), Math.floor(gy / 256)]);
+      return [px, py, x0, y0];
+    });
+    // Corner tiles too (a 2x2 neighbourhood can straddle four tiles).
+    for (const [, [tx, ty]] of [...need]) for (const [dx, dy] of [[1, 0], [0, 1]]) need.set(`${tx + dx}/${ty + dy}`, null);
+    const tiles = new Map();
+    await Promise.all([...need.keys()].map(async (k) => {
+      const [x, y] = k.split('/').map(Number);
+      try { tiles.set(k, await tile(x, y)); } catch (e) { if (need.get(k)) throw e; }
+    }));
+    const get = (gx, gy) => tiles.get(`${Math.floor(gx / 256)}/${Math.floor(gy / 256)}`)?.[(((gy % 256) + 256) % 256) * 256 + (((gx % 256) + 256) % 256)] ?? NaN;
+    return Float32Array.from(pos, ([px, py, x0, y0]) => {
+      const tx = px - x0, ty = py - y0;
+      return get(x0, y0) * (1 - tx) * (1 - ty) + get(x0 + 1, y0) * tx * (1 - ty) + get(x0, y0 + 1) * (1 - tx) * ty + get(x0 + 1, y0 + 1) * tx * ty;
+    });
+  }
+  return { at, many, zoom };
 }
 
 /** Browser loader: PNG -> Float32Array of 256x256 metres. */
