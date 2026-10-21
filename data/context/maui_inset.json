@@ -1,0 +1,14 @@
+{
+ "bounds": [
+  -156.72,
+  20.55,
+  -155.95,
+  21.05
+ ],
+ "crs": "EPSG:4326",
+ "size": [
+  308,
+  200
+ ],
+ "source": "Copernicus DEM GLO-90 (AWS copernicus-dem-90m), land = elevation > 0"
+}

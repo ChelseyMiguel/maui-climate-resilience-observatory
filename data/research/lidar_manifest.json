@@ -1,0 +1,42 @@
+{
+ "source": "https://usgs-lidar-public.s3.amazonaws.com/HI_NOAAMauiOahu_2_B20",
+ "survey": "2022-2023 NOAA/USGS lidar, Hawaii (Maui, Oahu...), QL1, nominal 8 pts/m2",
+ "max_depth": 11,
+ "nodes": 1268,
+ "points_in_box": 44776687,
+ "ground_points": 12461415,
+ "density_pts_m2": 4.99,
+ "acquired_utc": [
+  "2023-02-19",
+  "2023-02-19",
+  "2023-03-30"
+ ],
+ "grid": {
+  "crs": "EPSG:32604",
+  "res_m": 2.0,
+  "width": 1495,
+  "height": 1500,
+  "origin": [
+   774820.0,
+   2308080.0
+  ]
+ },
+ "dtm_cells_measured": 1953772,
+ "dtm_cells_filled": 288668,
+ "dtm_cells_empty": 60,
+ "chm_m_percentiles_5_50_95": [
+  0.04,
+  0.73,
+  9.54
+ ],
+ "points_file": {
+  "count": 300515,
+  "every_kth": 149,
+  "origin_utm": [
+   774820.0,
+   2305080.0
+  ],
+  "z_min_m": 268.0,
+  "layout": "u16 (e-west) dm, u16 (n-south) dm, u16 (z - z_min) cm, i16 height above ground cm, u8 class"
+ }
+}

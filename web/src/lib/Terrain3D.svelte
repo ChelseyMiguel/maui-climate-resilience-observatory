@@ -32,6 +32,10 @@
   // Optional (lon, lat) => tooltip text for the ground under the pointer, so the
   // page can report raster values without this component knowing about them.
   export let probe = null;
+  // Optional lidar points ({ lon, lat, hag, count } typed arrays): drawn at their
+  // height above ground on top of this mesh, coloured by that height.
+  export let points = null;
+  export let pointColour = (hag) => [1, 1, 1];
 
   const dispatch = createEventDispatcher();
   const CANVAS_W = 2048;
@@ -39,7 +43,7 @@
   let container;
   let hover = null;              // { x, y, text } for the tooltip
   let renderer, scene, camera, controls, mesh, texture, overlay, baseLayer;
-  let pinGroup, proj, ready = false, pinCount = 0, raf = 0;
+  let pinGroup, proj, ready = false, pinCount = 0, raf = 0, cloud = null;
 
   // ---------- scene ----------
   function build() {
@@ -254,8 +258,9 @@
       stem.position.set(x, y + stemH / 2, z);
       pinGroup.add(stem);
 
+      // Square markers, not spheres (no round symbols anywhere).
       const head = new THREE.Mesh(
-        new THREE.SphereGeometry(selected ? 0.11 : 0.075, 16, 12),
+        new THREE.BoxGeometry(...(selected ? [0.18, 0.18, 0.18] : [0.12, 0.12, 0.12])),
         new THREE.MeshBasicMaterial({ color: pinColor(pin.browned_fraction) })
       );
       head.position.set(x, y + stemH, z);
@@ -263,6 +268,29 @@
       pinGroup.add(head);
       pinCount++;
     }
+    requestRender();
+  }
+
+  // ---------- lidar point cloud ----------
+  function renderPoints() {
+    if (cloud) { scene.remove(cloud); cloud.geometry.dispose(); cloud.material.dispose(); cloud = null; }
+    if (!points || !show.points) { requestRender(); return; }
+    const { grid, meta } = terrain;
+    const pos = new Float32Array(points.count * 3), col = new Float32Array(points.count * 3);
+    for (let i = 0; i < points.count; i++) {
+      const [x, z] = proj.toLocal(points.lon[i], points.lat[i]);
+      const ground = sampleElevation(grid, meta, points.lon[i], points.lat[i]) ?? 0;
+      // Height above the lidar ground, set on this mesh's ground, so the cloud
+      // sits on the surface whatever the vertical datum of either source.
+      pos[i * 3] = x; pos[i * 3 + 1] = ((Math.max(ground, 0) + Math.max(points.hag[i], 0)) / 1000) * exaggeration + 0.002; pos[i * 3 + 2] = z;
+      const c = pointColour(points.hag[i]);
+      col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    cloud = new THREE.Points(g, new THREE.PointsMaterial({ size: 2, sizeAttenuation: false, vertexColors: true }));
+    scene.add(cloud);
     requestRender();
   }
 
@@ -382,6 +410,7 @@
   $: if (ready) { show; imagery; change; paintOverlay(); }
   $: if (ready) { exaggeration; applyExaggeration(); }
   $: if (ready) { sites; selectedId; show; renderPins(); }
+  $: if (ready) { points; show; exaggeration; renderPoints(); }
 </script>
 
 <div class="map3d" bind:this={container} data-ready={ready} data-pins={pinCount}>

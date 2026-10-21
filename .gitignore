@@ -23,5 +23,5 @@ data/terrain/tiles/
 data/sfm/
 
 # Before/after satellite GeoTIFFs from scripts/gee/imagery_before_after.js (~11 MB each)
-data/imagery/
+data/imagery/*.tif
 docs/email-peder-draft.md

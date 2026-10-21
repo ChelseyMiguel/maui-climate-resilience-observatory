@@ -2,7 +2,6 @@
   // The Observatory shell: navigation, the always-visible research-only notice,
   // and a tiny router. The 360° GLOBE site viewer stays its own page (/viewer).
   import { path as currentPath, interceptLinks } from './lib/router.ts';
-  import Notice from './components/Notice.svelte';
   import Overview from './pages/Overview.svelte';
 
   // Pages load on demand: the map libraries (MapLibre ~0.8 MB, three.js ~0.6 MB)
@@ -58,7 +57,6 @@
       {/each}
     </nav>
   </div>
-  {#if !fullBleed}<div class="wrap noticebar"><Notice compact /></div>{/if}
 </header>
 
 <main id="main" class:fullBleed tabindex="-1">
@@ -101,7 +99,6 @@
   nav a:hover { background: var(--paper-2); color: var(--forest); }
   nav a[aria-current='page'] { background: none; color: var(--ink); box-shadow: inset 0 -2px 0 var(--forest); }
   .menu { display: none; margin-left: auto; border: 1px solid var(--line); background: var(--card); border-radius: 0; padding: .35em .8em; }
-  .noticebar { padding-bottom: 10px; }
   main { outline: none; }
   main.fullBleed { height: calc(100vh - 57px); }
   footer { padding: 28px 22px 40px; border-top: 1px solid var(--line); margin-top: 48px; }

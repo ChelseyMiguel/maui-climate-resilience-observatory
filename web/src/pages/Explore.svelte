@@ -12,7 +12,6 @@
   // tell MapLibre where it is.
   import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
   maplibregl.setWorkerUrl(workerUrl);
-  import Notice from '../components/Notice.svelte';
   import SeriesPanel from '../components/SeriesPanel.svelte';
   import ProfilePanel from '../components/ProfilePanel.svelte';
   import ThresholdHistogram from '../components/ThresholdHistogram.svelte';
@@ -20,6 +19,8 @@
   import { getTerrain } from '../lib/api.js';
   import { reliefDataUrl } from '../lib/relief.ts';
   import { loadChangeRaster, rampColor, renderThreshold, CLASS_COLORS } from '../lib/raster.ts';
+  import { imageryIndex, imageryCanvas, loadBands, paint, ndviColour, chmColour, worldcoverColour, WORLDCOVER,
+    BBOX_CORNERS, remoteManifest, cellOf, median, NDVI_STOPS, CHM_STOPS } from '../lib/remote.ts';
   import { histogram, joinMonthly } from '../lib/series.js';
   import { classify, RESEARCH_THRESHOLD } from '../lib/threshold.js';
   import { BASEMAPS, DEM_TILES, basemapById } from '../lib/basemaps.js';
@@ -52,10 +53,11 @@
   // 'classes': browning / stable / greening at the threshold; 'below': browned
   // pixels only; 'ramp': the full diverging change as in the study's figures.
   let vegMode = 'classes', thrView = null, thrCanvas = null;
-  let drought = true, community = true;
+  // County-scale drought polygons wash out the imagery underneath; opt-in.
+  let drought = false, community = true;
   let kinds = { fire_stations: true, ems_stations: true, hospitals: true, public_schools: true, private_schools: true };
   let fires = true, firesAllYears = false;
-  let regions = true, globe = true, study = true;
+  let regions = true, globe = true, study = false;
 
   // Basemap, terrain, 3D
   let basemap = 'relief', basemapError = null, hillshade = true, demError = null;
@@ -67,6 +69,23 @@
   let compare = false, compareRight = 's2-2022', compareOverlay = 'none', split = 50, compareError = null;
   let dataOpen = false, seriesRows = [], seriesError = null, seriesLoaded = false;
   let cursor = null;             // pointer readout
+
+  // ---------- remote-sensing layers (scripts/remote_sensing/, public AWS archives) ----------
+  let rs = { imagery: [], annual: null, regional: null, lidar: null, landcover: null, manifest: {} };
+  let rsLoading = true;
+  let imgId = 'none', imgOpacity = 1;
+  let annualOn = false, annualYear = 2022, annualIdx = 'ndvi', playing = false, facets = false;
+  let regionalOn = false, landcoverOn = false, lidarOn = false, lidarProduct = 'chm', droughtPlaying = false;
+  const rsCanvas = {};
+  let playTimer = 0, droughtTimer = 0;
+  $: annualYears = rs.annual ? Array.from({ length: rs.annual.bands.length / 3 }, (_, i) => annualFirst + i) : [];
+  $: annualFirst = Math.min(...Object.keys(rs.manifest?.sentinel2?.products ?? { aoi_2017: 1 })
+    .filter((k) => k.startsWith('aoi_')).map((k) => +k.slice(4)));
+  $: yearIdx = annualYears.indexOf(annualYear);
+  $: annualQuality = rs.annual && yearIdx >= 0 ? median(rs.annual.bands[2 * annualYears.length + yearIdx]) : null;
+  $: lcRows = rs.manifest?.worldcover?.study_area ?? [];
+  $: lidarMeta = rs.manifest?.lidar;
+  $: s2Valid = rs.manifest?.sentinel2?.validation_vs_study_dndvi;
 
   // Data
   let rasters = {}, catalog = [], droughtIndex = [], observations = [], terrain = null, studyArea = null;
@@ -196,7 +215,7 @@
       map.addLayer({ id: 'patches-line', type: 'line', source: 'patches', paint: { 'line-color': '#ffd08a', 'line-width': 0.8 } });
 
       map.addSource('study', { type: 'geojson', data: circle(studyArea.lat, studyArea.lon, studyArea.radius_m) });
-      map.addLayer({ id: 'study-line', type: 'line', source: 'study', paint: { 'line-color': '#e4e8ea', 'line-width': 2, 'line-dasharray': [3, 2] } });
+      map.addLayer({ id: 'study-line', type: 'line', source: 'study', paint: { 'line-color': '#e4e8ea', 'line-width': 1, 'line-dasharray': [4, 3] } });
 
       map.addSource('regions', { type: 'geojson', data: regionsFc });
       map.addLayer({ id: 'regions-fill', type: 'fill', source: 'regions', paint: { 'fill-color': '#1f6f73', 'fill-opacity': 0.04 } });
@@ -251,6 +270,7 @@
       loading = false;
       applyAll();
       applyBasemap();
+      loadRemote();
     });
   }
 
@@ -331,6 +351,138 @@
   $: label = vegIndex === 'dndvi' ? 'dNDVI' : 'dNBR';
 
   $: if (ready) { veg; vegIndex; vegPatches; vegMode; drought; community; kinds; fires; regions; globe; study; applyAll(); }
+
+  // ---------- remote sensing ----------
+  async function loadRemote() {
+    const safe = (p) => p.catch(() => null);
+    const [img, annual, regional, lidar, landcover, manifest] = await Promise.all([
+      safe(imageryIndex()), safe(loadBands('s2_aoi_annual')), safe(loadBands('s2_regional_change', ['dndvi', 'dnbr'])),
+      safe(loadBands('lidar_aoi', ['dtm_dm', 'chm_cm', 'hillshade'])), safe(loadBands('worldcover_2021', ['class'])), safe(remoteManifest())]);
+    rs = { imagery: img ?? [], annual, regional, lidar, landcover, manifest: manifest ?? {} };
+    if (!map) return;
+    // Land cover and regional change sit under the drought polygons; annual NDVI
+    // and lidar sit over the study rasters so they can be compared in place.
+    const below = { landcover: 'drought-fill', regional: 'drought-fill', annual: 'patches-line', lidar: 'patches-line' };
+    for (const key of Object.keys(below)) {
+      const b = rs[key];
+      if (!b) continue;
+      rsCanvas[key] = document.createElement('canvas');
+      map.addSource(`rs-${key}`, { type: 'canvas', canvas: rsCanvas[key], coordinates: b.corners, animate: false });
+      map.addLayer({ id: `rs-${key}`, type: 'raster', source: `rs-${key}`, layout: { visibility: 'none' },
+        paint: { 'raster-resampling': 'nearest', 'raster-opacity': key === 'landcover' ? 0.75 : 0.92 } }, below[key]);
+    }
+    rsLoading = false;
+    paintRemote();
+    applyRemote();
+  }
+
+  function repaint(key) {
+    const src = map.getSource(`rs-${key}`);
+    if (!src) return;
+    src.play();
+    map.once('render', () => src.pause());
+    map.triggerRepaint();
+  }
+  const rgba = (c, a = 235) => [...c, a];
+  function paintRemote() {
+    if (!map || rsLoading) return;
+    const n = annualYears.length;
+    if (rs.annual && yearIdx >= 0) {
+      paint(rs.annual.bands[(annualIdx === 'ndvi' ? 0 : n) + yearIdx], rs.annual.width, rs.annual.height,
+        (v) => rgba(ndviColour(v)), rsCanvas.annual);
+      repaint('annual');
+    }
+    if (rs.regional) {
+      paint(rs.regional.bands[vegIndex === 'dndvi' ? 0 : 1], rs.regional.width, rs.regional.height, (v) => rgba(rampColor(v), 225), rsCanvas.regional);
+      repaint('regional');
+    }
+    if (rs.landcover) { paint(rs.landcover.bands[0], rs.landcover.width, rs.landcover.height, worldcoverColour, rsCanvas.landcover); repaint('landcover'); }
+    if (rs.lidar) {
+      const l = rs.lidar;
+      if (lidarProduct === 'chm') paint(l.bands[1], l.width, l.height, (v) => rgba(chmColour(v / 100), 230), rsCanvas.lidar);
+      else paint(l.bands[2], l.width, l.height, (v) => [v, v, v, 255], rsCanvas.lidar);
+      repaint('lidar');
+    }
+  }
+  function applyRemote() {
+    if (!ready || rsLoading) return;
+    vis('rs-annual', annualOn); vis('rs-regional', regionalOn); vis('rs-landcover', landcoverOn); vis('rs-lidar', lidarOn);
+    // Satellite image (period-matched Sentinel-2 composites), under the hillshade.
+    const item = rs.imagery.find((i) => i.id === imgId);
+    if (!item) { vis('rs-img', false); return; }
+    setImage(map, item, 'hillshade', imgOpacity);
+  }
+  async function setImage(m, item, beforeId, opacity = 1) {
+    const url = item.format === 'jpg' ? `/api/layers/imagery/${item.id}` : (await imageryCanvas(item)).toDataURL('image/jpeg', 0.9);
+    const src = m.getSource('rs-img');
+    if (src) src.updateImage({ url, coordinates: BBOX_CORNERS });
+    else {
+      m.addSource('rs-img', { type: 'image', url, coordinates: BBOX_CORNERS });
+      m.addLayer({ id: 'rs-img', type: 'raster', source: 'rs-img', paint: { 'raster-fade-duration': 0 } }, m.getLayer(beforeId) ? beforeId : undefined);
+    }
+    m.setLayoutProperty('rs-img', 'visibility', 'visible');
+    m.setPaintProperty('rs-img', 'raster-opacity', opacity);
+  }
+  $: if (ready) { annualYear; annualIdx; vegIndex; lidarProduct; rs; paintRemote(); }
+  $: if (ready) { annualOn; regionalOn; landcoverOn; lidarOn; imgId; imgOpacity; rs; applyRemote(); }
+
+  function togglePlay() {
+    playing = !playing;
+    clearInterval(playTimer);
+    if (playing) {
+      annualOn = true;
+      playTimer = setInterval(() => { annualYear = annualYears[(annualYears.indexOf(annualYear) + 1) % annualYears.length]; }, reduceMotion ? 2500 : 1200);
+    }
+  }
+  function toggleDroughtPlay() {
+    droughtPlaying = !droughtPlaying;
+    clearInterval(droughtTimer);
+    if (droughtPlaying) droughtTimer = setInterval(() => { year = YEARS[(YEARS.indexOf(year) + 1) % YEARS.length]; }, reduceMotion ? 2500 : 1500);
+  }
+  /** Small-multiples facet: paint one year's annual NDVI into a canvas. */
+  function facet(node, y) {
+    const draw = (yy) => {
+      const k = annualYears.indexOf(yy);
+      if (k >= 0) paint(rs.annual.bands[(annualIdx === 'ndvi' ? 0 : annualYears.length) + k], rs.annual.width, rs.annual.height, (v) => rgba(ndviColour(v), 255), node);
+    };
+    draw(y);
+    return { update: draw };
+  }
+
+  /** Values of every remote-sensing product at a point, for the feature card. */
+  function remoteAt(lat, lon) {
+    const out = {};
+    if (rs.annual) {
+      const c = cellOf(rs.annual, lat, lon), n = annualYears.length;
+      if (c) out.series = annualYears.map((y, k) => ({ year: y, ndvi: rs.annual.bands[k][c.i], nbr: rs.annual.bands[n + k][c.i], obs: rs.annual.bands[2 * n + k][c.i] }))
+        .filter((p) => Number.isFinite(p.ndvi));
+    }
+    if (rs.landcover) {
+      const c = cellOf(rs.landcover, lat, lon);
+      const code = c ? rs.landcover.bands[0][c.i] : NaN;
+      if (WORLDCOVER[code]) out.landcover = WORLDCOVER[code][0];
+    }
+    if (rs.lidar) {
+      const c = cellOf(rs.lidar, lat, lon);
+      if (c && Number.isFinite(rs.lidar.bands[0][c.i])) out.lidar = { ground: rs.lidar.bands[0][c.i] / 10, chm: rs.lidar.bands[1][c.i] / 100 };
+    }
+    if (rs.regional) {
+      const c = cellOf(rs.regional, lat, lon);
+      if (c && Number.isFinite(rs.regional.bands[0][c.i])) out.regional = { dndvi: rs.regional.bands[0][c.i], dnbr: rs.regional.bands[1][c.i] };
+    }
+    return out;
+  }
+  const spark = (series) => {
+    const W = 220, H = 46, x = (i) => 6 + (i / Math.max(1, series.length - 1)) * (W - 12), y = (v) => H - 6 - (Math.max(0, Math.min(0.8, v)) / 0.8) * (H - 12);
+    return { W, H, x, y, d: series.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.ndvi).toFixed(1)}`).join('') };
+  };
+
+  // ---------- inset locator ----------
+  const INSET = { west: -156.72, south: 20.55, east: -155.95, north: 21.05, w: 154, h: 100 };
+  const ix = (lon) => ((lon - INSET.west) / (INSET.east - INSET.west)) * INSET.w;
+  const iy = (lat) => ((INSET.north - lat) / (INSET.north - INSET.south)) * INSET.h;
+  let viewBox = null;
+  $: if (ready) map.on('move', () => { const b = map.getBounds(); viewBox = { w: b.getWest(), s: b.getSouth(), e: b.getEast(), n: b.getNorth() }; });
 
   // ---------- 2D / 3D ----------
   function set3d(on) {
@@ -414,7 +566,10 @@
         mapB.addLayer({ id: 'hillshade', type: 'hillshade', source: 'dem-hs',
           paint: { 'hillshade-exaggeration': 0.35, 'hillshade-shadow-color': '#000000', 'hillshade-highlight-color': '#ffffff', 'hillshade-accent-color': '#000000' } });
       }
-      if (compareRight !== 'relief') ensureBasemap(mapB, compareRight, mapB.getLayer('hillshade') ? 'hillshade' : undefined);
+      if (compareRight.startsWith('img:')) {
+        const item = rs.imagery.find((i) => i.id === compareRight.slice(4));
+        if (item) setImage(mapB, item, 'hillshade');
+      } else if (compareRight !== 'relief') ensureBasemap(mapB, compareRight, mapB.getLayer('hillshade') ? 'hillshade' : undefined);
       if (compareOverlay !== 'none') {
         const r = rasters[compareOverlay];
         mapB.addSource('ov', { type: 'image', url: r.imageUrl, coordinates: r.meta.corners });
@@ -431,7 +586,8 @@
   $: if (ready && !compare) closeCompare();
   function preset(kind) {
     compare = true;
-    if (kind === 's2') { basemap = 's2-2019'; compareRight = 's2-2022'; compareOverlay = 'none'; veg = false; }
+    if (kind === 's2') { basemap = 'relief'; imgId = 's2_dry_2019'; compareRight = 'img:s2_dry_2022'; compareOverlay = 'none'; veg = false; }
+    else if (kind === 'fire') { basemap = 'relief'; imgId = 'before_2023'; compareRight = 'img:after_2023'; compareOverlay = 'none'; veg = false; fires = true; }
     else { basemap = 'relief'; veg = true; vegMode = 'ramp'; vegIndex = 'dndvi'; compareRight = 'relief'; compareOverlay = 'dnbr'; }
   }
   let dragging = false, wrapEl;
@@ -444,8 +600,9 @@
     if (e.key === 'ArrowLeft') split = Math.max(5, split - 5);
     else if (e.key === 'ArrowRight') split = Math.min(95, split + 5);
   }
-  $: leftLabel = `${basemapById(basemap).label}${veg ? ` + ${vegMode === 'ramp' ? label : `${label} < ${threshold.toFixed(2)}`}` : ''}`;
-  $: rightLabel = `${basemapById(compareRight).label}${compareOverlay !== 'none' ? ` + ${compareOverlay === 'dndvi' ? 'dNDVI' : 'dNBR'}` : ''}`;
+  $: imgLabel = (id) => rs.imagery.find((i) => i.id === id)?.label ?? id;
+  $: leftLabel = `${imgId !== 'none' ? `Sentinel-2 · ${imgLabel(imgId)}` : basemapById(basemap).label}${veg ? ` + ${vegMode === 'ramp' ? label : `${label} < ${threshold.toFixed(2)}`}` : ''}`;
+  $: rightLabel = `${compareRight.startsWith('img:') ? `Sentinel-2 · ${imgLabel(compareRight.slice(4))}` : basemapById(compareRight).label}${compareOverlay !== 'none' ? ` + ${compareOverlay === 'dndvi' ? 'dNDVI' : 'dNBR'}` : ''}`;
 
   // ---------- data panel ----------
   async function openData() {
@@ -528,6 +685,7 @@
       card.uncertainty = 'One 10 m pixel; cloud-masked dry-season medians. Greenness/moisture change is not fuel load or fire risk.';
       card.source = 'Author’s analysis (Copernicus Sentinel-2)';
     }
+    card.rs = remoteAt(lat, lng);
     selected = card;
     if (window.innerWidth < 860) sidebarOpen = true;
     const el = await elevationAt(lng, lat);
@@ -538,7 +696,7 @@
     map?.flyTo({ center: [studyArea.lon, studyArea.lat], zoom: 13.6, duration: dur(1200) });
   }
 
-  onDestroy(() => { closeCompare(); map?.remove(); });
+  onDestroy(() => { clearInterval(playTimer); clearInterval(droughtTimer); closeCompare(); map?.remove(); });
 
   const swatch = (v) => `rgb(${rampColor(v).join(',')})`;
   const rgb = (c) => `rgb(${c.join(',')})`;
@@ -556,7 +714,6 @@
 
   <aside id="layers" class:open={sidebarOpen} aria-label="Map layers and legend">
     <h1>Map Explorer</h1>
-    <Notice compact />
 
     <fieldset class="year">
       <legend>Year</legend>
@@ -565,6 +722,7 @@
           <label class:on={y === year}><input type="radio" bind:group={year} value={y} />{y}</label>
         {/each}
       </div>
+      <button class="play" aria-pressed={droughtPlaying} on:click={toggleDroughtPlay}>{droughtPlaying ? '❚❚ Pause' : '▶ Animate years'}</button>
       <p class="hint">Sets the drought map, fire perimeters and GLOBE observations. The vegetation layer is a fixed 2019 → 2022 comparison.</p>
     </fieldset>
 
@@ -578,6 +736,70 @@
         {#if basemapError}<p class="empty">{basemapError}</p>{/if}
         <label><input type="checkbox" bind:checked={hillshade} disabled={!!demError} /> Hillshade (AWS Terrain Tiles)</label>
         {#if demError}<p class="empty">{demError}</p>{/if}
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Satellite &amp; lidar</legend>
+      <div class="sub">
+        {#if rsLoading}<p class="hint">Loading Sentinel-2, lidar and land-cover products…</p>{/if}
+        <label class="col">Sentinel-2 image
+          <select bind:value={imgId} aria-label="Sentinel-2 image">
+            <option value="none">none</option>
+            {#each rs.imagery as im}<option value={im.id}>{im.label}</option>{/each}
+          </select></label>
+        {#if imgId !== 'none'}
+          {@const im = rs.imagery.find((i) => i.id === imgId)}
+          <label>Opacity <input type="range" min="0.2" max="1" step="0.05" bind:value={imgOpacity} /></label>
+          {#if im}<p class="hint">{im.period}. {im.bands ?? ''} · {im.scenes ?? '?'} cloud-masked scenes{#if im.dates}, {im.dates[0]} – {im.dates[1]}{/if} · median, 20 m.</p>{/if}
+        {:else if !rsLoading && !rs.imagery.length}
+          <p class="empty">No imagery yet — run <code>scripts/remote_sensing/sentinel2_composites.py</code>.</p>
+        {/if}
+
+        <label class="lyr"><input type="checkbox" bind:checked={annualOn} disabled={!rs.annual} /> Annual dry-season {annualIdx.toUpperCase()}, study area</label>
+        {#if rs.annual}
+          <div class="sub2" class:dim={!annualOn}>
+            <div class="row">
+              <button class="play" aria-pressed={playing} on:click={togglePlay}>{playing ? '❚❚' : '▶'}</button>
+              <input type="range" min={annualYears[0]} max={annualYears[annualYears.length - 1]} step="1" bind:value={annualYear} aria-label="Year" />
+              <b class="num">{annualYear}</b>
+              <select bind:value={annualIdx} aria-label="Index"><option value="ndvi">NDVI</option><option value="nbr">NBR</option></select>
+            </div>
+            <div class="ramp" aria-hidden="true">{#each NDVI_STOPS as [v, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
+            <div class="ramp-labels"><span>0 bare / dry</span><span>0.4</span><span>0.8 green</span></div>
+            <p class="hint">Sentinel-2 L2A, May–Sep median, 10 m on the study grid. Data quality {annualYear}: median <b>{annualQuality ?? '—'}</b> clear observations per pixel.
+              {#if s2Valid}Check vs the study raster (2022 − 2019): r = {s2Valid.pearson_r}, {(s2Valid['class_agreement_at_-0.10'] * 100).toFixed(0)}% same class at −0.10.{/if}</p>
+            <button class="linkish" on:click={() => (facets = !facets)}>{facets ? 'Hide' : 'Show'} all years side by side</button>
+          </div>
+        {/if}
+
+        <label class="lyr"><input type="checkbox" bind:checked={regionalOn} disabled={!rs.regional} /> Regional {label} 2019 → 2022 (20 m)</label>
+        {#if regionalOn}<p class="hint sub2">Exploratory: the same Sentinel-2 change across the whole terrain box, not the study raster. Colours as the vegetation ramp below.</p>{/if}
+
+        <label class="lyr"><input type="checkbox" bind:checked={landcoverOn} disabled={!rs.landcover} /> Land cover 2021 (ESA WorldCover, 10 m)</label>
+        {#if landcoverOn && lcRows.length}
+          <table class="classes sub2">
+            <thead><tr><th>Class</th><th>% of area</th><th>% browned</th></tr></thead>
+            <tbody>{#each lcRows as row}<tr><td><span class="sw" style="background:{row.colour}"></span>{row.name}</td>
+              <td>{(row.share_of_study_area * 100).toFixed(1)}</td><td>{(row['share_browned_dndvi_lt_-0.10'] * 100).toFixed(0)}</td></tr>{/each}</tbody>
+          </table>
+          <p class="hint">Inside the study area; “browned” = study dNDVI &lt; −0.10. Classes from 2021 Sentinel-1/2 (CC BY 4.0).</p>
+        {/if}
+
+        <label class="lyr"><input type="checkbox" bind:checked={lidarOn} disabled={!rs.lidar} /> Lidar, {lidarMeta?.acquired_utc?.[0]?.slice(0, 7) ?? '2023'} (USGS 3DEP)</label>
+        {#if rs.lidar}
+          <div class="sub2" class:dim={!lidarOn}>
+            <div class="seg" role="radiogroup" aria-label="Lidar product">
+              <label class:on={lidarProduct === 'chm'}><input type="radio" bind:group={lidarProduct} value="chm" />Height above ground</label>
+              <label class:on={lidarProduct === 'hillshade'}><input type="radio" bind:group={lidarProduct} value="hillshade" />Bare-earth relief</label>
+            </div>
+            {#if lidarProduct === 'chm'}
+              <div class="ramp" aria-hidden="true">{#each CHM_STOPS as [, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
+              <div class="ramp-labels"><span>0 m</span><span>5</span><span>10</span><span>20+ m</span></div>
+            {/if}
+            <p class="hint">Height of the highest return above the ground model (trees <em>and</em> buildings: this survey doesn’t class buildings separately), 2 m grid; {lidarMeta?.density_pts_m2 ?? '~5'} points/m² used. Flown {lidarMeta?.acquired_utc?.[0]} – {lidarMeta?.acquired_utc?.[2]}: after the 2022 drought, before the Aug 2023 fires.</p>
+          </div>
+        {/if}
       </div>
     </fieldset>
 
@@ -692,6 +914,25 @@
           {#if selected.rows.length}
             <dl>{#each selected.rows as [k, v]}<dt>{k}</dt><dd>{v}</dd>{/each}</dl>
           {/if}
+          {#if selected.rs?.series?.length}
+            {@const sp = spark(selected.rs.series)}
+            <p class="meta"><b>Dry-season NDVI here, {selected.rs.series[0].year}–{selected.rs.series[selected.rs.series.length - 1].year}</b> (Sentinel-2, 10 m)</p>
+            <svg class="spark" viewBox="0 0 {sp.W} {sp.H}" role="img" aria-label="NDVI by year at this pixel">
+              <line x1="0" x2={sp.W} y1={sp.y(0.4)} y2={sp.y(0.4)} class="g" />
+              <path d={sp.d} />
+              {#each selected.rs.series as p, i}<rect x={sp.x(i) - 2.5} y={sp.y(p.ndvi) - 2.5} width="5" height="5" class:hl={p.year === 2019 || p.year === 2022}>
+                <title>{p.year}: NDVI {p.ndvi.toFixed(3)}, {p.obs} clear obs</title></rect>{/each}
+            </svg>
+            <div class="sparkx"><span>{selected.rs.series[0].year}</span><span>2019 · 2022 marked</span><span>{selected.rs.series[selected.rs.series.length - 1].year}</span></div>
+          {/if}
+          {#if selected.rs?.landcover || selected.rs?.lidar || selected.rs?.regional}
+            <dl class="px">
+              {#if selected.rs.landcover}<dt>Land cover 2021</dt><dd>{selected.rs.landcover}</dd>{/if}
+              {#if selected.rs.lidar}<dt>Height above ground</dt><dd>{selected.rs.lidar.chm.toFixed(1)} m (lidar 2023)</dd>
+                <dt>Ground (lidar)</dt><dd>{selected.rs.lidar.ground.toFixed(1)} m</dd>{/if}
+              {#if selected.rs.regional && !selected.raster}<dt>Regional dNDVI</dt><dd>{selected.rs.regional.dndvi.toFixed(3)} (20 m, exploratory)</dd>{/if}
+            </dl>
+          {/if}
           <dl class="px">
             <dt>Lat, lon</dt><dd>{selected.lat.toFixed(5)}, {selected.lon.toFixed(5)}</dd>
             <dt>Elevation</dt><dd>{selected.elevation ? (Number.isFinite(selected.elevation.z) ? `${selected.elevation.z.toFixed(1)} m` : 'outside DEM') : '…'}</dd>
@@ -743,14 +984,28 @@
     {#if compare}
       <div class="subbar compare">
         <span class="hint">Left: the map as set. Right:</span>
-        <select bind:value={compareRight} aria-label="Right-hand basemap">{#each BASEMAPS as bm}<option value={bm.id}>{bm.label}</option>{/each}</select>
+        <select bind:value={compareRight} aria-label="Right-hand basemap">
+          {#each rs.imagery as im}<option value={'img:' + im.id}>Sentinel-2 · {im.label}</option>{/each}
+          {#each BASEMAPS as bm}<option value={bm.id}>{bm.label}</option>{/each}
+        </select>
         <select bind:value={compareOverlay} aria-label="Right-hand overlay">
           <option value="none">no overlay</option><option value="dndvi">dNDVI</option><option value="dnbr">dNBR</option>
         </select>
-        <button on:click={() => preset('s2')}>Sentinel-2 2019 | 2022</button>
+        <button on:click={() => preset('s2')} disabled={!rs.imagery.some((i) => i.id === 's2_dry_2022')}>Dry season 2019 | 2022</button>
+        <button on:click={() => preset('fire')} disabled={!rs.imagery.some((i) => i.id === 'after_2023')}>Before | after Aug 2023 fires</button>
         <button on:click={() => preset('idx')}>dNDVI | dNBR</button>
       </div>
     {/if}
+
+    <figure class="inset" aria-label="Location of the map on Maui">
+      <img src="/api/layers/inset.png" alt="" width={INSET.w} height={INSET.h} />
+      <svg viewBox="0 0 {INSET.w} {INSET.h}" aria-hidden="true">
+        <rect class="box" x={ix(-156.45)} y={iy(20.88)} width={ix(-156.24) - ix(-156.45)} height={iy(20.70) - iy(20.88)} />
+        {#if viewBox}<rect class="view" x={Math.max(0, ix(viewBox.w))} y={Math.max(0, iy(viewBox.n))}
+          width={Math.max(2, Math.min(INSET.w, ix(viewBox.e)) - Math.max(0, ix(viewBox.w)))} height={Math.max(2, Math.min(INSET.h, iy(viewBox.s)) - Math.max(0, iy(viewBox.n)))} />{/if}
+      </svg>
+      <figcaption>Maui · view in orange</figcaption>
+    </figure>
 
     {#if cursor}
       <div class="cursor" aria-hidden="true">
@@ -769,6 +1024,20 @@
       on:hover={(e) => drawTransect(e.detail)}
       on:close={() => { profile = null; transect = []; tool = null; map.getSource('transect').setData(fc([])); }} /></div>
   {/if}
+  {#if facets && rs.annual}
+    <div class="dock"><section class="facets" aria-label="Dry-season {annualIdx.toUpperCase()} by year">
+      <header><h2>Dry-season {annualIdx.toUpperCase()} by year · study area · Sentinel-2 10 m</h2><button class="x" on:click={() => (facets = false)} aria-label="Close">×</button></header>
+      <div class="fgrid">
+        {#each annualYears as y, k}
+          <button class="fcell" class:on={y === annualYear} on:click={() => { annualYear = y; annualOn = true; }}>
+            <canvas use:facet={y}></canvas>
+            <span>{y}</span><small>{median(rs.annual.bands[2 * annualYears.length + k])} obs</small>
+          </button>
+        {/each}
+      </div>
+      <p class="hint">Same colour scale in every panel (0 brown → 0.8 green). Each is the median of that year’s May–Sep cloud-free observations; “obs” is the median number of clear looks per pixel (fewer = less certain). Click a year to show it on the map.</p>
+    </section></div>
+  {/if}
   {#if dataOpen}
     <div class="dock"><SeriesPanel rows={seriesRows} error={seriesError} {year} bind:from={seriesFrom} bind:to={seriesTo} on:close={() => (dataOpen = false)}
       on:pickyear={(e) => (year = e.detail)} /></div>
@@ -776,8 +1045,8 @@
 </div>
 
 <style>
-  .explore { display: grid; grid-template-columns: 360px 1fr; grid-template-rows: 1fr auto auto; height: 100%; position: relative; }
-  aside { grid-row: 1 / 4; min-height: 0; overflow-y: auto; padding: 14px 16px 30px; background: var(--card); border-right: 1px solid var(--line); }
+  .explore { display: grid; grid-template-columns: 360px 1fr; grid-template-rows: 1fr auto auto auto; height: 100%; position: relative; }
+  aside { grid-row: 1 / 5; min-height: 0; overflow-y: auto; padding: 14px 16px 30px; background: var(--card); border-right: 1px solid var(--line); }
   .dock { grid-column: 2; min-width: 0; max-height: 46vh; overflow-y: auto; }
   aside h1 { font-size: 1.5rem; margin-bottom: 8px; }
   fieldset { border: 0; border-top: 1px solid var(--line); padding: 10px 0 4px; margin: 10px 0 0; }
@@ -858,6 +1127,35 @@
   .state { position: absolute; inset: 0; display: grid; place-items: center; background: var(--paper); color: var(--muted); z-index: 5; }
   .state.err { color: var(--fire); }
   .toggle { display: none; }
+  .col { flex-direction: column; align-items: stretch !important; gap: 3px !important; }
+  .lyr { margin-top: 8px; font-weight: 600; }
+  .sub2 { margin-left: 22px; display: flex; flex-direction: column; gap: 3px; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row input[type=range] { flex: 1; }
+  .row select { background: var(--paper-2); border: 1px solid var(--line); font-size: .78rem; }
+  .play { background: var(--paper-2); border: 1px solid var(--line); color: var(--ink); padding: 1px 8px; font-size: .78rem; margin-top: 6px; }
+  .row .play { margin-top: 0; }
+  .play[aria-pressed='true'] { border-color: var(--forest); color: var(--forest); }
+  .spark { width: 100%; height: auto; background: var(--paper); border: 1px solid var(--line); }
+  .spark path { fill: none; stroke: #5ab4ac; stroke-width: 1.5; }
+  .spark rect { fill: #5ab4ac; } .spark rect.hl { fill: var(--forest); }
+  .spark .g { stroke: var(--line); stroke-dasharray: 2 2; }
+  .sparkx { display: flex; justify-content: space-between; font: .66rem var(--mono); color: var(--muted); }
+  .inset { position: absolute; right: 10px; top: 118px; z-index: 2; margin: 0; background: #0b1013; border: 1px solid var(--line); padding: 4px; }
+  .inset img, .inset svg { display: block; width: 154px; height: 100px; }
+  .inset svg { position: absolute; left: 4px; top: 4px; }
+  .inset .box { fill: none; stroke: #e4e8ea; stroke-width: 1; stroke-dasharray: 2 2; }
+  .inset .view { fill: rgba(224, 123, 44, .15); stroke: var(--forest); stroke-width: 1.5; }
+  .inset figcaption { font: .62rem var(--mono); color: var(--muted); margin-top: 2px; }
+  .facets { background: var(--card); border-top: 1px solid var(--line); padding: 8px 14px 10px; }
+  .facets header { display: flex; align-items: center; }
+  .facets h2 { flex: 1; margin: 0; border: 0; padding: 0; font-size: .8rem; }
+  .facets .x { background: var(--paper-2); border: 1px solid var(--line); color: var(--ink-2); }
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; margin-top: 6px; }
+  .fcell { background: var(--paper); border: 1px solid var(--line); padding: 3px; display: grid; grid-template-columns: 1fr auto; gap: 0 4px; text-align: left; color: var(--ink); }
+  .fcell canvas { grid-column: 1 / -1; width: 100%; height: auto; image-rendering: pixelated; }
+  .fcell span { font: 600 .78rem var(--mono); } .fcell small { font: .66rem var(--mono); color: var(--muted); align-self: center; }
+  .fcell.on { border-color: var(--forest); box-shadow: inset 0 -2px 0 var(--forest); }
   :global(.region-label) {
     font: 700 13px/1 var(--sans); color: #5fb7c2; text-shadow: 0 0 3px #000, 0 0 3px #000;
     pointer-events: none; letter-spacing: .02em;
@@ -870,6 +1168,7 @@
     .toggle { display: block; position: absolute; z-index: 7; top: 8px; right: 8px; background: var(--card);
               border: 1px solid var(--line); padding: .4em .8em; font-weight: 600; }
     .toolbar { top: 52px; }
+    .inset { display: none; }
     .subbar { top: 132px; max-width: calc(100% - 20px); }
   }
 </style>

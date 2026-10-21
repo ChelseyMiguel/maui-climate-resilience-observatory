@@ -183,6 +183,16 @@ CONTEXT_KEYS = ("fire_stations", "ems_stations", "hospitals", "public_schools", 
 RASTERS = {
     "dndvi": browning.DATA_DIR / "dndvi_2019_2022.tif",
     "dnbr": browning.DATA_DIR / "dnbr_2019_2022.tif",
+    # Remote-sensing products from scripts/remote_sensing/ (public AWS archives).
+    "s2_aoi_annual": browning.DATA_DIR / "s2_aoi_annual.tif",
+    "s2_regional_change": browning.DATA_DIR / "s2_regional_change.tif",
+    "lidar_aoi": browning.DATA_DIR / "lidar_aoi.tif",
+    "worldcover_2021": DATA / "context" / "worldcover_2021.tif",
+}
+MANIFESTS = {
+    "sentinel2": browning.DATA_DIR / "s2_manifest.json",
+    "lidar": browning.DATA_DIR / "lidar_manifest.json",
+    "worldcover": browning.DATA_DIR / "worldcover_browning.json",
 }
 
 
@@ -227,12 +237,39 @@ def drought_map(year: int) -> FileResponse:
 
 @router.get("/raster/{name}")
 def raster(name: str) -> FileResponse:
-    """The project's own change rasters (GeoTIFF, EPSG:32604, 10 m): dNDVI or dNBR,
-    dry season 2022 minus dry season 2019."""
+    """GeoTIFF rasters: the project's own change rasters (dndvi, dnbr: EPSG:32604,
+    10 m, dry season 2022 minus 2019) and the remote-sensing products built by
+    scripts/remote_sensing/ (annual Sentinel-2 composites, regional change,
+    lidar terrain/canopy, WorldCover land cover)."""
     path = RASTERS.get(name)
     if path is None:
         raise HTTPException(status_code=404, detail=f"Unknown raster '{name}'")
-    return FileResponse(_require(path, "the browning analysis"), media_type="image/tiff")
+    return FileResponse(_require(path, "scripts/remote_sensing/ or the browning analysis"), media_type="image/tiff")
+
+
+@router.get("/remote-sensing")
+def remote_sensing() -> dict:
+    """Provenance and validation for the remote-sensing products: scenes used,
+    lidar acquisition dates and density, land-cover breakdown of browning.
+    A missing product is reported as null, not an error."""
+    out = {k: json.loads(p.read_text()) if p.exists() else None for k, p in MANIFESTS.items()}
+    out["rasters"] = {k: p.exists() for k, p in RASTERS.items()}
+    return out
+
+
+@router.get("/inset.png")
+def inset() -> FileResponse:
+    """Maui shaded relief for the Map Explorer's locator inset (Copernicus DEM GLO-90)."""
+    return FileResponse(_require(DATA / "context" / "maui_inset.png", "scripts/remote_sensing/maui_inset.py"),
+                        media_type="image/png")
+
+
+@router.get("/lidar-points")
+def lidar_points() -> FileResponse:
+    """Thinned lidar points over the study area (see scripts/remote_sensing/lidar_canopy.py
+    for the binary layout)."""
+    return FileResponse(_require(browning.DATA_DIR / "lidar_points.bin", "scripts/remote_sensing/lidar_canopy.py"),
+                        media_type="application/octet-stream")
 
 
 @router.get("/observations")
@@ -271,26 +308,46 @@ def region_insights(key: str) -> dict:
 # ---------------------------------------------------------------------------
 
 IMAGERY_DIR = DATA / "imagery"
+# key -> (label, period). Each is either a JPEG + JSON sidecar from
+# scripts/remote_sensing/sentinel2_composites.py, or a GeoTIFF exported by
+# scripts/gee/imagery_before_after.js; both cover the terrain box in EPSG:4326.
 IMAGERY = {
+    "s2_dry_2019": ("Dry season 2019", "Sentinel-2 true colour, May – Sep 2019 median"),
+    "s2_dry_2022": ("Dry season 2022", "Sentinel-2 true colour, May – Sep 2022 median"),
+    "s2_dry_2019_cir": ("Dry season 2019 · colour infrared", "Sentinel-2 NIR-red-green, May – Sep 2019"),
+    "s2_dry_2022_cir": ("Dry season 2022 · colour infrared", "Sentinel-2 NIR-red-green, May – Sep 2022"),
     "before_2023": ("Before the fires", "Sentinel-2 true colour, 1 May – 7 Aug 2023"),
     "after_2023": ("After the fires", "Sentinel-2 true colour, 15 Aug – 31 Oct 2023"),
 }
+_IMAGE_TYPES = {".jpg": "image/jpeg", ".tif": "image/tiff"}
+
+
+def _image_file(key: str) -> Path | None:
+    for suffix in _IMAGE_TYPES:
+        if (path := IMAGERY_DIR / f"{key}{suffix}").exists():
+            return path
+    return None
 
 
 @router.get("/imagery")
 def imagery_index() -> dict:
-    """Which before/after images exist. They are produced by running the Earth
-    Engine script, so the app reports what's missing rather than failing."""
-    available = [
-        {"id": k, "label": label, "period": period}
-        for k, (label, period) in IMAGERY.items()
-        if (IMAGERY_DIR / f"{k}.tif").exists()
-    ]
+    """Which images exist, in which format, with their provenance. Missing ones
+    are listed with how to make them, rather than failing."""
+    available = []
+    for k, (label, period) in IMAGERY.items():
+        path = _image_file(k)
+        if path is None:
+            continue
+        sidecar = path.with_suffix(".json")
+        meta = json.loads(sidecar.read_text()) if sidecar.exists() else {}
+        available.append({"id": k, "label": label, "period": period, "format": path.suffix[1:],
+                          "scenes": meta.get("scenes"), "dates": meta.get("dates"), "source": meta.get("source"),
+                          "bands": meta.get("bands")})
     return {
         "available": available,
-        "missing": [k for k in IMAGERY if not (IMAGERY_DIR / f"{k}.tif").exists()],
-        "how": "Run scripts/gee/imagery_before_after.js in the Earth Engine Code Editor, "
-               "then save the exports as data/imagery/before_2023.tif and after_2023.tif.",
+        "missing": [k for k in IMAGERY if _image_file(k) is None],
+        "how": "Run scripts/remote_sensing/sentinel2_composites.py (public AWS Sentinel-2 archive), or "
+               "scripts/gee/imagery_before_after.js in the Earth Engine Code Editor for the 2023 pair.",
     }
 
 
@@ -298,5 +355,7 @@ def imagery_index() -> dict:
 def imagery_file(key: str) -> FileResponse:
     if key not in IMAGERY:
         raise HTTPException(status_code=404, detail=f"Unknown imagery '{key}'")
-    return FileResponse(_require(IMAGERY_DIR / f"{key}.tif", "scripts/gee/imagery_before_after.js"),
-                        media_type="image/tiff")
+    path = _image_file(key)
+    if path is None:
+        raise HTTPException(status_code=503, detail=f"{key} missing — run scripts/remote_sensing/sentinel2_composites.py")
+    return FileResponse(path, media_type=_IMAGE_TYPES[path.suffix])

@@ -140,8 +140,27 @@ def test_imagery_reports_what_is_missing_instead_of_failing():
     info = api.get("/api/layers/imagery").json()
     # Every known image is accounted for exactly once: either available or missing.
     available = {a["id"] for a in info["available"]}
-    assert available | set(info["missing"]) == {"before_2023", "after_2023"}
+    assert available | set(info["missing"]) == {
+        "s2_dry_2019", "s2_dry_2022", "s2_dry_2019_cir", "s2_dry_2022_cir", "before_2023", "after_2023"}
     assert not available & set(info["missing"])
-    assert "imagery_before_after.js" in info["how"]
-    if "before_2023" in info["missing"]:
-        assert api.get("/api/layers/imagery/before_2023").status_code == 503
+    assert "sentinel2_composites.py" in info["how"]
+    for key in info["missing"]:
+        assert api.get(f"/api/layers/imagery/{key}").status_code == 503
+    for a in info["available"]:
+        r = api.get(f"/api/layers/imagery/{a['id']}")
+        assert r.status_code == 200 and r.headers["content-type"] == {"jpg": "image/jpeg", "tif": "image/tiff"}[a["format"]]
+    assert api.get("/api/layers/imagery/nope").status_code == 404
+
+
+def test_remote_sensing_products_report_provenance():
+    info = api.get("/api/layers/remote-sensing").json()
+    assert set(info["rasters"]) >= {"dndvi", "s2_aoi_annual", "lidar_aoi", "worldcover_2021"}
+    if info["sentinel2"]:
+        assert info["sentinel2"]["max_tile_cloud"] == 60
+        v = info["sentinel2"]["validation_vs_study_dndvi"]
+        assert v["pixels"] > 60000 and v["share_below_-0.10_study"] == 0.4274
+    if info["lidar"]:
+        assert info["lidar"]["acquired_utc"][0].startswith("202")
+    if info["worldcover"]:
+        rows = info["worldcover"]["study_area"]
+        assert abs(sum(r["share_of_study_area"] for r in rows) - 1) < 0.01

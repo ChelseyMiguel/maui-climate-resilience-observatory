@@ -1,0 +1,21 @@
+{
+ "label": "Dry season 2022 (May\u2013Sep)",
+ "source": "Sentinel-2 L2A (AWS sentinel-cogs), tile 4QGJ, 20 m median of cloud-masked scenes",
+ "scenes": 27,
+ "dates": [
+  "2022-05-10",
+  "2022-09-27"
+ ],
+ "bands": "B4-B3-B2 (true colour)",
+ "bbox": [
+  -156.45,
+  20.7,
+  -156.24,
+  20.88
+ ],
+ "crs": "EPSG:4326",
+ "size": [
+  2048,
+  1877
+ ]
+}

@@ -22,7 +22,8 @@ export interface DatasetMetadata {
   /** What kind of data it is: an observation is not a model, a reanalysis or an index. */
   kind?: 'Satellite-derived index' | 'In-situ observation' | 'Mapped observation' | 'Expert synthesis' | 'Satellite estimate'
     | 'Satellite + gauge estimate' | 'Climate model (interpolated)' | 'Reanalysis' | 'Modelled classification' | 'Elevation model'
-    | 'Reference / administrative' | 'Basemap imagery' | 'Basemap cartography';
+    | 'Reference / administrative' | 'Basemap imagery' | 'Basemap cartography' | 'Satellite imagery (reflectance)'
+    | 'Lidar point cloud' | 'Land-cover classification';
   /** False for links added after the last check that every link resolves. */
   linkChecked?: boolean;
 }

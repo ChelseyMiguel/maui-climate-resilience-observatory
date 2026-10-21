@@ -314,3 +314,39 @@ anomalies against each month's normal."
 - DSCI vs. NDVI anomaly: r = −0.47 (above). Signal also in NBR.
 - **48% of the LCMS vegetation-loss area** was also browned (partial overlap).
 - The paper states the results **do not show that the browned areas burned**.
+
+
+## Remote-sensing additions (Oct 2026, scripts/remote_sensing/)
+
+All fetched from public AWS Open Data archives; manifests in `data/research/*_manifest.json`.
+
+**Independent rebuild of the study dNDVI.** Sentinel-2 L2A (AWS `sentinel-cogs`, tile 4QGJ), same
+SCL masking and May–Sep medians, on the study raster's exact 10 m grid, 2022 minus 2019:
+
+- Pearson r = 0.8541 over 70,280 pixels; mean difference -0.0008; RMSE 0.0702
+- 76.8% of pixels in the same class at −0.10
+- Share below −0.10: 40.3% (rebuild) vs 42.7% (study)
+
+Safe claim: *"Rebuilding the change from the raw Sentinel-2 archive gives nearly the same map (r = 0.85)."*
+The study raster itself is unchanged and is still the one every study number comes from.
+Pitfall found and fixed: this archive already removes ESA's +1000 DN offset (baseline ≥ 04.00);
+applying it again made the first rebuild disagree (r = 0.10).
+
+**Browning by land cover** (ESA WorldCover 2021, 10 m; study dNDVI < −0.10):
+
+| Class | Share of study area | Share browned | Median dNDVI |
+|---|---|---|---|
+| Grassland | 61.9% | 48% | -0.0955 |
+| Built-up | 30.9% | 27% | -0.0538 |
+| Tree cover | 7.0% | 66% | -0.1551 |
+| Bare / sparse vegetation | 0.1% | 43% | -0.0466 |
+| Shrubland | 0.0% | 100% | -0.1673 |
+
+Safe claim: *"Tree cover browned most often (about two-thirds of its pixels), grassland about half."*
+Not: that trees are a fire risk — WorldCover is a 2021 model classification and dNDVI is greenness.
+
+**Lidar** (2022–2023 NOAA/USGS QL1, `usgs-lidar-public/HI_NOAAMauiOahu_2`): 44,776,687 points over
+the study box (4.99 pts/m² used), flown 2023-02-19 – 2023-03-30.
+Height above ground: median 0.73 m, 95th percentile 9.54 m;
+includes buildings (not classed separately). Lidar ground is ~5 m higher than the AWS terrain tiles at a
+test point in Pukalani (vertical datum difference) — elevations are always labelled with their source.

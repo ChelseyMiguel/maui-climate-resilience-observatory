@@ -1,0 +1,105 @@
+{
+ "source": "ESA WorldCover 10 m 2021 v200, tile N18W159 (AWS esa-worldcover), CC BY 4.0",
+ "study_area": [
+  {
+   "code": 30,
+   "name": "Grassland",
+   "colour": "#ffff4c",
+   "pixels": 43509,
+   "share_of_study_area": 0.6191,
+   "share_browned_dndvi_lt_-0.10": 0.4775,
+   "median_dndvi": -0.0955
+  },
+  {
+   "code": 50,
+   "name": "Built-up",
+   "colour": "#fa0000",
+   "pixels": 21737,
+   "share_of_study_area": 0.3093,
+   "share_browned_dndvi_lt_-0.10": 0.2736,
+   "median_dndvi": -0.0538
+  },
+  {
+   "code": 10,
+   "name": "Tree cover",
+   "colour": "#006400",
+   "pixels": 4943,
+   "share_of_study_area": 0.0703,
+   "share_browned_dndvi_lt_-0.10": 0.6609,
+   "median_dndvi": -0.1551
+  },
+  {
+   "code": 60,
+   "name": "Bare / sparse vegetation",
+   "colour": "#b4b4b4",
+   "pixels": 79,
+   "share_of_study_area": 0.0011,
+   "share_browned_dndvi_lt_-0.10": 0.4304,
+   "median_dndvi": -0.0466
+  },
+  {
+   "code": 20,
+   "name": "Shrubland",
+   "colour": "#ffbb22",
+   "pixels": 12,
+   "share_of_study_area": 0.0002,
+   "share_browned_dndvi_lt_-0.10": 1.0,
+   "median_dndvi": -0.1673
+  }
+ ],
+ "terrain_box_pixels": {
+  "Tree cover": 1034486,
+  "Shrubland": 70646,
+  "Grassland": 3890012,
+  "Cropland": 8336,
+  "Built-up": 138270,
+  "Bare / sparse vegetation": 284909,
+  "Permanent water": 16541
+ },
+ "classes": {
+  "10": {
+   "name": "Tree cover",
+   "colour": "#006400"
+  },
+  "20": {
+   "name": "Shrubland",
+   "colour": "#ffbb22"
+  },
+  "30": {
+   "name": "Grassland",
+   "colour": "#ffff4c"
+  },
+  "40": {
+   "name": "Cropland",
+   "colour": "#f096ff"
+  },
+  "50": {
+   "name": "Built-up",
+   "colour": "#fa0000"
+  },
+  "60": {
+   "name": "Bare / sparse vegetation",
+   "colour": "#b4b4b4"
+  },
+  "70": {
+   "name": "Snow and ice",
+   "colour": "#f0f0f0"
+  },
+  "80": {
+   "name": "Permanent water",
+   "colour": "#0064c8"
+  },
+  "90": {
+   "name": "Herbaceous wetland",
+   "colour": "#0096a0"
+  },
+  "95": {
+   "name": "Mangroves",
+   "colour": "#00cf75"
+  },
+  "100": {
+   "name": "Moss and lichen",
+   "colour": "#fae6a0"
+  }
+ }
+}

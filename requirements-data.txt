@@ -1,0 +1,7 @@
+# Only for the remote-sensing pipeline scripts in scripts/remote_sensing/
+# (the web app itself does not need these). Install into the same venv:
+#   .venv/bin/pip install -r requirements-data.txt
+rasterio==1.5.2
+laspy[lazrs]==2.7.0
+pyproj==3.8.0
+pillow==13.0.0

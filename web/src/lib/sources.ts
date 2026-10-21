@@ -123,4 +123,36 @@ export const DATASETS: DatasetMetadata[] = [
     provenance: 'verified-public', spatialResolution: 'Vector-rendered tiles', coverage: 'Global', temporal: 'Current', currency: 'As served',
     license: '© OpenStreetMap contributors (ODbL), © CARTO — see provider terms', link: 'https://carto.com/attributions', linkChecked: false,
   },
+  // Added Oct 21, 2026 with scripts/remote_sensing/ (fetched from the public AWS
+  // archives; links not re-checked from the build environment).
+  {
+    id: 's2-aws', kind: 'Satellite imagery (reflectance)', name: 'Sentinel-2 Level-2A surface reflectance (COGs)',
+    provider: 'ESA Copernicus; archive by Element 84 on AWS Open Data (sentinel-cogs)',
+    provenance: 'verified-public', spatialResolution: '10 m (B2-B4, B8), 20 m (B12, SCL)', coverage: 'Tile 4QGJ (Upcountry Maui)',
+    temporal: 'Dry seasons (May–Sep) 2017–2025; 2023 before/after the fires', currency: 'Archive as of Oct 2026',
+    license: 'Copernicus Sentinel data, free and open (see provider terms)', link: 'https://registry.opendata.aws/sentinel-2-l2a-cogs/', linkChecked: false,
+    caveat: 'Cloud-masked (SCL 1, 3, 8, 9, 10) median composites, tile cloud < 60 %. Rebuilt 2022 − 2019 dNDVI matches the study raster: r = 0.854, 77 % same class at −0.10. Some residual cloud upslope; a few pixels never clear.',
+  },
+  {
+    id: 'lidar-3dep', kind: 'Lidar point cloud', name: '2022–2023 NOAA/USGS lidar, Maui (QL1)',
+    provider: 'USGS 3D Elevation Program / NOAA; Entwine point tiles on AWS (usgs-lidar-public, HI_NOAAMauiOahu_2)',
+    provenance: 'verified-public', spatialResolution: '~5 points/m² used (of ~8 nominal); 2 m grids', coverage: 'The 3 km study box',
+    temporal: 'Flown 19 Feb – 30 Mar 2023 (from point GPS times)', currency: 'As published', license: 'Public domain (3DEP)',
+    link: 'https://www.fisheries.noaa.gov/inport/item/75941', linkChecked: false,
+    caveat: 'Height above ground includes buildings (not classified separately here). Ground is ~5 m above the AWS terrain tiles at a test point — a vertical-datum difference; each elevation is labelled with its source.',
+  },
+  {
+    id: 'worldcover', kind: 'Land-cover classification', name: 'ESA WorldCover 2021 v200',
+    provider: 'European Space Agency (WorldCover consortium); AWS Open Data (esa-worldcover)',
+    provenance: 'verified-public', spatialResolution: '10 m', coverage: 'Terrain box (tile N18W159)', temporal: '2021',
+    currency: 'v200', license: 'CC BY 4.0', link: 'https://esa-worldcover.org/', linkChecked: false,
+    caveat: 'A modelled classification from Sentinel-1/2, not a field survey; resampled to the study grid by nearest neighbour.',
+  },
+  {
+    id: 'copdem', kind: 'Elevation model', name: 'Copernicus DEM GLO-90 (locator inset)',
+    provider: 'ESA / Airbus (Copernicus); AWS Open Data (copernicus-dem-90m)', provenance: 'verified-public',
+    spatialResolution: '90 m', coverage: 'Maui', temporal: '2011–2015 acquisitions', currency: 'As published',
+    license: 'Copernicus DEM licence (free, attribution) — see provider terms', link: 'https://registry.opendata.aws/copernicus-dem/', linkChecked: false,
+    caveat: 'Only used to draw the island in the locator inset.',
+  },
 ];

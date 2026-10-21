@@ -17,6 +17,7 @@
   import { countBelow, classify, RESEARCH_THRESHOLD } from '../lib/threshold.js';
   import { binStats, blockShare, climatologyZ, lagPairs, monthlyAnomaly, pearson, rollingSum } from '../lib/analysis.js';
   import { analysis } from '../lib/state.js';
+  import { loadBands, remoteManifest } from '../lib/remote.ts';
 
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const RAIN = { chirps: 'CHIRPS', terraclimate: 'TerraClimate', imerg: 'IMERG V07', era5land: 'ERA5-Land' };
@@ -26,6 +27,8 @@
   let Plotly = null, loading = 'Loading data…', error = null;
   let ndviMap = new Map(), nbrMap = new Map(), dsciMap = new Map(), rainRows = [], rainError = null;
   let rasters = {}, elev = null, elevSource = '', elevError = null, pixels = null;
+  // Remote-sensing products (scripts/remote_sensing/): annual Sentinel-2 composites, lidar, WorldCover.
+  let annual = null, lidar = null, manifest = {}, rsError = null, cubeStride = 6;
 
   // Shared state
   const s0 = get(analysis);
@@ -53,6 +56,9 @@
     // Exploratory datasets load after the study data, and may fail on their own.
     api.rainfall().then((r) => (rainRows = r.monthly)).catch((e) => (rainError = e.message));
     loadElevation();
+    Promise.all([loadBands('s2_aoi_annual'), loadBands('lidar_aoi'), remoteManifest()])
+      .then(([a, l, m]) => { annual = a; lidar = l; manifest = m ?? {}; })
+      .catch((e) => (rsError = e.message));
   });
 
   /** Pixel centres (lon/lat) of every valid pixel, then their elevation. */
@@ -280,6 +286,97 @@
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
+  // ---------- remote sensing ----------
+  $: aYears = annual ? Object.keys(manifest?.sentinel2?.products ?? {}).filter((k) => k.startsWith('aoi_')).map((k) => +k.slice(4)).sort() : [];
+  $: nY = aYears.length;
+  // Independent check: this pipeline's 2022 - 2019 dNDVI vs the study raster, pixel by pixel.
+  $: check = annual && rasters.dndvi && nY ? (() => {
+    const a19 = annual.bands[aYears.indexOf(2019)], a22 = annual.bands[aYears.indexOf(2022)], st = rasters.dndvi.values;
+    const x = [], y = [];
+    for (let i = 0; i < st.length; i++) { const m = a22[i] - a19[i]; if (Number.isFinite(m) && !Number.isNaN(st[i])) { x.push(st[i]); y.push(m); } }
+    return { x, y, fit: pearson(x, y) };
+  })() : null;
+  $: checkFig = check ? {
+    data: [{ type: 'histogram2d', x: check.x, y: check.y, xbins: { start: -0.6, end: 0.4, size: 0.01 }, ybins: { start: -0.6, end: 0.4, size: 0.01 },
+      colorscale: [[0, '#151a1e'], [0.0001, '#1f2a33'], [0.3, '#3e6b78'], [0.7, '#8fc1c4'], [1, '#f4f7f7']],
+      colorbar: { title: { text: 'Pixels', side: 'right' }, thickness: 10, outlinewidth: 0 }, hovertemplate: 'study %{x}<br>pipeline %{y}<br>%{z} px<extra></extra>' },
+      { type: 'scatter', mode: 'lines', x: [-0.6, 0.4], y: [-0.6, 0.4], line: { color: '#e4e8ea', dash: 'dot', width: 1 }, hoverinfo: 'skip', name: '1:1' }],
+    layout: { showlegend: false, xaxis: { title: { text: 'Study dNDVI (Earth Engine export)' }, range: [-0.6, 0.4] },
+      yaxis: { title: { text: 'This pipeline dNDVI (AWS Sentinel-2)' }, range: [-0.6, 0.4], scaleanchor: 'x' },
+      shapes: [{ type: 'line', x0: -0.1, x1: -0.1, y0: -0.6, y1: 0.4, line: { color: '#e07b2c', dash: 'dash', width: 1 } },
+               { type: 'line', y0: -0.1, y1: -0.1, x0: -0.6, x1: 0.4, line: { color: '#e07b2c', dash: 'dash', width: 1 } }],
+      annotations: [{ xref: 'paper', yref: 'paper', x: 0.02, y: 0.98, xanchor: 'left', showarrow: false, align: 'left',
+        text: `r = ${check.fit.r?.toFixed(3)} · n = ${check.fit.n.toLocaleString()}`, font: { family: 'ui-monospace, monospace', size: 12, color: '#e4e8ea' },
+        bgcolor: '#0f1215', bordercolor: '#4a555c', borderpad: 4 }] },
+  } : null;
+
+  // Space-time: every year's pixel distribution, and a cube of (easting, northing, year).
+  $: yearDist = annual && nY ? {
+    data: aYears.map((y, k) => ({ type: 'violin', name: String(y), y: Array.from(annual.bands[k]).filter(Number.isFinite), points: false,
+      box: { visible: true, width: 0.15 }, meanline: { visible: false }, line: { color: y === 2022 ? '#e07b2c' : y === 2019 ? '#5ab4ac' : '#8a959c', width: 1 },
+      fillcolor: 'rgba(0,0,0,0)', spanmode: 'hard', hoverinfo: 'y' })),
+    layout: { showlegend: false, yaxis: { title: { text: 'Dry-season NDVI per 10 m pixel' }, range: [-0.05, 0.9] }, xaxis: { title: { text: 'Year (May–Sep median)' } } },
+  } : null;
+  $: cube = annual && nY ? (() => {
+    const W = annual.width, H = annual.height, [w, , , n] = annual.bounds;
+    const x = [], y = [], z = [], c = [];
+    for (let k = 0; k < nY; k++) for (let row = 0; row < H; row += cubeStride) for (let col = 0; col < W; col += cubeStride) {
+      const v = annual.bands[k][row * W + col];
+      if (!Number.isFinite(v)) continue;
+      x.push((w + (col + 0.5) * 10) / 1000); y.push((n - (row + 0.5) * 10) / 1000); z.push(aYears[k]); c.push(v);
+    }
+    return { x, y, z, c };
+  })() : null;
+  $: cubeFig = cube ? {
+    data: [{ type: 'scatter3d', mode: 'markers', x: cube.x, y: cube.y, z: cube.z,
+      marker: { size: 2.2, symbol: 'square', color: cube.c, colorscale: [[0, '#8c510a'], [0.25, '#d8b365'], [0.44, '#f6e8c3'], [0.62, '#80cdc1'], [0.81, '#35978f'], [1, '#01665e']], cmin: 0, cmax: 0.8,
+        colorbar: { title: { text: 'NDVI', side: 'right' }, thickness: 10, outlinewidth: 0 } },
+      hovertemplate: 'E %{x:.2f} · N %{y:.2f} km<br>%{z}: NDVI %{marker.color:.3f}<extra></extra>' }],
+    layout: { margin: { l: 0, r: 0, t: 0, b: 0 }, scene: { xaxis: { title: { text: 'Easting (km, UTM 4N)' } }, yaxis: { title: { text: 'Northing (km)' } },
+      zaxis: { title: { text: 'Dry season (year)' }, dtick: 1 }, aspectmode: 'manual', aspectratio: { x: 1, y: 1, z: 1.3 }, camera: { eye: { x: 1.5, y: -1.5, z: 0.7 } } } },
+  } : null;
+
+  // Land cover and canopy height vs the study's browning.
+  $: lcRows = manifest?.worldcover?.study_area ?? [];
+  $: lcFig = lcRows.length ? {
+    data: [{ type: 'bar', orientation: 'h', y: lcRows.map((r) => r.name), x: lcRows.map((r) => r['share_browned_dndvi_lt_-0.10'] * 100),
+      marker: { color: lcRows.map((r) => r.colour), line: { color: '#000', width: 1 } }, customdata: lcRows.map((r) => [r.pixels, (r.share_of_study_area * 100).toFixed(1), r.median_dndvi]),
+      text: lcRows.map((r) => `${(r['share_browned_dndvi_lt_-0.10'] * 100).toFixed(0)}% · ${(r.share_of_study_area * 100).toFixed(1)}% of area`), textposition: 'outside',
+      hovertemplate: '%{y}<br>%{x:.1f}% browned (dNDVI < −0.10)<br>%{customdata[0]} px = %{customdata[1]}% of the study area<br>median dNDVI %{customdata[2]}<extra></extra>' }],
+    layout: { xaxis: { title: { text: '% of the class’s pixels with study dNDVI < −0.10' }, range: [0, 110] }, yaxis: { autorange: 'reversed' }, margin: { l: 150 } },
+  } : null;
+  const CHM_BINS = [[0, 0.5, '< 0.5 m'], [0.5, 2, '0.5–2 m'], [2, 5, '2–5 m'], [5, 10, '5–10 m'], [10, 99, '> 10 m']];
+  $: chmStats = lidar && rasters[index] ? (() => {
+    // Mean canopy height of the 5 x 5 lidar cells (2 m) inside each 10 m study pixel: the grids share an origin.
+    const L = lidar.width, v = rasters[index].values, W = rasters[index].meta.width, H = rasters[index].meta.height;
+    const bins = CHM_BINS.map(([lo, hi, name]) => ({ lo, hi, name, vals: [] }));
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+      const val = v[r * W + c];
+      if (Number.isNaN(val)) continue;
+      let sum = 0, cnt = 0;
+      for (let dr = 0; dr < 5; dr++) for (let dc = 0; dc < 5; dc++) {
+        const h = lidar.bands[1][(r * 5 + dr) * L + c * 5 + dc];
+        if (Number.isFinite(h)) { sum += h / 100; cnt++; }
+      }
+      if (cnt < 13) continue;                   // need most of the 10 m pixel measured
+      const h = sum / cnt;
+      bins.find((b) => h >= b.lo && h < b.hi)?.vals.push(val);
+    }
+    return bins.map((b) => ({ name: b.name, n: b.vals.length, browned: b.vals.length ? countBelow(Float32Array.from(b.vals), threshold).share : null,
+      vals: b.vals }));
+  })() : [];
+  $: chmFig = chmStats.length ? {
+    data: [{ type: 'box', x: chmStats.flatMap((b) => b.vals.map(() => b.name)), y: chmStats.flatMap((b) => b.vals), boxpoints: false,
+      line: { color: '#5ec962', width: 1.2 }, fillcolor: 'rgba(0,0,0,0)', name: label, hoverinfo: 'y' },
+      { type: 'scatter', mode: 'markers+text', x: chmStats.map((b) => b.name), y: chmStats.map((b) => (b.browned === null ? null : b.browned * 100)), yaxis: 'y2',
+        marker: { symbol: 'square', size: 10, color: '#e07b2c' }, text: chmStats.map((b) => (b.browned === null ? '' : `${(b.browned * 100).toFixed(0)}%`)),
+        textposition: 'middle right', textfont: { color: '#e07b2c' }, name: `% below ${threshold.toFixed(2)}`, customdata: chmStats.map((b) => b.n),
+        hovertemplate: '%{x}: %{y:.1f}% browned (n=%{customdata})<extra></extra>' }],
+    layout: { xaxis: { title: { text: 'Lidar height above ground, mean over the 10 m pixel (Feb–Mar 2023)' }, categoryorder: 'array', categoryarray: CHM_BINS.map((b) => b[2]) },
+      yaxis: { title: { text: `${label} 2019 → 2022` }, range: [-0.6, 0.4] },
+      yaxis2: { title: { text: `% below ${threshold.toFixed(2)}` }, overlaying: 'y', side: 'right', range: [0, 100], showgrid: false }, margin: { r: 70 }, legend: { y: -0.3 } },
+  } : null;
+
   $: studyShare = rasters[index] ? countBelow(rasters[index].values, threshold) : null;
 </script>
 
@@ -386,12 +483,37 @@
         </PlotPanel>
       {/if}
 
-      <section class="plot-wait wide">
-        <h3>Not shown: a pixel-by-month space-time cube</h3>
-        <p class="muted small">This repository has the 2019 → 2022 change rasters and the study-area <em>mean</em> NDVI per month, not a 10 m NDVI raster for every month.
-          A space-time view of how individual pixels changed would need those monthly rasters exported from Earth Engine (the same Sentinel-2 cloud masking, one image per month).
-          Until then, the anomaly heatmap above is the time view and the maps are the space view — nothing here is interpolated between them.</p>
-      </section>
+      {#if rsError}<p class="err small wide">Remote-sensing products couldn’t load: {rsError}</p>{/if}
+      {#if checkFig}
+        <PlotPanel {Plotly} id="independent_check" title="Independent check of the study raster" tag="mixed" height={380}
+          meta="Each 10 m pixel: the study’s dNDVI (Earth Engine) vs the same quantity rebuilt from the public AWS Sentinel-2 L2A archive with the same masking and May–Sep medians (scripts/remote_sensing/). Dashed: −0.10."
+          data={checkFig.data} layout={checkFig.layout}
+          rows={manifest?.sentinel2?.validation_vs_study_dndvi ? [manifest.sentinel2.validation_vs_study_dndvi] : []}
+          note={manifest?.sentinel2?.validation_vs_study_dndvi ? `Mean difference ${manifest.sentinel2.validation_vs_study_dndvi.mean_difference}, RMSE ${manifest.sentinel2.validation_vs_study_dndvi.rmse}; ${(manifest.sentinel2.validation_vs_study_dndvi['class_agreement_at_-0.10'] * 100).toFixed(0)}% of pixels in the same class at −0.10 (${(manifest.sentinel2.validation_vs_study_dndvi['share_below_-0.10_this_pipeline'] * 100).toFixed(1)}% vs ${(manifest.sentinel2.validation_vs_study_dndvi['share_below_-0.10_study'] * 100).toFixed(1)}% below). Differences come from scene selection and compositing, not from changing the study.` : ''} />
+      {/if}
+      {#if lcFig}
+        <PlotPanel {Plotly} id="landcover_browning" title="Browning by land cover" tag="mixed" height={380}
+          meta="ESA WorldCover 2021 (10 m, Sentinel-1/2, CC BY 4.0) resampled to the study grid (nearest); bars: share of each class’s pixels with study dNDVI < −0.10."
+          data={lcFig.data} layout={lcFig.layout} rows={lcRows.map(({ colour, ...r }) => r)} />
+      {/if}
+      {#if yearDist}
+        <PlotPanel {Plotly} id="ndvi_by_year_pixels" title="Nine dry seasons, pixel by pixel" tag="mixed" height={340}
+          meta="Distribution of every valid 10 m pixel’s May–Sep median NDVI in the study area, {aYears[0]}–{aYears[nY - 1]} (Sentinel-2 L2A, AWS). 2019 teal, 2022 orange. {aYears[0]} has fewer scenes (Sentinel-2B only from mid-2017)."
+          data={yearDist.data} layout={yearDist.layout}
+          rows={aYears.map((y, k) => ({ year: y, scenes: manifest?.sentinel2?.products?.[`aoi_${y}`]?.scenes?.length, median_clear_obs: manifest?.sentinel2?.products?.[`aoi_${y}`]?.median_clear_obs }))} />
+      {/if}
+      {#if chmFig}
+        <PlotPanel {Plotly} id="canopy_vs_browning" title="Browning by lidar height above ground" tag="mixed" height={340}
+          meta="USGS 3DEP lidar (Feb–Mar 2023, ~5 pts/m² used): mean height of the highest returns above ground in each 10 m pixel (vegetation and buildings — the survey doesn’t separate them); boxes: {label}; squares: share below {threshold.toFixed(2)}. Canopy is measured after the change it is compared with."
+          data={chmFig.data} layout={chmFig.layout} rows={chmStats.map(({ vals, ...b }) => ({ ...b, browned: b.browned === null ? null : +b.browned.toFixed(4) }))} />
+      {/if}
+      {#if cubeFig}
+        <PlotPanel {Plotly} id="space_time_cube" title="Space-time cube: dry-season NDVI {aYears[0]}–{aYears[nY - 1]}" tag="mixed" height={520}
+          meta="Each square is one 10 m pixel (every {cubeStride}th row and column) at its true UTM position, stacked by year. Drag to rotate; hover for values. Built from real annual composites — nothing interpolated between years."
+          data={cubeFig.data} layout={cubeFig.layout}>
+          <div class="ctl"><label>Sampling <select bind:value={cubeStride}>{#each [4, 6, 8, 12] as k}<option value={k}>every {k}th pixel</option>{/each}</select></label></div>
+        </PlotPanel>
+      {/if}
     </div>
   {/if}
 </div>
@@ -412,7 +534,7 @@
   .t { font: 600 .64rem var(--sans); letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border: 1px solid; }
   .t.study { color: var(--forest); } .t.exploratory { color: var(--teal); }
   .grid { max-width: 1400px; margin: 0 auto; padding: 0 22px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .grid :global(.plot:has([data-plot='terrain_change_3d'])), .grid :global(.plot:has([data-plot='browning_density'])), .wide { grid-column: 1 / -1; }
+  .grid :global(.plot:has([data-plot='terrain_change_3d'])), .grid :global(.plot:has([data-plot='browning_density'])), .grid :global(.plot:has([data-plot='space_time_cube'])), .wide { grid-column: 1 / -1; }
   .plot-wait { background: var(--card); border: 1px solid var(--line); padding: 10px 12px; }
   .plot-wait h3 { margin: 0 0 4px; font: 600 .82rem var(--sans); text-transform: uppercase; letter-spacing: .06em; color: var(--ink); }
   .ctl { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 6px; font-size: .78rem; }

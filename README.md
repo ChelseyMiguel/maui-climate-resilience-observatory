@@ -96,6 +96,18 @@ place or year, the app shows an empty state instead.
 
 Refresh any public layer with the matching `scripts/fetch_*.py`.
 
+### Remote-sensing products (public AWS archives, no accounts)
+
+Built by `scripts/remote_sensing/` (`.venv/bin/pip install -r requirements-data.txt` first);
+the outputs are committed, so the app needs none of this to run.
+
+| Script | Source | Products |
+|---|---|---|
+| `sentinel2_composites.py` | Sentinel-2 L2A COGs (`sentinel-cogs`, tile 4QGJ) | Dry-season NDVI/NBR 2017–2025 on the study grid; true-colour and colour-infrared images for 2019, 2022 and before/after the 2023 fires; regional 2019→2022 change; an independent check of the study raster (r = 0.854) |
+| `lidar_canopy.py` | USGS 3DEP lidar 2022–23 (`usgs-lidar-public`) | 2 m ground model, height above ground, hillshade; 300k points for the 3D view |
+| `worldcover.py` | ESA WorldCover 2021 (`esa-worldcover`) | 10 m land cover; browning share per class |
+| `maui_inset.py` | Copernicus DEM GLO-90 | Locator inset |
+
 ## Key findings — and their limits
 
 Stated carefully; `docs/evidence-claims.md` lists what can and cannot be claimed.

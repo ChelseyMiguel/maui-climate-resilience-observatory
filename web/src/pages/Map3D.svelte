@@ -2,12 +2,13 @@
   // 3D View: terrain with the project's layers, a guided tour for presenting the
   // story, and (once exported) real before/after satellite imagery.
   import { onMount, onDestroy } from 'svelte';
-  import { fromArrayBuffer } from 'geotiff';
   import Terrain3D from '../lib/Terrain3D.svelte';
   import Timeline from '../lib/Timeline.svelte';
   import { loadAll } from '../lib/api.js';
   import { get } from 'svelte/store';
-  import { loadChangeRaster, renderThreshold } from '../lib/raster.ts';
+  import { loadChangeRaster, renderThreshold, rampColor } from '../lib/raster.ts';
+  import { imageryCanvas as imageryCanvasOf, loadBands, paint, worldcoverColour, chmColour, CHM_STOPS, lidarPoints, remoteManifest } from '../lib/remote.ts';
+  import { fromUtm } from '../lib/utm.ts';
   import { classify, RESEARCH_THRESHOLD } from '../lib/threshold.js';
   import { analysis } from '../lib/state.js';
   import { createSampler } from '../lib/terrarium.js';
@@ -15,7 +16,7 @@
 
   let data = null, error = null, map;
   let selected = null;
-  let show = { browning: true, fires: true, sites: true, study: true };
+  let show = { browning: true, fires: true, sites: true, study: false, points: false };
   let exaggeration = 2;
   // Pixel-level browning from the dNDVI raster, cut at a user-set threshold. Falls
   // back to the −0.10 patch polygons if the raster can't load.
@@ -54,25 +55,59 @@
     } catch (e) { error = e.message; }
   });
 
+  // Ground textures: Sentinel-2 images (served for the terrain box, EPSG:4326)
+  // and two rasters painted onto the same box: WorldCover land cover and the
+  // regional Sentinel-2 dNDVI. All are drawn into a canvas covering exactly the
+  // terrain bbox, as Terrain3D expects.
+  const BOX_W = 2048, BOX_H = 1877;
+  function onBox(src, corners) {
+    const b = data.terrain.meta.bbox;
+    const c = Object.assign(document.createElement('canvas'), { width: BOX_W, height: BOX_H });
+    const [nw, , se] = corners;
+    const x = (lon) => ((lon - b.west) / (b.east - b.west)) * BOX_W, y = (lat) => ((b.north - lat) / (b.north - b.south)) * BOX_H;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#2a3036'; ctx.fillRect(0, 0, BOX_W, BOX_H);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(src, x(nw[0]), y(nw[1]), x(se[0]) - x(nw[0]), y(se[1]) - y(nw[1]));
+    return c;
+  }
   async function setImagery(choice) {
     imageryChoice = choice; imageryError = null;
     if (choice === 'tint') { imageryCanvas = null; return; }
     try {
       if (!imageryCache[choice]) {
-        const res = await fetch(`/api/layers/imagery/${choice}`);
-        if (!res.ok) throw new Error(`imagery ${choice}: ${res.status}`);
-        const img = await (await fromArrayBuffer(await res.arrayBuffer())).getImage();
-        const [r, g, b] = await img.readRasters();
-        const c = Object.assign(document.createElement('canvas'), { width: img.getWidth(), height: img.getHeight() });
-        const ctx = c.getContext('2d');
-        const out = ctx.createImageData(c.width, c.height);
-        for (let i = 0; i < r.length; i++) out.data.set([r[i], g[i], b[i], 255], i * 4);
-        ctx.putImageData(out, 0, 0);
-        imageryCache[choice] = c;
+        if (choice === 'landcover') {
+          const lc = await loadBands('worldcover_2021');
+          if (!lc) throw new Error('land cover not built — run scripts/remote_sensing/worldcover.py');
+          imageryCache[choice] = onBox(paint(lc.bands[0], lc.width, lc.height, worldcoverColour), lc.corners);
+        } else if (choice === 'regional') {
+          const rc = await loadBands('s2_regional_change');
+          if (!rc) throw new Error('regional change not built — run scripts/remote_sensing/sentinel2_composites.py');
+          imageryCache[choice] = onBox(paint(rc.bands[0], rc.width, rc.height, (v) => [...rampColor(v), 255]), rc.corners);
+        } else {
+          imageryCache[choice] = await imageryCanvasOf(imageryInfo.available.find((i) => i.id === choice));
+        }
       }
       imageryCanvas = imageryCache[choice];
     } catch (e) { imageryError = e.message; imageryChoice = 'tint'; imageryCanvas = null; }
   }
+
+  // Lidar points, loaded the first time they are switched on.
+  let points = null, pointsError = null, lidarInfo = null;
+  async function loadPoints() {
+    if (points) return;
+    try {
+      lidarInfo = (await remoteManifest())?.lidar;
+      if (!lidarInfo) throw new Error('lidar not built — run scripts/remote_sensing/lidar_canopy.py');
+      const p = await lidarPoints(lidarInfo.points_file.z_min_m);
+      const [e0, n0] = lidarInfo.points_file.origin_utm;
+      const lon = new Float32Array(p.count), lat = new Float32Array(p.count);
+      for (let i = 0; i < p.count; i++) { const [la, lo] = fromUtm(e0 + p.e[i], n0 + p.n[i], 4); lat[i] = la; lon[i] = lo; }
+      points = { lon, lat, hag: p.hag, count: p.count };
+    } catch (e) { pointsError = e.message; show.points = false; }
+  }
+  $: if (show.points) loadPoints();
+  const pointColour = (h) => chmColour(Math.max(0, h)).map((v) => v / 255);
 
   let frame = 0;
   $: if (dndvi) {
@@ -150,7 +185,7 @@
   <div class="layout">
     <section class="stage">
       <Terrain3D bind:this={map} terrain={data.terrain} browning={data.browning} fires={data.fires}
-        sites={data.sites} studyArea={data.studyArea} {show} {exaggeration} imagery={imageryCanvas} {change} {probe}
+        sites={data.sites} studyArea={data.studyArea} {show} {exaggeration} imagery={imageryCanvas} {change} {probe} {points} {pointColour}
         selectedId={selected?.site_id} on:select={(e) => { selected = e.detail; inspected = null; stopTour(); }}
         on:inspect={(e) => inspect(e.detail)} />
 
@@ -168,17 +203,25 @@
         <label><input type="checkbox" bind:checked={show.fires} /> <span class="sw fire"></span>Fire perimeters</label>
         <label><input type="checkbox" bind:checked={show.sites} /> <span class="sw site"></span>GLOBE sites</label>
         {#if data.sitesError}<p class="note">GLOBE sites couldn’t load; the rest of the view is unaffected.</p>{/if}
-        <label><input type="checkbox" bind:checked={show.study} /> <span class="sw study"></span>Study area</label>
+        <label><input type="checkbox" bind:checked={show.study} /> <span class="sw study"></span>Study area outline</label>
+        <label><input type="checkbox" bind:checked={show.points} /> <span class="sw pts"></span>Lidar points, 2023</label>
+        {#if show.points}
+          <div class="ramp" aria-hidden="true">{#each CHM_STOPS as [, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
+          <p class="note num">{points ? `${points.count.toLocaleString()} points` : 'loading…'} · colour = height above ground, 0 → 20+ m</p>
+        {/if}
+        {#if pointsError}<p class="note">{pointsError}</p>{/if}
         <label class="exag">Relief ×{exaggeration}<input type="range" min="1" max="4" step="0.5" bind:value={exaggeration} /></label>
         <fieldset class="imagery">
           <legend>Ground</legend>
           <label><input type="radio" name="img" checked={imageryChoice === 'tint'} on:change={() => setImagery('tint')} /> Elevation tint</label>
           {#each imageryInfo?.available ?? [] as im}
-            <label><input type="radio" name="img" checked={imageryChoice === im.id} on:change={() => setImagery(im.id)} /> {im.label}</label>
+            <label title={im.period}><input type="radio" name="img" checked={imageryChoice === im.id} on:change={() => setImagery(im.id)} /> {im.label}</label>
           {/each}
+          <label><input type="radio" name="img" checked={imageryChoice === 'landcover'} on:change={() => setImagery('landcover')} /> Land cover 2021 (WorldCover)</label>
+          <label><input type="radio" name="img" checked={imageryChoice === 'regional'} on:change={() => setImagery('regional')} /> dNDVI 2019 → 2022, regional (20 m)</label>
           {#if imageryInfo && !imageryInfo.available.length}
-            <p class="hint">Before/after satellite imagery not exported yet — run <code>scripts/gee/imagery_before_after.js</code>.</p>
-          {/if}
+            <p class="hint">No Sentinel-2 images yet — run <code>scripts/remote_sensing/sentinel2_composites.py</code>.</p>
+          {:else if imageryInfo}<p class="hint">Sentinel-2 L2A cloud-masked medians, 20 m, draped on the terrain.</p>{/if}
           {#if imageryError}<p class="hint err">{imageryError}</p>{/if}
         </fieldset>
       </div>
@@ -272,6 +315,9 @@
   .controls label { display: flex; gap: 6px; align-items: center; }
   .tourbtn { background: var(--forest); color: #111; border: 0; border-radius: 0; padding: .45em .8em; font-weight: 700; margin-bottom: 4px; }
   .exag { flex-direction: column; align-items: flex-start !important; margin-top: 4px; }
+  .ramp { display: flex; height: 8px; margin: 2px 0 0 22px; border: 1px solid var(--line); }
+  .ramp span { flex: 1; }
+  .sw.pts { background: #5ec962; }
   .imagery { border: 0; border-top: 1px solid var(--line); margin: 6px 0 0; padding: 6px 0 0; min-width: 0; }
   .imagery code { white-space: normal; word-break: break-all; }
   .imagery legend { font-weight: 700; color: var(--forest); padding: 0; }
