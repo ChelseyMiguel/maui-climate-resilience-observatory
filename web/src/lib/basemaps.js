@@ -10,8 +10,12 @@ const usgs = (svc) => `https://basemap.nationalmap.gov/arcgis/rest/services/${sv
 export const BASEMAPS = [
   { id: 'relief', label: 'Terrain (offline)', kind: 'Elevation tint',
     note: 'Elevation tint from the app’s own 68 m DEM grid (AWS Terrain Tiles). Works with no connection.' },
-  { id: 'dark', label: 'Minimal dark', kind: 'Reference map', tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'], maxzoom: 19,
-    attribution: '© OpenStreetMap contributors © CARTO', note: 'Streets and places, no imagery. OpenStreetMap data via CARTO.' },
+  // CARTO's dark tiles now carry an "API key required" watermark; Esri's dark
+  // canvas needs no key.
+  { id: 'dark', label: 'Minimal dark', kind: 'Reference map',
+    tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'], maxzoom: 16,
+    attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community',
+    note: 'Roads and coastlines on a dark canvas, no imagery (Esri World Dark Gray Canvas).' },
   { id: 'imagery', label: 'Satellite (USGS)', kind: 'Aerial / satellite imagery', tiles: [usgs('USGSImageryOnly')], maxzoom: 16,
     attribution: 'USGS The National Map: Orthoimagery (public domain)',
     note: 'High-resolution orthoimagery; capture date varies by tile and is not matched to 2019 or 2022.' },

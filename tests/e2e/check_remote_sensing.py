@@ -38,7 +38,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(1000)
     ok(pg.locator(".fcell").count() == 9, f"small multiples: {pg.locator('.fcell').count()} years")
     pg.locator(".fcell:has-text('2019')").click()
-    ok(pg.locator(".row b.num").inner_text() == "2019", "facet click sets the year")
+    ok(pg.locator(".sub2:has(select[aria-label='Index']) .row b.num").inner_text() == "2019", "facet click sets the year")
     ok("r = 0.8541" in pg.locator("aside").inner_text(), "independent check quoted")
     mb = pg.locator(".map").bounding_box()
     pg.mouse.click(mb["x"] + mb["width"] / 2 + 40, mb["y"] + mb["height"] / 2 - 60)

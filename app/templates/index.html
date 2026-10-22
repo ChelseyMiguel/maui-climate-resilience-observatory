@@ -123,7 +123,7 @@
     background: #151a1e; border: 1px solid var(--line); border-radius: 0;
     /* left: 50% leaves only half the stage for shrink-to-fit sizing, which wrapped
        the bar onto two lines; size it to its content instead (still capped). */
-    width: max-content;
+    width: max-content; max-width: calc(100% - 20px);
   }
   .hud-heading { font-size: 12px; color: var(--muted); min-width: 92px; }
   .hud-heading b { color: var(--text); }

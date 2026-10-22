@@ -119,9 +119,9 @@ export const DATASETS: DatasetMetadata[] = [
     caveat: 'Context only; imagery dates are not matched to 2019 or 2022.',
   },
   {
-    id: 'carto', kind: 'Basemap cartography', name: 'Minimal dark basemap', provider: 'CARTO, with OpenStreetMap data',
-    provenance: 'verified-public', spatialResolution: 'Vector-rendered tiles', coverage: 'Global', temporal: 'Current', currency: 'As served',
-    license: '© OpenStreetMap contributors (ODbL), © CARTO — see provider terms', link: 'https://carto.com/attributions', linkChecked: false,
+    id: 'esri-dark', kind: 'Basemap cartography', name: 'Minimal dark basemap (World Dark Gray Canvas)', provider: 'Esri, with HERE, Garmin and OpenStreetMap data',
+    provenance: 'verified-public', spatialResolution: 'Raster tiles to zoom 16', coverage: 'Global', temporal: 'Current', currency: 'As served',
+    license: 'Esri terms of use, attribution required — see provider terms', link: 'https://www.arcgis.com/home/item.html?id=5e9b3685f4c24d8781073dd928ebda50', linkChecked: false,
   },
   // Added Oct 21, 2026 with scripts/remote_sensing/ (fetched from the public AWS
   // archives; links not re-checked from the build environment).

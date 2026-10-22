@@ -39,6 +39,7 @@ with sync_playwright() as p:
     pg.click("text=Zoom to the study area"); pg.wait_for_timeout(2500)
     pg.screenshot(path=f"{S}/x_2d.png")
     # basemap fallback (tiles blocked in this sandbox)
+    pg.route("**/USGSImageryOnly/**", lambda route: route.abort())   # simulate an outage, whatever the network allows
     pg.select_option("select[aria-label='Basemap']", "imagery"); pg.wait_for_timeout(6000)
     msg=pg.locator("aside .empty").all_inner_texts()
     ok(any("couldn’t load" in m for m in msg) and pg.locator("select[aria-label='Basemap']").input_value()=="relief", "blocked basemap falls back: "+" / ".join(msg)[:160])
