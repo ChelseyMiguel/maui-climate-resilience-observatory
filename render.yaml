@@ -1,0 +1,15 @@
+# Render blueprint: a free web service running the FastAPI app.
+# The front end is prebuilt (app/static/site/) and all data is in the repo,
+# so the build only installs Python packages. See docs/deploy.md.
+services:
+  - type: web
+    name: maui-climate-observatory
+    runtime: python
+    plan: free
+    branch: claude/modest-hamilton-wy93h5
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
