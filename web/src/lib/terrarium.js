@@ -69,7 +69,7 @@ async function loadTile(href) {
   if (!res.ok) throw new Error(`terrain tile ${res.status}`);
   const bmp = await createImageBitmap(await res.blob());
   const c = new OffscreenCanvas(256, 256);
-  const ctx = c.getContext('2d');
+  const ctx = c.getContext('2d', { willReadFrequently: true });   // read back once per tile
   ctx.drawImage(bmp, 0, 0);
   const px = ctx.getImageData(0, 0, 256, 256).data;
   const out = new Float32Array(256 * 256);
