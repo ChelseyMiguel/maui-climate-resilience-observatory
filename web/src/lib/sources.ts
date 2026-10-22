@@ -163,4 +163,11 @@ export const DATASETS: DatasetMetadata[] = [
     link: 'https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2', linkChecked: true,
     caveat: 'Same method as the Earth Engine notebook (QA bits 1, 3, 4 masked). No Landsat 5 over this scene in 2000–2011; Landsat 8/9 (2013 on) read NDVI higher than Landsat 7 — 2014 stands out for that reason.',
   },
+  {
+    id: 'landsat-lst', kind: 'Satellite imagery (reflectance)', name: 'Landsat 8/9 surface temperature (ST_B10)',
+    provider: 'USGS; Microsoft Planetary Computer (landsat-c2-l2)', provenance: 'verified-public', spatialResolution: '30 m (100 m thermal, resampled by USGS)',
+    coverage: 'Study area', temporal: 'Dry seasons 2013–2025', currency: 'Archive as of Oct 2026', license: 'Public domain (USGS)',
+    link: 'https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2', linkChecked: true,
+    caveat: 'Ground/canopy skin temperature at the ~10:30 a.m. overpass, not air temperature. Landsat 9 doubles the scenes from 2022.',
+  },
 ];

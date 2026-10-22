@@ -164,3 +164,16 @@ export function median(a: ArrayLike<number>): number | null {
   if (!v.length) return null;
   return v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
 }
+
+/** USGS FIREMON dNBR severity classes (Key & Benson 2006); unburned is transparent. */
+export const BURN_CLASSES: [number, number, string, string][] = [
+  [0.10, 0.27, 'Low', '#f3d250'], [0.27, 0.44, 'Moderate-low', '#ef9a3b'],
+  [0.44, 0.66, 'Moderate-high', '#d4442c'], [0.66, 9, 'High', '#7b1d6a']];
+export function burnColour(v: number): [number, number, number, number] | null {
+  const c = BURN_CLASSES.find(([lo, hi]) => v >= lo && v < hi);
+  return c ? [...hex(c[3]), 235] : null;
+}
+/** Surface temperature 25..50 degC (inferno-like, light = hot). */
+export const LST_STOPS: [number, [number, number, number]][] = [
+  [25, [40, 30, 90]], [32, [120, 40, 110]], [38, [200, 70, 70]], [44, [245, 150, 40]], [50, [252, 240, 150]]];
+export const lstColour = ramp(LST_STOPS);

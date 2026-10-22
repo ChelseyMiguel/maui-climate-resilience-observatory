@@ -1,0 +1,204 @@
+{
+ "unburned_offset": 0.0394,
+ "unburned_pixels_used": 1000195,
+ "method": "dNBR = NBR(before) - NBR(after), NBR = (NIR - SWIR2) / (NIR + SWIR2), from the\nsame cloud-masked median composites as sentinel2_composites.py (20 m):\n  before = 1 May - 7 Aug 2023, after = 15 Aug - 31 Oct 2023.\nSeverity classes are the USGS FIREMON ranges (Key & Benson 2006):\n  < 0.10 unburned/regrowth, 0.10-0.27 low, 0.27-0.44 moderate-low,\n  0.44-0.66 moderate-high, >= 0.66 high.\nThese are ranges calibrated for forests; on Maui's grass and shrub they are a\nguide, not a field-verified severity.",
+ "scenes_before": [
+  "S2A_4QGJ_20230505_0_L2A",
+  "S2B_4QGJ_20230510_0_L2A",
+  "S2A_4QGJ_20230515_0_L2A",
+  "S2B_4QGJ_20230520_0_L2A",
+  "S2A_4QGJ_20230604_0_L2A",
+  "S2B_4QGJ_20230609_0_L2A",
+  "S2A_4QGJ_20230614_0_L2A",
+  "S2B_4QGJ_20230619_0_L2A",
+  "S2A_4QGJ_20230624_0_L2A",
+  "S2B_4QGJ_20230629_0_L2A",
+  "S2A_4QGJ_20230704_0_L2A",
+  "S2A_4QGJ_20230714_0_L2A",
+  "S2A_4QGJ_20230724_0_L2A",
+  "S2B_4QGJ_20230729_0_L2A",
+  "S2A_4QGJ_20230803_0_L2A"
+ ],
+ "scenes_after": [
+  "S2B_4QGJ_20230818_0_L2A",
+  "S2A_4QGJ_20230823_0_L2A",
+  "S2B_4QGJ_20230828_0_L2A",
+  "S2A_4QGJ_20230902_0_L2A",
+  "S2B_4QGJ_20230907_0_L2A",
+  "S2A_4QGJ_20230912_0_L2A",
+  "S2B_4QGJ_20230917_0_L2A",
+  "S2A_4QGJ_20230922_0_L2A",
+  "S2B_4QGJ_20230927_0_L2A",
+  "S2B_4QGJ_20231007_0_L2A",
+  "S2A_4QGJ_20231012_0_L2A",
+  "S2B_4QGJ_20231017_0_L2A",
+  "S2A_4QGJ_20231022_0_L2A",
+  "S2B_4QGJ_20231027_0_L2A"
+ ],
+ "pixel_m": 20,
+ "classes": [
+  "Unburned / regrowth",
+  "Low",
+  "Moderate-low",
+  "Moderate-high",
+  "High"
+ ],
+ "fires": [
+  {
+   "name": "Kula",
+   "pixels": 2096,
+   "area_ha": 83.8,
+   "mean_dnbr": 0.2729,
+   "median_dnbr": 0.2549,
+   "class_ha": {
+    "Unburned / regrowth": 13.1,
+    "Low": 31.5,
+    "Moderate-low": 24.2,
+    "Moderate-high": 14.5,
+    "High": 0.6
+   },
+   "by_prior_browning": [
+    {
+     "dndvi_2019_2022": [
+      -9.0,
+      -0.2
+     ],
+     "pixels": 1532,
+     "mean_dnbr": 0.2376,
+     "share_moderate_or_high": 0.3825
+    },
+    {
+     "dndvi_2019_2022": [
+      -0.2,
+      -0.1
+     ],
+     "pixels": 418,
+     "mean_dnbr": 0.3779,
+     "share_moderate_or_high": 0.7201
+    },
+    {
+     "dndvi_2019_2022": [
+      -0.1,
+      0.0
+     ],
+     "pixels": 134,
+     "mean_dnbr": 0.3463,
+     "share_moderate_or_high": 0.6493
+    },
+    {
+     "dndvi_2019_2022": [
+      0.0,
+      9.0
+     ],
+     "pixels": 12,
+     "mean_dnbr": 0.3042,
+     "share_moderate_or_high": 0.5
+    }
+   ]
+  },
+  {
+   "name": "Olinda",
+   "pixels": 10988,
+   "area_ha": 439.5,
+   "mean_dnbr": 0.2266,
+   "median_dnbr": 0.215,
+   "class_ha": {
+    "Unburned / regrowth": 123.2,
+    "Low": 143.0,
+    "Moderate-low": 121.0,
+    "Moderate-high": 50.0,
+    "High": 2.2
+   },
+   "by_prior_browning": [
+    {
+     "dndvi_2019_2022": [
+      -9.0,
+      -0.2
+     ],
+     "pixels": 6797,
+     "mean_dnbr": 0.2097,
+     "share_moderate_or_high": 0.3337
+    },
+    {
+     "dndvi_2019_2022": [
+      -0.2,
+      -0.1
+     ],
+     "pixels": 2668,
+     "mean_dnbr": 0.2111,
+     "share_moderate_or_high": 0.3838
+    },
+    {
+     "dndvi_2019_2022": [
+      -0.1,
+      0.0
+     ],
+     "pixels": 1472,
+     "mean_dnbr": 0.33,
+     "share_moderate_or_high": 0.6855
+    },
+    {
+     "dndvi_2019_2022": [
+      0.0,
+      9.0
+     ],
+     "pixels": 51,
+     "mean_dnbr": 0.3072,
+     "share_moderate_or_high": 0.6078
+    }
+   ]
+  },
+  {
+   "name": "Pulehu",
+   "pixels": 32791,
+   "area_ha": 1311.6,
+   "mean_dnbr": 0.2389,
+   "median_dnbr": 0.2349,
+   "class_ha": {
+    "Unburned / regrowth": 148.2,
+    "Low": 643.7,
+    "Moderate-low": 473.6,
+    "Moderate-high": 46.0,
+    "High": 0.0
+   },
+   "by_prior_browning": [
+    {
+     "dndvi_2019_2022": [
+      -9.0,
+      -0.2
+     ],
+     "pixels": 30,
+     "mean_dnbr": 0.1446,
+     "share_moderate_or_high": 0.1
+    },
+    {
+     "dndvi_2019_2022": [
+      -0.2,
+      -0.1
+     ],
+     "pixels": 7825,
+     "mean_dnbr": 0.2836,
+     "share_moderate_or_high": 0.6106
+    },
+    {
+     "dndvi_2019_2022": [
+      -0.1,
+      0.0
+     ],
+     "pixels": 24380,
+     "mean_dnbr": 0.2265,
+     "share_moderate_or_high": 0.3358
+    },
+    {
+     "dndvi_2019_2022": [
+      0.0,
+      9.0
+     ],
+     "pixels": 556,
+     "mean_dnbr": 0.1579,
+     "share_moderate_or_high": 0.045
+    }
+   ]
+  }
+ ]
+}

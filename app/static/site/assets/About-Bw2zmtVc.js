@@ -1,4 +1,4 @@
-import{K as e,W as t}from"./index-CxyWNQiH.js";var n=e(`<section class="wrap page svelte-gf7t7t"><p class="eyebrow">About</p> <h1>An independent, student-led project</h1> <div class="cols svelte-gf7t7t"><div class="svelte-gf7t7t"><p>The Rural Hawaiʻi Climate Resilience Observatory is a research and education project by a high-school student
+import{K as e,W as t}from"./index-DTXqIH43.js";var n=e(`<section class="wrap page svelte-gf7t7t"><p class="eyebrow">About</p> <h1>An independent, student-led project</h1> <div class="cols svelte-gf7t7t"><div class="svelte-gf7t7t"><p>The Rural Hawaiʻi Climate Resilience Observatory is a research and education project by a high-school student
         on Maui, built for the Congressional App Challenge. It grows out of research on whether the 2022 drought left
         Upcountry vegetation browned ahead of the August 2023 fires, carried out through the NASA SEES Earth System
         Explorers program.</p> <p>Its centre is a <a href="/viewer">GLOBE site viewer</a> that rebuilds a citizen scientist’s six land-cover

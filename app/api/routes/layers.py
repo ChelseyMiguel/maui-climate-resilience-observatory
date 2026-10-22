@@ -189,13 +189,17 @@ RASTERS = {
     "lidar_aoi": browning.DATA_DIR / "lidar_aoi.tif",
     "worldcover_2021": DATA / "context" / "worldcover_2021.tif",
     "landsat_aoi_annual": browning.DATA_DIR / "landsat_aoi_annual.tif",
+    "landsat_lst_annual": browning.DATA_DIR / "landsat_lst_annual.tif",
+    "s2_burn_severity_2023": browning.DATA_DIR / "s2_burn_severity_2023.tif",
 }
 MANIFESTS = {
     "sentinel2": browning.DATA_DIR / "s2_manifest.json",
     "lidar": browning.DATA_DIR / "lidar_manifest.json",
     "worldcover": browning.DATA_DIR / "worldcover_browning.json",
     "landsat": browning.DATA_DIR / "landsat_manifest.json",
+    "burn_severity": browning.DATA_DIR / "burn_severity_2023.json",
 }
+LST_CSV = browning.DATA_DIR / "landsat_lst_dryseason.csv"
 
 
 @router.get("/regions")
@@ -256,6 +260,14 @@ def remote_sensing() -> dict:
     A missing product is reported as null, not an error."""
     out = {k: json.loads(p.read_text()) if p.exists() else None for k, p in MANIFESTS.items()}
     out["rasters"] = {k: p.exists() for k, p in RASTERS.items()}
+    # Dry-season land surface temperature per year (scripts/remote_sensing/landsat_lst.py).
+    if LST_CSV.exists():
+        import csv
+        with LST_CSV.open(newline="") as f:
+            out["lst"] = [{"year": int(r["year"]), "lst_c": float(r["lst_c_median"]) if r["lst_c_median"] else None,
+                           "n_scenes": int(r["n_scenes"]), "sensors": r["sensors"]} for r in csv.DictReader(f)]
+    else:
+        out["lst"] = None
     return out
 
 

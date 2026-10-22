@@ -85,3 +85,27 @@ def test_landsat_scene_failures_are_recorded_not_filled():
     m = json.loads((ROOT / "data" / "research" / "landsat_manifest.json").read_text())
     assert m["masked_qa_bits"] == [1, 3, 4]
     assert all(s not in m["years"][y] for y, skipped in m.get("unreadable", {}).items() for s in skipped)
+
+
+burn = _load("burn_severity")
+
+
+def test_burn_severity_classes_follow_firemon():
+    v = np.array([0.05, 0.1, 0.3, 0.5, 0.7, np.nan])
+    assert burn.severity_class(v).tolist() == [0, 1, 2, 3, 4, -1]
+
+
+def test_burned_area_matches_official_perimeters():
+    import json
+    d = json.loads((ROOT / "data" / "research" / "burn_severity_2023.json").read_text())
+    acres = {"Pulehu": 3238, "Olinda": 1083, "Kula": 207}          # NIFC, as on the 3D view
+    for f in d["fires"]:
+        assert abs(f["area_ha"] - acres[f["name"]] * 0.404686) / (acres[f["name"]] * 0.404686) < 0.02
+    assert 0 < d["unburned_offset"] < 0.1                            # seasonal drying, removed
+
+
+def test_2022_was_the_hottest_dry_season_since_2013():
+    import csv
+    rows = list(csv.DictReader((ROOT / "data" / "research" / "landsat_lst_dryseason.csv").open()))
+    hottest = max(rows, key=lambda r: float(r["lst_c_median"]))
+    assert hottest["year"] == "2022" and len(rows) == 13

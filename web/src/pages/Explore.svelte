@@ -20,7 +20,7 @@
   import { reliefDataUrl } from '../lib/relief.ts';
   import { loadChangeRaster, rampColor, renderThreshold, CLASS_COLORS } from '../lib/raster.ts';
   import { imageryIndex, imageryCanvas, loadBands, paint, ndviColour, chmColour, worldcoverColour, WORLDCOVER,
-    BBOX_CORNERS, remoteManifest, cellOf, median, NDVI_STOPS, CHM_STOPS } from '../lib/remote.ts';
+    BBOX_CORNERS, remoteManifest, cellOf, median, NDVI_STOPS, CHM_STOPS, BURN_CLASSES, burnColour, lstColour, LST_STOPS } from '../lib/remote.ts';
   import { histogram, joinMonthly } from '../lib/series.js';
   import { classify, RESEARCH_THRESHOLD } from '../lib/threshold.js';
   import { BASEMAPS, DEM_TILES, basemapById } from '../lib/basemaps.js';
@@ -28,6 +28,7 @@
   import { samplePoints, slopeStats } from '../lib/profile.js';
   import { sampleElevation } from '../lib/geo.js';
   import { analysis } from '../lib/state.js';
+  import { toUtm } from '../lib/utm.ts';
   import { drawIcon, iconSvg, KIND_LABEL } from '../lib/icons.ts';
 
   const YEARS = [2018, 2019, 2020, 2021, 2022, 2023, 2024];
@@ -71,12 +72,14 @@
   let cursor = null;             // pointer readout
 
   // ---------- remote-sensing layers (scripts/remote_sensing/, public AWS archives) ----------
-  let rs = { imagery: [], annual: null, regional: null, lidar: null, landcover: null, landsat: null, manifest: {} };
+  let rs = { imagery: [], annual: null, regional: null, lidar: null, landcover: null, landsat: null, burn: null, lst: null, manifest: {} };
   let rsLoading = true;
   let imgId = 'none', imgOpacity = 1;
   let annualOn = false, annualYear = 2022, annualIdx = 'ndvi', playing = false, facets = false;
   let regionalOn = false, landcoverOn = false, lidarOn = false, lidarProduct = 'chm', droughtPlaying = false;
-  let landsatOn = false, landsatYear = 2022, landsatMode = 'z';
+  let landsatOn = false, landsatYear = 2022, landsatMode = 'z', burnOn = false, lstOn = false, lstYear = 2022;
+  $: lstYears = (rs.manifest?.lst ?? []).map((r) => r.year);
+  $: burnFires = rs.manifest?.burn_severity?.fires ?? [];
   // Landsat 30 m dry-season NDVI per year (Planetary Computer): years from the
   // manifest, and each pixel's 2000-2018 normal (mean, sample SD).
   $: lsYears = Object.keys(rs.manifest?.landsat?.years ?? {}).map(Number).sort((a, b) => a - b);
@@ -371,15 +374,15 @@
   // ---------- remote sensing ----------
   async function loadRemote() {
     const safe = (p) => p.catch(() => null);
-    const [img, annual, regional, lidar, landcover, manifest, landsat] = await Promise.all([
+    const [img, annual, regional, lidar, landcover, manifest, landsat, burn, lst] = await Promise.all([
       safe(imageryIndex()), safe(loadBands('s2_aoi_annual')), safe(loadBands('s2_regional_change', ['dndvi', 'dnbr'])),
       safe(loadBands('lidar_aoi', ['dtm_dm', 'chm_cm', 'hillshade'])), safe(loadBands('worldcover_2021', ['class'])), safe(remoteManifest()),
-      safe(loadBands('landsat_aoi_annual'))]);
-    rs = { imagery: img ?? [], annual, regional, lidar, landcover, landsat, manifest: manifest ?? {} };
+      safe(loadBands('landsat_aoi_annual')), safe(loadBands('s2_burn_severity_2023')), safe(loadBands('landsat_lst_annual'))]);
+    rs = { imagery: img ?? [], annual, regional, lidar, landcover, landsat, burn, lst, manifest: manifest ?? {} };
     if (!map) return;
     // Land cover and regional change sit under the drought polygons; annual NDVI
     // and lidar sit over the study rasters so they can be compared in place.
-    const below = { landcover: 'drought-fill', regional: 'drought-fill', annual: 'patches-line', lidar: 'patches-line', landsat: 'patches-line' };
+    const below = { landcover: 'drought-fill', regional: 'drought-fill', annual: 'patches-line', lidar: 'patches-line', landsat: 'patches-line', burn: 'fires-fill', lst: 'patches-line' };
     for (const key of Object.keys(below)) {
       const b = rs[key];
       if (!b) continue;
@@ -422,6 +425,15 @@
       } else paint(b, rs.landsat.width, rs.landsat.height, (v) => rgba(ndviColour(v)), rsCanvas.landsat);
       repaint('landsat');
     }
+    if (rs.burn) {
+      paint(rs.burn.bands[0], rs.burn.width, rs.burn.height, burnColour, rsCanvas.burn);
+      clipToFires(rsCanvas.burn, rs.burn);
+      repaint('burn');
+    }
+    if (rs.lst && lstYears.includes(lstYear)) {
+      paint(rs.lst.bands[lstYears.indexOf(lstYear)], rs.lst.width, rs.lst.height, (v) => rgba(lstColour(v)), rsCanvas.lst);
+      repaint('lst');
+    }
     if (rs.landcover) { paint(rs.landcover.bands[0], rs.landcover.width, rs.landcover.height, worldcoverColour, rsCanvas.landcover); repaint('landcover'); }
     if (rs.lidar) {
       const l = rs.lidar;
@@ -430,9 +442,26 @@
       repaint('lidar');
     }
   }
+  /** Keep burn severity only inside the 2023 fire perimeters: outside them dNBR
+   * mostly reflects seasonal drying, not fire. */
+  function clipToFires(canvas, b) {
+    const ctx = canvas.getContext('2d');
+    const [w, s0, e, n] = b.bounds;
+    const px = (lon, lat) => { const [x, y] = toUtm(lat, lon, 4); return [((x - w) / (e - w)) * b.width, ((n - y) / (n - s0)) * b.height]; };
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.beginPath();
+    for (const f of fireFeatures.filter((f) => f.properties.year === 2023)) {
+      const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+      for (const rings of polys) for (const ring of rings) ring.forEach(([lon, lat], i) => { const [x, y] = px(lon, lat); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    }
+    ctx.fillStyle = '#000';
+    ctx.fill('evenodd');
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   function applyRemote() {
     if (!ready || rsLoading) return;
-    vis('rs-annual', annualOn); vis('rs-landsat', landsatOn); vis('rs-regional', regionalOn); vis('rs-landcover', landcoverOn); vis('rs-lidar', lidarOn);
+    vis('rs-annual', annualOn); vis('rs-landsat', landsatOn); vis('rs-burn', burnOn); vis('rs-lst', lstOn); vis('rs-regional', regionalOn); vis('rs-landcover', landcoverOn); vis('rs-lidar', lidarOn);
     // Satellite image (period-matched Sentinel-2 composites), under the hillshade.
     const item = rs.imagery.find((i) => i.id === imgId);
     if (!item) { vis('rs-img', false); return; }
@@ -449,8 +478,8 @@
     m.setLayoutProperty('rs-img', 'visibility', 'visible');
     m.setPaintProperty('rs-img', 'raster-opacity', opacity);
   }
-  $: if (ready) { annualYear; annualIdx; vegIndex; lidarProduct; landsatYear; landsatMode; lsNormal; rs; paintRemote(); }
-  $: if (ready) { annualOn; regionalOn; landcoverOn; lidarOn; landsatOn; imgId; imgOpacity; rs; applyRemote(); }
+  $: if (ready) { annualYear; annualIdx; vegIndex; lidarProduct; landsatYear; landsatMode; lsNormal; lstYear; rs; paintRemote(); }
+  $: if (ready) { annualOn; regionalOn; landcoverOn; lidarOn; landsatOn; burnOn; lstOn; imgId; imgOpacity; rs; applyRemote(); }
 
   function togglePlay() {
     playing = !playing;
@@ -486,6 +515,14 @@
     if (rs.landsat && lsNormal) {
       const c = cellOf(rs.landsat, lat, lon), k = lsYears.indexOf(2022);
       if (c && k >= 0 && Number.isFinite(lsZ(c.i, k))) out.landsat = { z2022: lsZ(c.i, k), ndvi2022: rs.landsat.bands[k][c.i], normal: lsNormal.mean[c.i] };
+    }
+    if (rs.burn) {
+      const c = cellOf(rs.burn, lat, lon), v = c ? rs.burn.bands[0][c.i] : NaN;
+      if (Number.isFinite(v)) out.burn = { dnbr: v, cls: BURN_CLASSES.find(([lo, hi]) => v >= lo && v < hi)?.[2] ?? 'Unburned / regrowth' };
+    }
+    if (rs.lst) {
+      const c = cellOf(rs.lst, lat, lon), k = lstYears.indexOf(2022);
+      if (c && k >= 0 && Number.isFinite(rs.lst.bands[k][c.i])) out.lst2022 = rs.lst.bands[k][c.i];
     }
     if (rs.landcover) {
       const c = cellOf(rs.landcover, lat, lon);
@@ -820,6 +857,29 @@
           </div>
         {/if}
 
+        <label class="lyr"><input type="checkbox" bind:checked={burnOn} disabled={!rs.burn} /> Burn severity, Aug 2023 fires (dNBR, 20 m)</label>
+        {#if burnOn}
+          <div class="sub2">
+            <ul class="key">{#each BURN_CLASSES as [lo, hi, name, col]}<li><span class="sw" style="background:{col}"></span>{name} <span class="muted">({lo.toFixed(2)}{hi < 9 ? `–${hi.toFixed(2)}` : '+'})</span></li>{/each}</ul>
+            {#if burnFires.length}
+              <table class="classes"><thead><tr><th>Fire</th><th>ha</th><th>mod.+ ha</th></tr></thead>
+                <tbody>{#each burnFires as f}<tr><td>{f.name}</td><td>{f.area_ha}</td><td>{(f.class_ha['Moderate-low'] + f.class_ha['Moderate-high'] + f.class_ha.High).toFixed(0)}</td></tr>{/each}</tbody></table>
+            {/if}
+            <p class="hint">Sentinel-2 NBR before (1 May–7 Aug) minus after (15 Aug–31 Oct 2023), minus the dNBR of unburned ground ({rs.manifest?.burn_severity?.unburned_offset}) to remove seasonal drying; shown inside the 2023 perimeters only. USGS FIREMON classes, calibrated for forest — a guide on grass, not field-verified.</p>
+          </div>
+        {/if}
+
+        <label class="lyr"><input type="checkbox" bind:checked={lstOn} disabled={!rs.lst} /> Surface temperature, study area (Landsat 8/9, 30 m)</label>
+        {#if rs.lst}
+          <div class="sub2" class:dim={!lstOn}>
+            <div class="row"><input type="range" min={lstYears[0]} max={lstYears[lstYears.length - 1]} step="1" bind:value={lstYear} aria-label="Temperature year" />
+              <b class="num">{lstYear}</b> <span class="num muted">{rs.manifest?.lst?.find((r) => r.year === lstYear)?.lst_c?.toFixed(1)} °C</span></div>
+            <div class="ramp" aria-hidden="true">{#each LST_STOPS as [, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
+            <div class="ramp-labels"><span>25 °C</span><span>38</span><span>50 °C</span></div>
+            <p class="hint">Dry-season (May–Sep) median ground/canopy skin temperature at the ~10:30 a.m. overpass — not air temperature.</p>
+          </div>
+        {/if}
+
         <label class="lyr"><input type="checkbox" bind:checked={regionalOn} disabled={!rs.regional} /> Regional {label} 2019 → 2022 (20 m)</label>
         {#if regionalOn}<p class="hint sub2">Exploratory: the same Sentinel-2 change across the whole terrain box, not the study raster. Colours as the vegetation ramp below.</p>{/if}
 
@@ -972,8 +1032,10 @@
             </svg>
             <div class="sparkx"><span>{selected.rs.series[0].year}</span><span>2019 · 2022 marked</span><span>{selected.rs.series[selected.rs.series.length - 1].year}</span></div>
           {/if}
-          {#if selected.rs?.landcover || selected.rs?.lidar || selected.rs?.regional || selected.rs?.landsat}
+          {#if selected.rs?.landcover || selected.rs?.lidar || selected.rs?.regional || selected.rs?.landsat || selected.rs?.burn || selected.rs?.lst2022 !== undefined}
             <dl class="px">
+              {#if selected.rs.burn}<dt>Burn severity 2023</dt><dd>{selected.rs.burn.cls} (dNBR {selected.rs.burn.dnbr.toFixed(2)})</dd>{/if}
+              {#if selected.rs.lst2022 !== undefined}<dt>Surface temp 2022</dt><dd>{selected.rs.lst2022.toFixed(1)} °C (dry-season median)</dd>{/if}
               {#if selected.rs.landsat}<dt>Landsat 2022</dt><dd>NDVI {selected.rs.landsat.ndvi2022.toFixed(3)} vs normal {selected.rs.landsat.normal.toFixed(3)} · z {selected.rs.landsat.z2022.toFixed(1)}</dd>{/if}
               {#if selected.rs.landcover}<dt>Land cover 2021</dt><dd>{selected.rs.landcover}</dd>{/if}
               {#if selected.rs.lidar}<dt>Height above ground</dt><dd>{selected.rs.lidar.chm.toFixed(1)} m (lidar 2023)</dd>

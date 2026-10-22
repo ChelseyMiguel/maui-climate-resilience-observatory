@@ -395,6 +395,48 @@
     layout: { xaxis: { title: { text: 'Dry season (May–Sep)' }, dtick: 2 }, yaxis: { title: { text: 'Study-area mean NDVI' } }, legend: { y: -0.25 } },
   } : null;
 
+  // Burn severity of the Aug 2023 fires and surface temperature (scripts/remote_sensing/).
+  const SEV = [['Low', '#f3d250'], ['Moderate-low', '#ef9a3b'], ['Moderate-high', '#d4442c'], ['High', '#7b1d6a']];
+  $: fires = manifest?.burn_severity?.fires ?? [];
+  $: sevFig = fires.length ? {
+    data: SEV.map(([name, col]) => ({ type: 'bar', orientation: 'h', name, y: fires.map((f) => f.name), x: fires.map((f) => f.class_ha[name]),
+      marker: { color: col, line: { color: '#000', width: 1 } }, hovertemplate: '%{y}: %{x:.0f} ha ' + name + '<extra></extra>' })),
+    layout: { barmode: 'stack', xaxis: { title: { text: 'Hectares burned, by severity (Sentinel-2 dNBR, 20 m)' } }, legend: { y: -0.3 }, margin: { l: 70 } },
+  } : null;
+  const PRIOR = ['< −0.20', '−0.20 to −0.10', '−0.10 to 0', '> 0'];
+  $: priorFig = fires.length ? {
+    data: fires.map((f, k) => ({ type: 'bar', name: f.name, x: PRIOR, y: f.by_prior_browning.map((b) => (b.share_moderate_or_high === null ? null : b.share_moderate_or_high * 100)),
+      customdata: f.by_prior_browning.map((b) => [b.pixels, b.mean_dnbr]), marker: { color: ['#5ab4ac', '#e07b2c', '#b3bcc1'][k % 3], line: { color: '#000', width: 1 } },
+      hovertemplate: f.name + ', dNDVI %{x}: %{y:.0f}% moderate or worse<br>%{customdata[0]} px, mean dNBR %{customdata[1]}<extra></extra>' })),
+    layout: { barmode: 'group', xaxis: { title: { text: 'Regional dNDVI 2019 → 2022 inside the perimeter (browning →  ← greening)' } },
+      yaxis: { title: { text: '% of pixels burned moderate or worse' }, range: [0, 100] }, legend: { y: -0.3 } },
+  } : null;
+  $: lst = manifest?.lst ?? [];
+  function padRange(v) {
+    const f = v.filter(Number.isFinite), lo = Math.min(...f), hi = Math.max(...f), pad = (hi - lo) * 0.08 || 1;
+    return [lo - pad, hi + pad];
+  }
+  $: lstFig = lst.length ? {
+    data: [
+      { type: 'scatter', mode: 'lines+markers', name: 'Surface temperature (°C)', x: lst.map((r) => r.year), y: lst.map((r) => r.lst_c),
+        line: { color: '#ef9a3b', width: 2 }, marker: { symbol: 'square', size: lst.map((r) => (r.year === 2022 ? 11 : 7)) },
+        customdata: lst.map((r) => [r.n_scenes, r.sensors]), hovertemplate: '%{x}: %{y:.1f} °C<br>%{customdata[0]} scenes (%{customdata[1]})<extra></extra>' },
+      ...(baseline ? [{ type: 'scatter', mode: 'lines+markers', name: 'NDVI (Landsat)', yaxis: 'y2', x: baseline.rows.filter((r) => r.year >= lst[0].year).map((r) => r.year),
+        y: baseline.rows.filter((r) => r.year >= lst[0].year).map((r) => r.ndvi), line: { color: '#5ab4ac', width: 1.5, dash: 'dash' }, marker: { size: 6 },
+        hovertemplate: '%{x}: NDVI %{y:.3f}<extra></extra>' }] : [])],
+    // Explicit ranges: this chart renders before its data arrives, and Plotly.react
+    // otherwise keeps the empty-plot default ranges.
+    layout: { xaxis: { title: { text: 'Dry season (May–Sep)' }, dtick: 1, range: [lst[0].year - 0.5, lst[lst.length - 1].year + 0.5] },
+      yaxis: { title: { text: 'Land surface temperature, °C' }, range: padRange(lst.map((r) => r.lst_c)) },
+      yaxis2: { title: { text: 'NDVI' }, overlaying: 'y', side: 'right', showgrid: false, tickformat: '.2f',
+        range: baseline ? padRange(baseline.rows.filter((r) => r.year >= lst[0].year).map((r) => r.ndvi)) : undefined },
+      legend: { y: -0.3 }, margin: { r: 60 } },
+  } : null;
+  $: lstNdvi = lst.length && baseline ? (() => {
+    const pairs = lst.map((r) => [r.lst_c, baseline.rows.find((b) => b.year === r.year)?.ndvi]).filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+    return pearson(pairs.map((p) => p[0]), pairs.map((p) => p[1]));
+  })() : null;
+
   $: studyShare = rasters[index] ? countBelow(rasters[index].values, threshold) : null;
 </script>
 
@@ -507,6 +549,25 @@
           meta="USGS Landsat Collection 2 surface reflectance via Microsoft Planetary Computer (scripts/remote_sensing/landsat_baseline.py, same method as the Earth Engine notebook): May–Sep per-pixel median NDVI, mean over the 1.5 km study area. Dashed white: Sentinel-2 for the overlapping years. Landsat 8/9 (2013 on) read NDVI higher than Landsat 7 — that is why 2014 stands out — so recent years are, if anything, flattered."
           data={lsFig.data} layout={lsFig.layout} rows={baseline.rows.map(({ year, ndvi, z, rank_lowest, n_scenes, sensors }) => ({ year, ndvi, z, rank_lowest, n_scenes, sensors }))}
           note={(() => { const r = baseline.rows.find((x) => x.year === 2022); return r ? `2022: NDVI ${r.ndvi}, z = ${r.z} against the 2000–2018 normal, rank ${r.rank_lowest} lowest of ${baseline.years_with_data} years.` : ''; })()} />
+      {/if}
+      {#if sevFig}
+        <PlotPanel {Plotly} id="burn_severity_by_fire" title="How severely the Aug 2023 fires burned" tag="exploratory" height={300}
+          meta="Sentinel-2 dNBR (NBR 1 May–7 Aug minus 15 Aug–31 Oct 2023, minus the dNBR of unburned ground to remove seasonal drying), 20 m, inside each NIFC perimeter within the map area (Lahaina is outside it). USGS FIREMON classes, calibrated for forest — on grass a guide, not field-verified."
+          data={sevFig.data} layout={sevFig.layout} rows={fires.map((f) => ({ fire: f.name, area_ha: f.area_ha, mean_dnbr: f.mean_dnbr, ...f.class_ha }))}
+          note="Burned area from the satellite matches the official perimeters (Pulehu 1,312 ha vs 3,238 acres = 1,310 ha; Olinda 440 vs 438; Kula 84 vs 84)." />
+      {/if}
+      {#if priorFig}
+        <PlotPanel {Plotly} id="browning_vs_burn_severity" title="Did browned ground burn more severely?" tag="exploratory" height={300}
+          meta="Inside each 2023 perimeter: share of 20 m pixels burned moderate-low or worse (dNBR ≥ 0.27), by how much they browned 2019 → 2022 (regional Sentinel-2, not the study raster). Small bins are noisy — hover for pixel counts."
+          data={priorFig.data} layout={priorFig.layout}
+          rows={fires.flatMap((f) => f.by_prior_browning.map((b) => ({ fire: f.name, dndvi_from: b.dndvi_2019_2022[0], dndvi_to: b.dndvi_2019_2022[1], pixels: b.pixels, mean_dnbr: b.mean_dnbr, share_moderate_or_high: b.share_moderate_or_high })))}
+          note="No consistent pattern: in Kula the most-browned ground burned less severely than moderately browned ground, in Olinda the least-browned burned worst, and in Pulehu moderately browned ground burned more than unchanged ground. Browning alone does not predict burn severity here." />
+      {/if}
+      {#if lstFig}
+        <PlotPanel {Plotly} id="surface_temperature" title="Hotter and less green: surface temperature 2013–2025" tag="exploratory" height={340}
+          meta="Landsat 8/9 Collection 2 surface temperature (ST_B10, Planetary Computer), May–Sep median, mean over the study area; Landsat NDVI dashed. Skin temperature at ~10:30 a.m., not air temperature. Landsat 9 doubles the scene count from 2022."
+          data={lstFig.data} layout={lstFig.layout} rows={lst}
+          note={lstNdvi?.r != null ? `Across ${lstNdvi.n} dry seasons, hotter years were less green: r = ${lstNdvi.r.toFixed(2)} between surface temperature and NDVI. 2022 was the hottest (${lst.find((r) => r.year === 2022)?.lst_c?.toFixed(1)} °C).` : ''} />
       {/if}
       {#if checkFig}
         <PlotPanel {Plotly} id="independent_check" title="Independent check of the study raster" tag="mixed" height={380}

@@ -368,3 +368,17 @@ Tier 1, May–Sep, QA bits 1/3/4 masked, per-pixel median, mean over the 1.5 km 
 
 Safe claim: *"In 26 years of Landsat, the 2022 dry season was the least green in the study area."*
 Not: that this caused the fires, or that it measures fuel.
+
+
+## Burn severity 2023 and surface temperature (Oct 2026)
+
+**Burn severity** (`scripts/remote_sensing/burn_severity.py`): Sentinel-2 dNBR, 1 May–7 Aug minus 15 Aug–31 Oct
+2023, 20 m, minus the median dNBR of unburned ground ≥ 500 m outside the perimeters (offset 0.0394, seasonal
+drying). Satellite burned area matches NIFC: Kula 83.8 ha; Olinda 439.5 ha; Pulehu 1311.6 ha.
+Mostly low to moderate-low severity (forest-calibrated classes — a guide on grass).
+Browned-vs-severity: **no consistent pattern** across the three fires. Do not claim browned land burned hotter.
+
+**Surface temperature** (`scripts/remote_sensing/landsat_lst.py`, Landsat 8/9 ST_B10, May–Sep median, study area):
+2013 41.9 °C, 2014 37.2 °C, 2015 39.4 °C, 2016 38.5 °C, 2017 40.3 °C, 2018 33.8 °C, 2019 42.8 °C, 2020 37.8 °C, 2021 43.2 °C, 2022 44.2 °C, 2023 43.5 °C, 2024 41.2 °C, 2025 42.7 °C.
+2022 was the hottest of 13 dry seasons; across years LST and NDVI correlate at r = −0.80 (n = 13).
+Skin temperature at ~10:30 a.m., not air temperature; co-variation, not cause.

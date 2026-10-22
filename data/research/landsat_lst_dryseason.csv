@@ -1,0 +1,14 @@
+year,lst_c_median,n_scenes,sensors
+2013,41.924,9,landsat-8
+2014,37.179,9,landsat-8
+2015,39.437,9,landsat-8
+2016,38.509,9,landsat-8
+2017,40.303,10,landsat-8
+2018,33.83,9,landsat-8
+2019,42.785,10,landsat-8
+2020,37.778,9,landsat-8
+2021,43.246,9,landsat-8
+2022,44.219,17,landsat-8+landsat-9
+2023,43.492,19,landsat-8+landsat-9
+2024,41.164,18,landsat-8+landsat-9
+2025,42.657,17,landsat-8+landsat-9
