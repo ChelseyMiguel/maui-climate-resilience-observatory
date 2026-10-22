@@ -382,3 +382,16 @@ Browned-vs-severity: **no consistent pattern** across the three fires. Do not cl
 2013 41.9 °C, 2014 37.2 °C, 2015 39.4 °C, 2016 38.5 °C, 2017 40.3 °C, 2018 33.8 °C, 2019 42.8 °C, 2020 37.8 °C, 2021 43.2 °C, 2022 44.2 °C, 2023 43.5 °C, 2024 41.2 °C, 2025 42.7 °C.
 2022 was the hottest of 13 dry seasons; across years LST and NDVI correlate at r = −0.80 (n = 13).
 Skin temperature at ~10:30 a.m., not air temperature; co-variation, not cause.
+
+
+## Whole island, 2017–2025 (Oct 2026)
+
+`scripts/remote_sensing/island_annual.py` — Sentinel-2 L2A dry-season medians over all of Maui (tiles 4QGJ, 4QGH,
+4QHJ), 60 m, ocean masked with Copernicus DEM (1907 km² of land; Maui is 1,883 km²).
+
+- Island median dry-season NDVI: 2017 0.574, 2018 0.554, 2019 0.556, 2020 0.522, 2021 0.477, 2022 0.470, 2023 0.529, 2024 0.506, 2025 0.486.
+  2022 is the lowest of the nine; the driest tenth of the island fell from 0.174 (2019) to 0.127 (2022).
+- Share of land browning more than −0.10 (2019 → 2022) by elevation: 0–300 m 21%, 300–600 m 31%, 600–1000 m 36%, 1000–1500 m 21%, 1500–2200 m 15%, 2200–3100 m 3%.
+  The 300–1000 m belt — Upcountry, including Pukalani and Kula — browned most.
+
+Safe claim: *"Across all of Maui, 2022 was the least green dry season since 2017, and the Upcountry elevation belt browned most."*

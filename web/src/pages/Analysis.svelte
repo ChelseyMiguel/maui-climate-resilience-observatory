@@ -28,7 +28,7 @@
   let ndviMap = new Map(), nbrMap = new Map(), dsciMap = new Map(), rainRows = [], rainError = null;
   let rasters = {}, elev = null, elevSource = '', elevError = null, pixels = null;
   // Remote-sensing products (scripts/remote_sensing/): annual Sentinel-2 composites, lidar, WorldCover.
-  let annual = null, lidar = null, manifest = {}, rsError = null, cubeStride = 6, baseline = null;
+  let annual = null, lidar = null, manifest = {}, rsError = null, cubeStride = 6, baseline = null, island = null;
 
   // Shared state
   const s0 = get(analysis);
@@ -59,6 +59,7 @@
     Promise.all([loadBands('s2_aoi_annual'), loadBands('lidar_aoi'), remoteManifest()])
       .then(([a, l, m]) => { annual = a; lidar = l; manifest = m ?? {}; })
       .catch((e) => (rsError = e.message));
+    fetch('/api/layers/island-info').then((r) => (r.ok ? r.json() : null)).then((d) => (island = d)).catch(() => (island = null));
     api.ndviBaseline().then((b) => (baseline = b?.available ? b : null)).catch(() => (baseline = null))
       .catch((e) => (rsError = e.message));
   });
@@ -437,6 +438,38 @@
     return pearson(pairs.map((p) => p[0]), pairs.map((p) => p[1]));
   })() : null;
 
+  // Whole island (scripts/remote_sensing/island_annual.py): medians and spread per year, by elevation zone.
+  $: iYears = island ? Object.keys(island.years).map(Number).sort((a, b) => a - b) : [];
+  $: islandFig = iYears.length ? {
+    data: ['ndvi', 'nbr'].flatMap((k, j) => {
+      const col = j ? '#ef9a3b' : '#5ab4ac', st = iYears.map((y) => island.years[y][k]);
+      return [
+        { type: 'scatter', mode: 'lines', x: [...iYears, ...[...iYears].reverse()], y: [...st.map((v) => v.p75), ...[...st].reverse().map((v) => v.p25)], fill: 'toself',
+          fillcolor: j ? 'rgba(239,154,59,0.15)' : 'rgba(90,180,172,0.18)', line: { width: 0 }, hoverinfo: 'skip', name: `${k.toUpperCase()} middle 50 %` },
+        { type: 'scatter', mode: 'lines+markers', x: iYears, y: st.map((v) => v.median), name: `${k.toUpperCase()} island median`, line: { color: col, width: 2 },
+          marker: { symbol: 'square', size: iYears.map((y) => (y === 2022 ? 10 : 6)) },
+          customdata: iYears.map((y) => [island.years[y].scenes, island.years[y].clear_obs_median]),
+          hovertemplate: `%{x}: ${k.toUpperCase()} %{y:.3f}<br>%{customdata[0]} scenes · %{customdata[1]} clear looks/pixel<extra></extra>` }];
+    }),
+    layout: { xaxis: { title: { text: 'Dry season (May–Sep)' }, dtick: 1, range: [iYears[0] - 0.5, iYears[iYears.length - 1] + 0.5] },
+      yaxis: { title: { text: 'Index value, all of Maui (60 m)' }, range: [0, 0.85] }, legend: { y: -0.3 } },
+  } : null;
+  $: zoneFig = iYears.length ? {
+    data: [{ type: 'heatmap', x: iYears.map(String), y: island.zones.map(([a, b]) => `${a}–${b} m`),
+      z: island.zones.map((_, zi) => iYears.map((y) => island.years[y].zones[zi].ndvi?.median ?? null)),
+      colorscale: [[0, '#8c510a'], [0.25, '#d8b365'], [0.44, '#f6e8c3'], [0.62, '#80cdc1'], [0.81, '#35978f'], [1, '#01665e']], zmin: 0, zmax: 0.8,
+      texttemplate: '%{z:.2f}', textfont: { size: 10, color: '#111' }, xgap: 2, ygap: 2,
+      colorbar: { title: { text: 'NDVI', side: 'right' }, thickness: 10, outlinewidth: 0 }, hovertemplate: '%{y}, %{x}: median NDVI %{z:.3f}<extra></extra>' }],
+    layout: { xaxis: { title: { text: 'Dry season' }, type: 'category' }, yaxis: { title: { text: 'Elevation zone (Copernicus DEM)' } }, margin: { l: 90 } },
+  } : null;
+  $: changeZones = island?.change_2019_2022_by_zone ?? [];
+  $: zoneChangeFig = changeZones.length ? {
+    data: [{ type: 'bar', x: changeZones.map((z) => `${z.zone_m[0]}–${z.zone_m[1]} m`), y: changeZones.map((z) => z['share_below_-0.10'] * 100),
+      marker: { color: '#d08a3c', line: { color: '#000', width: 1 } }, text: changeZones.map((z) => `${(z['share_below_-0.10'] * 100).toFixed(0)}%`), textposition: 'outside',
+      customdata: changeZones.map((z) => [z.median, z.n]), hovertemplate: '%{x}: %{y:.1f}% browned (dNDVI < −0.10)<br>median change %{customdata[0]}<br>%{customdata[1]} px<extra></extra>' }],
+    layout: { xaxis: { title: { text: 'Elevation zone' } }, yaxis: { title: { text: '% of land with dNDVI 2019 → 2022 < −0.10' }, range: [0, 100] } },
+  } : null;
+
   $: studyShare = rasters[index] ? countBelow(rasters[index].values, threshold) : null;
 </script>
 
@@ -544,6 +577,23 @@
       {/if}
 
       {#if rsError}<p class="err small wide">Remote-sensing products couldn’t load: {rsError}</p>{/if}
+      {#if islandFig}
+        <PlotPanel {Plotly} id="island_by_year" title="All of Maui, nine dry seasons" tag="exploratory" height={320}
+          meta="Sentinel-2 L2A May–Sep medians over the whole island (tiles 4QGJ, 4QGH, 4QHJ; 60 m; ocean masked). Lines: island median; bands: middle 50 % of land pixels. Windward rain forest and the dry leeward slopes are both in here."
+          data={islandFig.data} layout={islandFig.layout}
+          rows={iYears.map((y) => ({ year: y, ndvi_median: island.years[y].ndvi.median, ndvi_p25: island.years[y].ndvi.p25, ndvi_p75: island.years[y].ndvi.p75, nbr_median: island.years[y].nbr.median, scenes: island.years[y].scenes }))} />
+      {/if}
+      {#if zoneFig}
+        <PlotPanel {Plotly} id="island_by_elevation" title="Greenness by elevation, year by year" tag="exploratory" height={320}
+          meta="Median dry-season NDVI of all land in each elevation zone (Copernicus DEM GLO-90). Low leeward zones are driest; the forest belt is greenest; the summit is bare rock."
+          data={zoneFig.data} layout={zoneFig.layout}
+          rows={island.zones.flatMap(([a, b], zi) => iYears.map((y) => ({ zone: `${a}-${b} m`, year: y, ndvi_median: island.years[y].zones[zi].ndvi?.median ?? null })))} />
+      {/if}
+      {#if zoneChangeFig}
+        <PlotPanel {Plotly} id="island_change_by_elevation" title="Where Maui browned 2019 → 2022" tag="exploratory" height={300}
+          meta="Share of land pixels in each elevation zone whose dry-season NDVI fell by more than 0.10 from 2019 to 2022 — the study’s threshold applied island-wide (60 m, exploratory)."
+          data={zoneChangeFig.data} layout={zoneChangeFig.layout} rows={changeZones} />
+      {/if}
       {#if lsFig}
         <PlotPanel {Plotly} id="landsat_26_years" title="26 dry seasons: was 2022 unusual?" tag="mixed" height={340}
           meta="USGS Landsat Collection 2 surface reflectance via Microsoft Planetary Computer (scripts/remote_sensing/landsat_baseline.py, same method as the Earth Engine notebook): May–Sep per-pixel median NDVI, mean over the 1.5 km study area. Dashed white: Sentinel-2 for the overlapping years. Landsat 8/9 (2013 on) read NDVI higher than Landsat 7 — that is why 2014 stands out — so recent years are, if anything, flattered."

@@ -109,3 +109,24 @@ def test_2022_was_the_hottest_dry_season_since_2013():
     rows = list(csv.DictReader((ROOT / "data" / "research" / "landsat_lst_dryseason.csv").open()))
     hottest = max(rows, key=lambda r: float(r["lst_c_median"]))
     assert hottest["year"] == "2022" and len(rows) == 13
+
+
+island = _load("island_annual")
+
+
+def test_island_codes_round_trip_within_half_a_step():
+    v = np.array([-1.0, -0.1, 0.0, 0.47, 0.8, 1.0, np.nan], dtype="float32")
+    c = island.encode(v)
+    assert c[-1] == 255 and c.max() <= 255 and c[:-1].max() <= 250
+    back = c[:-1] / 125 - 1
+    assert np.all(np.abs(back - v[:-1]) <= 0.004 + 1e-6)
+
+
+def test_island_products_cover_maui():
+    import json
+    p = ROOT / "data" / "research" / "island_annual.json"
+    if not p.exists():
+        pytest.skip("island_annual.py not run")
+    d = json.loads(p.read_text())
+    assert abs(d["land_pixels"] * 0.0036 - 1883) / 1883 < 0.05      # Maui is 1,883 km2; 60 m pixel = 0.0036 km2
+    assert d["years"]["2022"]["ndvi"]["median"] < d["years"]["2019"]["ndvi"]["median"]

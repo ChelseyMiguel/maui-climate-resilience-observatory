@@ -170,4 +170,11 @@ export const DATASETS: DatasetMetadata[] = [
     link: 'https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2', linkChecked: true,
     caveat: 'Ground/canopy skin temperature at the ~10:30 a.m. overpass, not air temperature. Landsat 9 doubles the scenes from 2022.',
   },
+  {
+    id: 's2-island', kind: 'Satellite-derived index', name: 'Whole-island dry-season NDVI and NBR, 2017–2025',
+    provider: 'This project, from Sentinel-2 L2A on AWS (tiles 4QGJ, 4QGH, 4QHJ)', provenance: 'project-analysis',
+    spatialResolution: '60 m (8-bit, 0.008 steps)', coverage: 'All of Maui (ocean masked with Copernicus DEM)', temporal: 'May–Sep 2017–2025',
+    currency: 'Built Oct 2026', license: 'Derived from Copernicus Sentinel data', link: 'https://registry.opendata.aws/sentinel-2-l2a-cogs/', linkChecked: false,
+    caveat: 'Same masking and medians as the study-area products, coarser for the whole island. Under 1 % of land has no cloud-free look in a season.',
+  },
 ];

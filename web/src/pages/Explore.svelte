@@ -72,11 +72,21 @@
   let cursor = null;             // pointer readout
 
   // ---------- remote-sensing layers (scripts/remote_sensing/, public AWS archives) ----------
-  let rs = { imagery: [], annual: null, regional: null, lidar: null, landcover: null, landsat: null, burn: null, lst: null, manifest: {} };
+  let rs = { imagery: [], annual: null, regional: null, lidar: null, landcover: null, landsat: null, burn: null, lst: null, island: null, islandInfo: null, manifest: {} };
   let rsLoading = true;
   let imgId = 'none', imgOpacity = 1;
   let annualOn = false, annualYear = 2022, annualIdx = 'ndvi', playing = false, facets = false;
   let regionalOn = false, landcoverOn = false, lidarOn = false, lidarProduct = 'chm', droughtPlaying = false;
+  // Whole-island dry-season NDVI/NBR (scripts/remote_sensing/island_annual.py), uint8 codes.
+  let islandOn = false, islandYear = 2022, islandIdx = 'ndvi', islandMode = 'value', islandPlaying = false, islandTimer = 0;
+  $: islandYears = Object.keys(rs.islandInfo?.years ?? {}).map(Number).sort((a, b) => a - b);
+  const dec = (c) => (Number.isFinite(c) ? c / 125 - 1 : NaN);
+  function islandBand(idx, y) { const k = islandYears.indexOf(y); return k < 0 ? null : rs.island.bands[(idx === 'ndvi' ? 0 : islandYears.length) + k]; }
+  function toggleIslandPlay() {
+    islandPlaying = !islandPlaying; clearInterval(islandTimer);
+    if (islandPlaying) { islandOn = true; islandTimer = setInterval(() => { islandYear = islandYears[(islandYears.indexOf(islandYear) + 1) % islandYears.length]; }, reduceMotion ? 2500 : 1200); }
+  }
+  function zoomIsland() { map?.fitBounds([[-156.72, 20.55], [-155.96, 21.04]], { padding: 20, duration: dur(1200) }); }
   let landsatOn = false, landsatYear = 2022, landsatMode = 'z', burnOn = false, lstOn = false, lstYear = 2022;
   $: lstYears = (rs.manifest?.lst ?? []).map((r) => r.year);
   $: burnFires = rs.manifest?.burn_severity?.fires ?? [];
@@ -185,7 +195,8 @@
     map = new maplibregl.Map({
       container, style: baseStyle(), maxPitch: 80,
       bounds: [[b.west, b.south], [b.east, b.north]],
-      maxBounds: [[b.west - 0.1, b.south - 0.1], [b.east + 0.1, b.north + 0.1]],
+      // All of Maui (the whole-island layer), not just the terrain box.
+      maxBounds: [[-156.85, 20.45], [-155.85, 21.15]],
       attributionControl: { compact: true, customAttribution:
         'Relief: AWS Terrain Tiles · Vegetation: author’s Sentinel-2 analysis · Drought: U.S. Drought Monitor · Fires: NIFC · Places & facilities: Hawaiʻi Statewide GIS Program, U.S. Census · Sites: NASA GLOBE' },
     });
@@ -374,22 +385,23 @@
   // ---------- remote sensing ----------
   async function loadRemote() {
     const safe = (p) => p.catch(() => null);
-    const [img, annual, regional, lidar, landcover, manifest, landsat, burn, lst] = await Promise.all([
+    const [img, annual, regional, lidar, landcover, manifest, landsat, burn, lst, island, islandInfo] = await Promise.all([
       safe(imageryIndex()), safe(loadBands('s2_aoi_annual')), safe(loadBands('s2_regional_change', ['dndvi', 'dnbr'])),
       safe(loadBands('lidar_aoi', ['dtm_dm', 'chm_cm', 'hillshade'])), safe(loadBands('worldcover_2021', ['class'])), safe(remoteManifest()),
-      safe(loadBands('landsat_aoi_annual')), safe(loadBands('s2_burn_severity_2023')), safe(loadBands('landsat_lst_annual'))]);
-    rs = { imagery: img ?? [], annual, regional, lidar, landcover, landsat, burn, lst, manifest: manifest ?? {} };
+      safe(loadBands('landsat_aoi_annual')), safe(loadBands('s2_burn_severity_2023')), safe(loadBands('landsat_lst_annual')),
+      safe(loadBands('island_annual')), safe(fetch('/api/layers/island-info').then((r) => (r.ok ? r.json() : null)))]);
+    rs = { imagery: img ?? [], annual, regional, lidar, landcover, landsat, burn, lst, island, islandInfo, manifest: manifest ?? {} };
     if (!map) return;
     // Land cover and regional change sit under the drought polygons; annual NDVI
     // and lidar sit over the study rasters so they can be compared in place.
-    const below = { landcover: 'drought-fill', regional: 'drought-fill', annual: 'patches-line', lidar: 'patches-line', landsat: 'patches-line', burn: 'fires-fill', lst: 'patches-line' };
+    const below = { landcover: 'drought-fill', regional: 'drought-fill', annual: 'patches-line', lidar: 'patches-line', landsat: 'patches-line', burn: 'fires-fill', lst: 'patches-line', island: 'drought-fill' };
     for (const key of Object.keys(below)) {
       const b = rs[key];
       if (!b) continue;
       rsCanvas[key] = document.createElement('canvas');
       map.addSource(`rs-${key}`, { type: 'canvas', canvas: rsCanvas[key], coordinates: b.corners, animate: false });
       map.addLayer({ id: `rs-${key}`, type: 'raster', source: `rs-${key}`, layout: { visibility: 'none' },
-        paint: { 'raster-resampling': 'nearest', 'raster-opacity': key === 'landcover' ? 0.75 : 0.92 } }, below[key]);
+        paint: { 'raster-resampling': 'nearest', 'raster-opacity': key === 'landcover' ? 0.75 : key === 'island' ? 1 : 0.92 } }, below[key]);
     }
     rsLoading = false;
     paintRemote();
@@ -424,6 +436,14 @@
         paint(z, rs.landsat.width, rs.landsat.height, (v) => rgba(rampColor((Math.max(-3, Math.min(3, v)) / 3) * 0.4), 235), rsCanvas.landsat);
       } else paint(b, rs.landsat.width, rs.landsat.height, (v) => rgba(ndviColour(v)), rsCanvas.landsat);
       repaint('landsat');
+    }
+    if (rs.island && islandYears.length) {
+      const now = islandBand(islandIdx, islandYear), base = islandBand(islandIdx, 2019);
+      if (islandMode === 'change' && base) {
+        const d = Float32Array.from(now, (c, i) => dec(c) - dec(base[i]));
+        paint(d, rs.island.width, rs.island.height, (v) => rgba(rampColor(v), 255), rsCanvas.island);
+      } else paint(now, rs.island.width, rs.island.height, (c) => rgba(ndviColour(dec(c)), 255), rsCanvas.island);
+      repaint('island');
     }
     if (rs.burn) {
       paint(rs.burn.bands[0], rs.burn.width, rs.burn.height, burnColour, rsCanvas.burn);
@@ -461,7 +481,7 @@
 
   function applyRemote() {
     if (!ready || rsLoading) return;
-    vis('rs-annual', annualOn); vis('rs-landsat', landsatOn); vis('rs-burn', burnOn); vis('rs-lst', lstOn); vis('rs-regional', regionalOn); vis('rs-landcover', landcoverOn); vis('rs-lidar', lidarOn);
+    vis('rs-annual', annualOn); vis('rs-landsat', landsatOn); vis('rs-burn', burnOn); vis('rs-island', islandOn); vis('rs-lst', lstOn); vis('rs-regional', regionalOn); vis('rs-landcover', landcoverOn); vis('rs-lidar', lidarOn);
     // Satellite image (period-matched Sentinel-2 composites), under the hillshade.
     const item = rs.imagery.find((i) => i.id === imgId);
     if (!item) { vis('rs-img', false); return; }
@@ -478,8 +498,8 @@
     m.setLayoutProperty('rs-img', 'visibility', 'visible');
     m.setPaintProperty('rs-img', 'raster-opacity', opacity);
   }
-  $: if (ready) { annualYear; annualIdx; vegIndex; lidarProduct; landsatYear; landsatMode; lsNormal; lstYear; rs; paintRemote(); }
-  $: if (ready) { annualOn; regionalOn; landcoverOn; lidarOn; landsatOn; burnOn; lstOn; imgId; imgOpacity; rs; applyRemote(); }
+  $: if (ready) { annualYear; annualIdx; vegIndex; lidarProduct; landsatYear; landsatMode; lsNormal; lstYear; islandYear; islandIdx; islandMode; rs; paintRemote(); }
+  $: if (ready) { annualOn; regionalOn; landcoverOn; lidarOn; landsatOn; burnOn; lstOn; islandOn; imgId; imgOpacity; rs; applyRemote(); }
 
   function togglePlay() {
     playing = !playing;
@@ -515,6 +535,13 @@
     if (rs.landsat && lsNormal) {
       const c = cellOf(rs.landsat, lat, lon), k = lsYears.indexOf(2022);
       if (c && k >= 0 && Number.isFinite(lsZ(c.i, k))) out.landsat = { z2022: lsZ(c.i, k), ndvi2022: rs.landsat.bands[k][c.i], normal: lsNormal.mean[c.i] };
+    }
+    if (rs.island && islandYears.length) {
+      const c = cellOf(rs.island, lat, lon);
+      if (c) {
+        const series = islandYears.map((y) => ({ year: y, ndvi: dec(islandBand('ndvi', y)[c.i]) }));
+        if (series.some((p) => Number.isFinite(p.ndvi))) out.island = { series: series.filter((p) => Number.isFinite(p.ndvi)) };
+      }
     }
     if (rs.burn) {
       const c = cellOf(rs.burn, lat, lon), v = c ? rs.burn.bands[0][c.i] : NaN;
@@ -763,7 +790,7 @@
     map?.flyTo({ center: [studyArea.lon, studyArea.lat], zoom: 13.6, duration: dur(1200) });
   }
 
-  onDestroy(() => { clearInterval(playTimer); clearInterval(droughtTimer); closeCompare(); map?.remove(); });
+  onDestroy(() => { clearInterval(playTimer); clearInterval(islandTimer); clearInterval(droughtTimer); closeCompare(); map?.remove(); });
 
   const swatch = (v) => `rgb(${rampColor(v).join(',')})`;
   const rgb = (c) => `rgb(${c.join(',')})`;
@@ -810,6 +837,33 @@
       <legend>Satellite &amp; lidar</legend>
       <div class="sub">
         {#if rsLoading}<p class="hint">Loading Sentinel-2, lidar and land-cover products…</p>{/if}
+        <label class="lyr"><input type="checkbox" bind:checked={islandOn} disabled={!rs.island} /> Whole island: dry-season {islandIdx.toUpperCase()} (60 m)</label>
+        {#if rs.island}
+          <div class="sub2" class:dim={!islandOn}>
+            <div class="row">
+              <button class="play" aria-pressed={islandPlaying} on:click={toggleIslandPlay}>{islandPlaying ? '❚❚' : '▶'}</button>
+              <input type="range" min={islandYears[0]} max={islandYears[islandYears.length - 1]} step="1" bind:value={islandYear} aria-label="Island year" />
+              <b class="num">{islandYear}</b>
+            </div>
+            <div class="row">
+              <select bind:value={islandIdx} aria-label="Island index"><option value="ndvi">NDVI</option><option value="nbr">NBR</option></select>
+              <select bind:value={islandMode} aria-label="Island display"><option value="value">value</option><option value="change">change since 2019</option></select>
+              <button class="play" on:click={zoomIsland}>Zoom to all Maui</button>
+            </div>
+            {#if islandMode === 'change'}
+              <div class="ramp" aria-hidden="true">{#each [-0.4, -0.2, -0.1, 0, 0.1, 0.2, 0.4] as v}<span style="background:{swatch(v)}"></span>{/each}</div>
+              <div class="ramp-labels"><span>−0.4 browner</span><span>no change</span><span>+0.4 greener</span></div>
+            {:else}
+              <div class="ramp" aria-hidden="true">{#each NDVI_STOPS as [, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
+              <div class="ramp-labels"><span>0 bare / dry</span><span>0.4</span><span>0.8 green</span></div>
+            {/if}
+            {#if rs.islandInfo?.years?.[islandYear]}
+              {@const yi = rs.islandInfo.years[islandYear]}
+              <p class="hint">Island median {islandIdx.toUpperCase()} <b class="num">{yi[islandIdx]?.median?.toFixed(3)}</b> · {yi.scenes} scenes from tiles {rs.islandInfo.tiles.join(', ')} · median {yi.clear_obs_median} clear looks per pixel. Sentinel-2 L2A May–Sep median, cloud-masked, 60 m; ocean masked (Copernicus DEM). Gaps: never cloud-free that season.</p>
+            {/if}
+          </div>
+        {/if}
+
         <label class="col">Sentinel-2 image
           <select bind:value={imgId} aria-label="Sentinel-2 image">
             <option value="none">none</option>
@@ -1031,6 +1085,15 @@
                 <title>{p.year}: NDVI {p.ndvi.toFixed(3)}, {p.obs} clear obs</title></rect>{/each}
             </svg>
             <div class="sparkx"><span>{selected.rs.series[0].year}</span><span>2019 · 2022 marked</span><span>{selected.rs.series[selected.rs.series.length - 1].year}</span></div>
+          {/if}
+          {#if !selected.rs?.series?.length && selected.rs?.island?.series?.length}
+            {@const sp = spark(selected.rs.island.series)}
+            <p class="meta"><b>Dry-season NDVI here, {selected.rs.island.series[0].year}–{selected.rs.island.series[selected.rs.island.series.length - 1].year}</b> (whole-island Sentinel-2, 60 m)</p>
+            <svg class="spark" viewBox="0 0 {sp.W} {sp.H}" role="img" aria-label="NDVI by year here">
+              <line x1="0" x2={sp.W} y1={sp.y(0.4)} y2={sp.y(0.4)} class="g" /><path d={sp.d} />
+              {#each selected.rs.island.series as p, i}<rect x={sp.x(i) - 2.5} y={sp.y(p.ndvi) - 2.5} width="5" height="5" class:hl={p.year === 2019 || p.year === 2022}><title>{p.year}: NDVI {p.ndvi.toFixed(2)}</title></rect>{/each}
+            </svg>
+            <div class="sparkx"><span>{selected.rs.island.series[0].year}</span><span>2019 · 2022 marked</span><span>{selected.rs.island.series[selected.rs.island.series.length - 1].year}</span></div>
           {/if}
           {#if selected.rs?.landcover || selected.rs?.lidar || selected.rs?.regional || selected.rs?.landsat || selected.rs?.burn || selected.rs?.lst2022 !== undefined}
             <dl class="px">

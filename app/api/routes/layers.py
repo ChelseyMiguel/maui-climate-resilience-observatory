@@ -191,6 +191,7 @@ RASTERS = {
     "landsat_aoi_annual": browning.DATA_DIR / "landsat_aoi_annual.tif",
     "landsat_lst_annual": browning.DATA_DIR / "landsat_lst_annual.tif",
     "s2_burn_severity_2023": browning.DATA_DIR / "s2_burn_severity_2023.tif",
+    "island_annual": browning.DATA_DIR / "island_annual.tif",
 }
 MANIFESTS = {
     "sentinel2": browning.DATA_DIR / "s2_manifest.json",
@@ -269,6 +270,13 @@ def remote_sensing() -> dict:
     else:
         out["lst"] = None
     return out
+
+
+@router.get("/island-info")
+def island_info() -> dict:
+    """Whole-island dry-season statistics (scripts/remote_sensing/island_annual.py)."""
+    path = _require(browning.DATA_DIR / "island_annual.json", "scripts/remote_sensing/island_annual.py")
+    return json.loads(path.read_text())
 
 
 @router.get("/inset.png")
