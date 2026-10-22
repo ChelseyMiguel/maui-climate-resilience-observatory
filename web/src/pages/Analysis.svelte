@@ -28,7 +28,7 @@
   let ndviMap = new Map(), nbrMap = new Map(), dsciMap = new Map(), rainRows = [], rainError = null;
   let rasters = {}, elev = null, elevSource = '', elevError = null, pixels = null;
   // Remote-sensing products (scripts/remote_sensing/): annual Sentinel-2 composites, lidar, WorldCover.
-  let annual = null, lidar = null, manifest = {}, rsError = null, cubeStride = 6;
+  let annual = null, lidar = null, manifest = {}, rsError = null, cubeStride = 6, baseline = null;
 
   // Shared state
   const s0 = get(analysis);
@@ -58,6 +58,8 @@
     loadElevation();
     Promise.all([loadBands('s2_aoi_annual'), loadBands('lidar_aoi'), remoteManifest()])
       .then(([a, l, m]) => { annual = a; lidar = l; manifest = m ?? {}; })
+      .catch((e) => (rsError = e.message));
+    api.ndviBaseline().then((b) => (baseline = b?.available ? b : null)).catch(() => (baseline = null))
       .catch((e) => (rsError = e.message));
   });
 
@@ -377,6 +379,22 @@
       yaxis2: { title: { text: `% below ${threshold.toFixed(2)}` }, overlaying: 'y', side: 'right', range: [0, 100], showgrid: false }, margin: { r: 70 }, legend: { y: -0.3 } },
   } : null;
 
+  // 26 years of Landsat (study-area mean of per-pixel dry-season medians) with the
+  // Sentinel-2 study-area means for the overlapping years: a cross-sensor check.
+  $: s2Means = annual && nY ? aYears.map((y, k) => { const v = Array.from(annual.bands[k]).filter(Number.isFinite); return { year: y, ndvi: v.reduce((a, b) => a + b, 0) / v.length }; }) : [];
+  $: lsFig = baseline ? {
+    data: [
+      { type: 'scatter', mode: 'lines', x: [baseline.normal.years[0] - 0.5, baseline.normal.years[1] + 0.5], y: [baseline.normal.mean, baseline.normal.mean],
+        line: { color: '#8a959c', dash: 'dot', width: 1 }, name: `2000–2018 normal ${baseline.normal.mean.toFixed(3)}`, hoverinfo: 'skip' },
+      { type: 'scatter', mode: 'lines+markers', x: baseline.rows.map((r) => r.year), y: baseline.rows.map((r) => r.ndvi), name: 'Landsat 5/7/8/9, 30 m',
+        line: { color: '#5ab4ac', width: 2 }, marker: { symbol: 'square', size: baseline.rows.map((r) => (r.year === 2022 ? 11 : 7)), color: baseline.rows.map((r) => (r.year === 2022 ? '#e07b2c' : '#5ab4ac')) },
+        customdata: baseline.rows.map((r) => [r.z, r.rank_lowest, r.n_scenes, r.sensors]),
+        hovertemplate: '%{x}: NDVI %{y:.3f}<br>z %{customdata[0]} · rank %{customdata[1]} lowest<br>%{customdata[2]} scenes (%{customdata[3]})<extra>Landsat</extra>' },
+      { type: 'scatter', mode: 'lines+markers', x: s2Means.map((r) => r.year), y: s2Means.map((r) => r.ndvi), name: 'Sentinel-2, 10 m',
+        line: { color: '#e4e8ea', width: 1.5, dash: 'dash' }, marker: { symbol: 'diamond', size: 6, color: '#e4e8ea' }, hovertemplate: '%{x}: NDVI %{y:.3f}<extra>Sentinel-2</extra>' }],
+    layout: { xaxis: { title: { text: 'Dry season (May–Sep)' }, dtick: 2 }, yaxis: { title: { text: 'Study-area mean NDVI' } }, legend: { y: -0.25 } },
+  } : null;
+
   $: studyShare = rasters[index] ? countBelow(rasters[index].values, threshold) : null;
 </script>
 
@@ -484,6 +502,12 @@
       {/if}
 
       {#if rsError}<p class="err small wide">Remote-sensing products couldn’t load: {rsError}</p>{/if}
+      {#if lsFig}
+        <PlotPanel {Plotly} id="landsat_26_years" title="26 dry seasons: was 2022 unusual?" tag="mixed" height={340}
+          meta="USGS Landsat Collection 2 surface reflectance via Microsoft Planetary Computer (scripts/remote_sensing/landsat_baseline.py, same method as the Earth Engine notebook): May–Sep per-pixel median NDVI, mean over the 1.5 km study area. Dashed white: Sentinel-2 for the overlapping years. Landsat 8/9 (2013 on) read NDVI higher than Landsat 7 — that is why 2014 stands out — so recent years are, if anything, flattered."
+          data={lsFig.data} layout={lsFig.layout} rows={baseline.rows.map(({ year, ndvi, z, rank_lowest, n_scenes, sensors }) => ({ year, ndvi, z, rank_lowest, n_scenes, sensors }))}
+          note={(() => { const r = baseline.rows.find((x) => x.year === 2022); return r ? `2022: NDVI ${r.ndvi}, z = ${r.z} against the 2000–2018 normal, rank ${r.rank_lowest} lowest of ${baseline.years_with_data} years.` : ''; })()} />
+      {/if}
       {#if checkFig}
         <PlotPanel {Plotly} id="independent_check" title="Independent check of the study raster" tag="mixed" height={380}
           meta="Each 10 m pixel: the study’s dNDVI (Earth Engine) vs the same quantity rebuilt from the public AWS Sentinel-2 L2A archive with the same masking and May–Sep medians (scripts/remote_sensing/). Dashed: −0.10."

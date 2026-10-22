@@ -67,3 +67,21 @@ def test_committed_products_agree_with_the_study():
     v = m["validation_vs_study_dndvi"]
     assert v["pixels"] == 70280 and v["share_below_-0.10_study"] == 0.4274
     assert v["pearson_r"] > 0.8 and abs(v["mean_difference"]) < 0.02
+
+
+def test_landsat_baseline_from_the_planetary_computer():
+    from lib import landsat_baseline
+    s = landsat_baseline.summary()
+    assert s["available"] and s["years_with_data"] == 26
+    assert s["normal"]["years"] == [2000, 2018] and s["normal"]["n"] == 19
+    y2022 = next(r for r in s["rows"] if r["year"] == 2022)
+    assert y2022["rank_lowest"] == 1 and y2022["z"] < -1.5
+    # Lower than every OLI-era (Landsat 8+) year before it, so not a sensor artefact.
+    assert all(r["ndvi"] > y2022["ndvi"] for r in s["rows"] if 2014 <= r["year"] <= 2021)
+
+
+def test_landsat_scene_failures_are_recorded_not_filled():
+    import json
+    m = json.loads((ROOT / "data" / "research" / "landsat_manifest.json").read_text())
+    assert m["masked_qa_bits"] == [1, 3, 4]
+    assert all(s not in m["years"][y] for y, skipped in m.get("unreadable", {}).items() for s in skipped)

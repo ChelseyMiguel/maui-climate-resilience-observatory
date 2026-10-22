@@ -350,3 +350,21 @@ the study box (4.99 pts/m² used), flown 2023-02-19 – 2023-03-30.
 Height above ground: median 0.73 m, 95th percentile 9.54 m;
 includes buildings (not classed separately). Lidar ground is ~5 m higher than the AWS terrain tiles at a
 test point in Pukalani (vertical datum difference) — elevations are always labelled with their source.
+
+
+## Landsat 2000–2025 (Microsoft Planetary Computer, Oct 2026)
+
+`scripts/remote_sensing/landsat_baseline.py` — same method as notebook section 6 (Collection 2 Level-2,
+Tier 1, May–Sep, QA bits 1/3/4 masked, per-pixel median, mean over the 1.5 km study area at 30 m).
+
+- 2022 dry-season NDVI 0.3574: **lowest of 26 years** (2000–2025), z = -1.61
+  against the 2000–2018 normal (mean 0.463, SD 0.0656, n = 19).
+- Next lowest: 2003 (0.374), 2010 (0.3865), 2007 (0.391), 2021 (0.3928).
+- Sensor caveat: Landsat 8/9 (2013 on) read NDVI higher than Landsat 7 (2014, Landsat 8 only, is the highest
+  year at 0.619). That bias makes recent years look *greener*, so 2022 ranking lowest is conservative;
+  2022 is also below every Landsat 8-era year 2014–2021 (minimum 0.3928).
+- No Landsat 5 scenes over this path/row in 2000–2011 (Landsat 7 only). One 2022 Landsat 7 file was unreadable
+  and is listed in `landsat_manifest.json`, not filled.
+
+Safe claim: *"In 26 years of Landsat, the 2022 dry season was the least green in the study area."*
+Not: that this caused the fires, or that it measures fuel.

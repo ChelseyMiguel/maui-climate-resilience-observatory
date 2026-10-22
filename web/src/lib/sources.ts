@@ -155,4 +155,12 @@ export const DATASETS: DatasetMetadata[] = [
     license: 'Copernicus DEM licence (free, attribution) — see provider terms', link: 'https://registry.opendata.aws/copernicus-dem/', linkChecked: false,
     caveat: 'Only used to draw the island in the locator inset.',
   },
+  {
+    id: 'landsat-pc', kind: 'Satellite imagery (reflectance)', name: 'Landsat 5/7/8/9 Collection 2 Level-2 surface reflectance',
+    provider: 'USGS; hosted free by Microsoft Planetary Computer (landsat-c2-l2)', provenance: 'verified-public',
+    spatialResolution: '30 m', coverage: 'Path 063 / row 046 (study area)', temporal: 'Dry seasons (May–Sep) 2000–2025, Tier 1 only',
+    currency: 'Archive as of Oct 2026', license: 'Public domain (USGS); Planetary Computer terms of use',
+    link: 'https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2', linkChecked: true,
+    caveat: 'Same method as the Earth Engine notebook (QA bits 1, 3, 4 masked). No Landsat 5 over this scene in 2000–2011; Landsat 8/9 (2013 on) read NDVI higher than Landsat 7 — 2014 stands out for that reason.',
+  },
 ];

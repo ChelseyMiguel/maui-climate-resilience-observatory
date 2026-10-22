@@ -71,11 +71,27 @@
   let cursor = null;             // pointer readout
 
   // ---------- remote-sensing layers (scripts/remote_sensing/, public AWS archives) ----------
-  let rs = { imagery: [], annual: null, regional: null, lidar: null, landcover: null, manifest: {} };
+  let rs = { imagery: [], annual: null, regional: null, lidar: null, landcover: null, landsat: null, manifest: {} };
   let rsLoading = true;
   let imgId = 'none', imgOpacity = 1;
   let annualOn = false, annualYear = 2022, annualIdx = 'ndvi', playing = false, facets = false;
   let regionalOn = false, landcoverOn = false, lidarOn = false, lidarProduct = 'chm', droughtPlaying = false;
+  let landsatOn = false, landsatYear = 2022, landsatMode = 'z';
+  // Landsat 30 m dry-season NDVI per year (Planetary Computer): years from the
+  // manifest, and each pixel's 2000-2018 normal (mean, sample SD).
+  $: lsYears = Object.keys(rs.manifest?.landsat?.years ?? {}).map(Number).sort((a, b) => a - b);
+  $: lsNormal = rs.landsat && lsYears.length ? (() => {
+    const idx = lsYears.map((y, k) => (y >= 2000 && y <= 2018 ? k : -1)).filter((k) => k >= 0);
+    const n = rs.landsat.width * rs.landsat.height, mean = new Float32Array(n).fill(NaN), sd = new Float32Array(n).fill(NaN);
+    for (let i = 0; i < n; i++) {
+      const v = idx.map((k) => rs.landsat.bands[k][i]).filter(Number.isFinite);
+      if (v.length < 5) continue;
+      const m = v.reduce((a, b) => a + b, 0) / v.length;
+      mean[i] = m; sd[i] = Math.sqrt(v.reduce((a, b) => a + (b - m) ** 2, 0) / (v.length - 1));
+    }
+    return { mean, sd };
+  })() : null;
+  const lsZ = (i, k) => (lsNormal && lsNormal.sd[i] > 0 ? (rs.landsat.bands[k][i] - lsNormal.mean[i]) / lsNormal.sd[i] : NaN);
   const rsCanvas = {};
   let playTimer = 0, droughtTimer = 0;
   $: annualYears = rs.annual ? Array.from({ length: rs.annual.bands.length / 3 }, (_, i) => annualFirst + i) : [];
@@ -355,14 +371,15 @@
   // ---------- remote sensing ----------
   async function loadRemote() {
     const safe = (p) => p.catch(() => null);
-    const [img, annual, regional, lidar, landcover, manifest] = await Promise.all([
+    const [img, annual, regional, lidar, landcover, manifest, landsat] = await Promise.all([
       safe(imageryIndex()), safe(loadBands('s2_aoi_annual')), safe(loadBands('s2_regional_change', ['dndvi', 'dnbr'])),
-      safe(loadBands('lidar_aoi', ['dtm_dm', 'chm_cm', 'hillshade'])), safe(loadBands('worldcover_2021', ['class'])), safe(remoteManifest())]);
-    rs = { imagery: img ?? [], annual, regional, lidar, landcover, manifest: manifest ?? {} };
+      safe(loadBands('lidar_aoi', ['dtm_dm', 'chm_cm', 'hillshade'])), safe(loadBands('worldcover_2021', ['class'])), safe(remoteManifest()),
+      safe(loadBands('landsat_aoi_annual'))]);
+    rs = { imagery: img ?? [], annual, regional, lidar, landcover, landsat, manifest: manifest ?? {} };
     if (!map) return;
     // Land cover and regional change sit under the drought polygons; annual NDVI
     // and lidar sit over the study rasters so they can be compared in place.
-    const below = { landcover: 'drought-fill', regional: 'drought-fill', annual: 'patches-line', lidar: 'patches-line' };
+    const below = { landcover: 'drought-fill', regional: 'drought-fill', annual: 'patches-line', lidar: 'patches-line', landsat: 'patches-line' };
     for (const key of Object.keys(below)) {
       const b = rs[key];
       if (!b) continue;
@@ -396,6 +413,15 @@
       paint(rs.regional.bands[vegIndex === 'dndvi' ? 0 : 1], rs.regional.width, rs.regional.height, (v) => rgba(rampColor(v), 225), rsCanvas.regional);
       repaint('regional');
     }
+    if (rs.landsat && lsYears.includes(landsatYear)) {
+      const k = lsYears.indexOf(landsatYear), b = rs.landsat.bands[k];
+      if (landsatMode === 'z') {
+        const z = Float32Array.from(b, (_, i) => lsZ(i, k));
+        // z of -3..+3 on the vegetation-change ramp (brown = below normal).
+        paint(z, rs.landsat.width, rs.landsat.height, (v) => rgba(rampColor((Math.max(-3, Math.min(3, v)) / 3) * 0.4), 235), rsCanvas.landsat);
+      } else paint(b, rs.landsat.width, rs.landsat.height, (v) => rgba(ndviColour(v)), rsCanvas.landsat);
+      repaint('landsat');
+    }
     if (rs.landcover) { paint(rs.landcover.bands[0], rs.landcover.width, rs.landcover.height, worldcoverColour, rsCanvas.landcover); repaint('landcover'); }
     if (rs.lidar) {
       const l = rs.lidar;
@@ -406,7 +432,7 @@
   }
   function applyRemote() {
     if (!ready || rsLoading) return;
-    vis('rs-annual', annualOn); vis('rs-regional', regionalOn); vis('rs-landcover', landcoverOn); vis('rs-lidar', lidarOn);
+    vis('rs-annual', annualOn); vis('rs-landsat', landsatOn); vis('rs-regional', regionalOn); vis('rs-landcover', landcoverOn); vis('rs-lidar', lidarOn);
     // Satellite image (period-matched Sentinel-2 composites), under the hillshade.
     const item = rs.imagery.find((i) => i.id === imgId);
     if (!item) { vis('rs-img', false); return; }
@@ -423,8 +449,8 @@
     m.setLayoutProperty('rs-img', 'visibility', 'visible');
     m.setPaintProperty('rs-img', 'raster-opacity', opacity);
   }
-  $: if (ready) { annualYear; annualIdx; vegIndex; lidarProduct; rs; paintRemote(); }
-  $: if (ready) { annualOn; regionalOn; landcoverOn; lidarOn; imgId; imgOpacity; rs; applyRemote(); }
+  $: if (ready) { annualYear; annualIdx; vegIndex; lidarProduct; landsatYear; landsatMode; lsNormal; rs; paintRemote(); }
+  $: if (ready) { annualOn; regionalOn; landcoverOn; lidarOn; landsatOn; imgId; imgOpacity; rs; applyRemote(); }
 
   function togglePlay() {
     playing = !playing;
@@ -456,6 +482,10 @@
       const c = cellOf(rs.annual, lat, lon), n = annualYears.length;
       if (c) out.series = annualYears.map((y, k) => ({ year: y, ndvi: rs.annual.bands[k][c.i], nbr: rs.annual.bands[n + k][c.i], obs: rs.annual.bands[2 * n + k][c.i] }))
         .filter((p) => Number.isFinite(p.ndvi));
+    }
+    if (rs.landsat && lsNormal) {
+      const c = cellOf(rs.landsat, lat, lon), k = lsYears.indexOf(2022);
+      if (c && k >= 0 && Number.isFinite(lsZ(c.i, k))) out.landsat = { z2022: lsZ(c.i, k), ndvi2022: rs.landsat.bands[k][c.i], normal: lsNormal.mean[c.i] };
     }
     if (rs.landcover) {
       const c = cellOf(rs.landcover, lat, lon);
@@ -773,6 +803,23 @@
           </div>
         {/if}
 
+        <label class="lyr"><input type="checkbox" bind:checked={landsatOn} disabled={!rs.landsat} /> Landsat {lsYears[0] ?? 2000}–{lsYears[lsYears.length - 1] ?? 2025}, study area (30 m)</label>
+        {#if rs.landsat}
+          <div class="sub2" class:dim={!landsatOn}>
+            <div class="row">
+              <input type="range" min={lsYears[0]} max={lsYears[lsYears.length - 1]} step="1" bind:value={landsatYear} aria-label="Landsat year" />
+              <b class="num">{landsatYear}</b>
+              <select bind:value={landsatMode} aria-label="Landsat display"><option value="z">vs normal</option><option value="ndvi">NDVI</option></select>
+            </div>
+            {#if landsatMode === 'z'}
+              <div class="ramp" aria-hidden="true">{#each [-3, -2, -1, 0, 1, 2, 3] as z}<span style="background:{swatch((z / 3) * 0.4)}"></span>{/each}</div>
+              <div class="ramp-labels"><span>−3 SD drier</span><span>normal</span><span>+3 SD greener</span></div>
+            {/if}
+            <p class="hint">USGS Landsat 5/7/8/9 Collection 2 surface reflectance (Microsoft Planetary Computer), May–Sep median, cloud-masked, 30 m.
+              “vs normal”: each pixel’s z-score against its own 2000–2018 dry seasons. {rs.manifest?.landsat?.years?.[landsatYear]?.length ?? '?'} scenes in {landsatYear}.</p>
+          </div>
+        {/if}
+
         <label class="lyr"><input type="checkbox" bind:checked={regionalOn} disabled={!rs.regional} /> Regional {label} 2019 → 2022 (20 m)</label>
         {#if regionalOn}<p class="hint sub2">Exploratory: the same Sentinel-2 change across the whole terrain box, not the study raster. Colours as the vegetation ramp below.</p>{/if}
 
@@ -925,8 +972,9 @@
             </svg>
             <div class="sparkx"><span>{selected.rs.series[0].year}</span><span>2019 · 2022 marked</span><span>{selected.rs.series[selected.rs.series.length - 1].year}</span></div>
           {/if}
-          {#if selected.rs?.landcover || selected.rs?.lidar || selected.rs?.regional}
+          {#if selected.rs?.landcover || selected.rs?.lidar || selected.rs?.regional || selected.rs?.landsat}
             <dl class="px">
+              {#if selected.rs.landsat}<dt>Landsat 2022</dt><dd>NDVI {selected.rs.landsat.ndvi2022.toFixed(3)} vs normal {selected.rs.landsat.normal.toFixed(3)} · z {selected.rs.landsat.z2022.toFixed(1)}</dd>{/if}
               {#if selected.rs.landcover}<dt>Land cover 2021</dt><dd>{selected.rs.landcover}</dd>{/if}
               {#if selected.rs.lidar}<dt>Height above ground</dt><dd>{selected.rs.lidar.chm.toFixed(1)} m (lidar 2023)</dd>
                 <dt>Ground (lidar)</dt><dd>{selected.rs.lidar.ground.toFixed(1)} m</dd>{/if}

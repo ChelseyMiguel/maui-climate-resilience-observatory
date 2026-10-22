@@ -188,11 +188,13 @@ RASTERS = {
     "s2_regional_change": browning.DATA_DIR / "s2_regional_change.tif",
     "lidar_aoi": browning.DATA_DIR / "lidar_aoi.tif",
     "worldcover_2021": DATA / "context" / "worldcover_2021.tif",
+    "landsat_aoi_annual": browning.DATA_DIR / "landsat_aoi_annual.tif",
 }
 MANIFESTS = {
     "sentinel2": browning.DATA_DIR / "s2_manifest.json",
     "lidar": browning.DATA_DIR / "lidar_manifest.json",
     "worldcover": browning.DATA_DIR / "worldcover_browning.json",
+    "landsat": browning.DATA_DIR / "landsat_manifest.json",
 }
 
 
