@@ -420,3 +420,24 @@ Medium 62%, Low 27%, unrated 23%. The 2023 fires: Lahaina
 71% in land rated High; Pulehu (Upcountry's largest) 99% outside any rated area.
 Safe claim: *"The state's fire-risk map covers communities, so the largest Upcountry fire burned mostly in land it doesn't rate."*
 Not: that the ratings are wrong, or that browning predicts them.
+
+
+## Outlook: El Niño and Hawaiʻi's 2026–27 wet season (Oct 2026) — a forecast, not our result
+
+Source chain: Kevin Kodama, "Hawaiʻi's Upcoming Drought of 2027?" (Mauka Showers blog, 23 Oct 2026), which summarises NOAA
+products. Checked against primary sources and our own data on 24 Oct 2026:
+
+- **Confirmed (NOAA CPC ENSO discussion, 8 Oct 2026):** El Niño Advisory in effect; a strong-to-very strong El Niño is likely
+  through January–March 2027 (greater than 83 % chance).
+- **Confirmed (NOAA CPC Seasonal Drought Outlook, issued 15 Oct 2026):** Hawaiʻi is expected to be **drought-free at the end
+  of January 2027**. The blog calls this at odds with CPC's own dry precipitation outlook; it is the official drought
+  forecast, so quote it as such.
+- **Blog only, not re-checked:** CPC long-lead precipitation odds of 50–75 % for below-normal rain through spring 2027, and
+  the NWS Honolulu advisory (22 Oct) about earlier impacts on rain-fed pasture and catchment, and "out of season" fire
+  potential after the heavy 2026 rains. Cite the blog or the NWS advisory for these, not as our finding.
+- **Confirmed with our data (U.S. Drought Monitor):** the 2026 May–Sep dry season was wet: Maui's mean DSCI 11, against 119–248
+  in 2019–2025. The 2015–16 analogy also holds: whole state at DSCI 0 in October 2015, 94–215 by May 2016.
+
+Safe wording: *"NOAA expects a strong to very strong El Niño this winter, and El Niño winters tend to be drier in Hawaiʻi."*
+Not: "a drought is coming in 2027" (NOAA's drought outlook does not say that), and never as a fire forecast. The Observatory
+is a record of past change, not a forecast.
