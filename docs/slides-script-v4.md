@@ -44,20 +44,26 @@ in slide 1 and slide 4 and the title card.
 > 0.47. ✂ *A USDA Forest Service map partly agreed.* That doesn't show the browned land burned. It shows the land was
 > drying before the fires.
 
-## Slide 3 — What exists, and the gap (1:03–1:25)
+## Slide 3 — How other sites turn satellite data into a product (1:03–1:25)
 
 **On slide**
-- Drought Monitor: county-wide, not a place
-- Land-cover maps: expert tools; they disagree at park scale
-- NASA GLOBE photos: six flat pictures per site
-- Fire-risk map (state): covers communities only
-- Gap: nowhere a community can see it all and check the source
+- NASA FIRMS: satellite fire detections, mapped within hours
+- Global Forest Watch: satellite images processed into forest-loss alerts
+- U.S. Drought Monitor: many measurements blended into one weekly map
+- Same recipe: raw data → one clear layer → a map anyone can open
+- Mine: the recipe at community scale, with the source one click away
 
 **Say**
-> The data exists, but it's scattered. The Drought Monitor covers a whole county. Satellite land-cover maps are built
-> for experts, and at the scale of a park they disagree. ✂ *The state's fire-risk map covers communities, so the largest
-> Upcountry fire burned 99 percent outside any rated area.* My results lived in a poster and in code, so no one place let
-> a community see them, or check them.
+> Websites already turn satellite data into something people can use. NASA FIRMS maps fire detections from satellites
+> within hours. Global Forest Watch processes satellite images into forest-loss alerts. The Drought Monitor blends many
+> measurements into one weekly map. Each takes raw data, processes it into one clear layer, and shows it on a map anyone
+> can open. ✂ *I used the same recipe for my own NASA SEES results, but at the scale of one community, and every layer
+> shows its source and its limits.*
+
+**Before you say it:** open each site's own "About" or "Data" page and confirm the one-line description matches what you
+say (FIRMS: active-fire detections; GFW: forest-loss alerts; USDM: weekly authored map). No numbers are quoted on this slide,
+so there is nothing to trace, but the descriptions must be true in the sites' own words. Add a screenshot of each site.
+Time: about 34 seconds with the ✂ sentence, 23 without (the slot is 22). Cut the ✂ sentence. The totals in the header were counted before this slide changed, so re-time the whole script.
 
 ## Slide 4 — How it grew into an app (1:25–1:57)
 
@@ -112,7 +118,6 @@ in slide 1 and slide 4 and the title card.
 | Lowest of 26 years of Landsat | Landsat 2000–2025, study area, z = −1.6 vs 2000–2018 |
 | Rebuilt result matches, r = 0.85 | Independent Sentinel-2 rebuild vs the study raster, 70,280 pixels |
 | ~three quarters old plantation land | 76% of the study circle in sugarcane/pineapple land 1900–1937 (state maps) |
-| Largest fire 99% outside rated areas | NIFC Pulehu perimeter vs DLNR fire-risk areas (rated 2007, populated areas only) |
 | Nearly 300 tests | 258 Python + 40 JavaScript |
 | Strong El Niño, drier winter | NOAA CPC ENSO discussion, 8 Oct 2026 (greater than 83% chance of strong-to-very strong); El Niño winters tend dry: Kodama, Mauka Showers, 23 Oct 2026 |
 
