@@ -177,4 +177,38 @@ export const DATASETS: DatasetMetadata[] = [
     currency: 'Built Oct 2026', license: 'Derived from Copernicus Sentinel data', link: 'https://registry.opendata.aws/sentinel-2-l2a-cogs/', linkChecked: false,
     caveat: 'Same masking and medians as the study-area products, coarser for the whole island. Under 1 % of land has no cloud-free look in a season.',
   },
+  {
+    id: 'hi-fire-risk', kind: 'Expert synthesis', name: 'Fire risk areas and fire response zones (DLNR-DOFAW)',
+    provider: 'Hawaii DLNR Division of Forestry and Wildlife, via Hawaii Statewide GIS Program', provenance: 'verified-public',
+    spatialResolution: 'Polygons for populated areas', coverage: 'Maui', temporal: 'Risk ratings 2007, boundaries reconfirmed 2017 and 2022; response zones April 2026',
+    currency: 'As published', license: 'State open data; no warranty of accuracy', link: 'https://geoportal.hawaii.gov/', linkChecked: true,
+    caveat: 'The rating covers populated areas only: unrated land is unrated, not low risk. This is the state’s assessment, not this project’s, and is shown unchanged.',
+  },
+  {
+    id: 'hi-moisture', kind: 'Modelled classification', name: 'Moisture zones (seven zones, Arid to Very Wet)',
+    provider: 'Hawaiʻi Cooperative Studies Unit, UH Hilo, with Smithsonian; via Hawaii Statewide GIS Program', provenance: 'verified-public',
+    spatialResolution: 'Polygons', coverage: 'Main Hawaiian Islands', temporal: 'Static', currency: 'As published', license: 'State open data; no warranty of accuracy',
+    link: 'https://geoportal.hawaii.gov/', linkChecked: true, caveat: 'Produced for a species-range model: a climate classification, not a measurement.',
+  },
+  {
+    id: 'hi-rainfall', kind: 'In-situ observation', name: 'Rainfall Atlas of Hawaiʻi: isohyets and rain gauges',
+    provider: 'Giambelluca et al., University of Hawaiʻi at Mānoa (2011); via Hawaii Statewide GIS Program', provenance: 'verified-public',
+    spatialResolution: '226 gauges on Maui; isohyets every 500 mm', coverage: 'Maui', temporal: 'Mean of the 1978–2007 base period', currency: '2011 atlas',
+    license: 'State open data; cite the Atlas', link: 'https://rainfall.geography.hawaii.edu/', linkChecked: true,
+    caveat: 'Long-term averages, not the 2018–2024 period. Isohyets are an interpolation of the gauges.',
+  },
+  {
+    id: 'hi-plantation', kind: 'Reference / administrative', name: 'Historical sugarcane and pineapple lands, 1900–1937',
+    provider: 'Hawaii Department of Health, Hazard Evaluation and Emergency Response, digitised from historical land-use maps; via Hawaii Statewide GIS Program',
+    provenance: 'verified-public', spatialResolution: 'Digitised polygons', coverage: 'Maui', temporal: 'Land in production in 1900, 1920 and 1937 (no Maui pineapple in 1900)',
+    currency: 'As published', license: 'State open data; no warranty of accuracy', link: 'https://geoportal.hawaii.gov/', linkChecked: true,
+    caveat: 'Hand-digitised from paper maps, so boundaries are approximate; says what the land was used for 85+ years ago, not what it is now.',
+  },
+  {
+    id: 'usdm-state', kind: 'Expert synthesis', name: 'U.S. Drought Monitor, all Hawaii counties, 2000 to now',
+    provider: 'National Drought Mitigation Center, University of Nebraska-Lincoln (with USDA and NOAA)', provenance: 'verified-public',
+    spatialResolution: 'County-wide value per week', coverage: 'Hawaiʻi, Honolulu, Kauaʻi, Maui and Kalawao counties', temporal: 'Weekly, Jan 2000 – Oct 2026',
+    currency: 'Fetched Oct 2026', license: 'Public data', link: 'https://droughtmonitor.unl.edu/DmData/DataDownload/WebServiceInfo.aspx', linkChecked: true,
+    caveat: 'County-wide: describes the whole county, not any place in it. The finer Hawaiʻi SPI product (Hawaiʻi Climate Data Portal) needs a free access token and is not used.',
+  },
 ];

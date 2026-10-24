@@ -60,6 +60,68 @@
   let fires = true, firesAllYears = false;
   let regions = true, globe = true, study = false;
 
+  // ---------- Hawaii Statewide GIS layers (scripts/fetch_hawaii_portal.py) ----------
+  const MOIST = { Arid: '#8c510a', 'Very Dry': '#bf812d', 'Moderately Dry': '#dfc27d', 'Seasonal Mesic': '#c7eae5',
+                  'Moist Mesic': '#80cdc1', 'Moderately Wet': '#35978f', 'Very Wet': '#01665e' };
+  const RISK = { High: '#d4442c', Medium: '#ef9a3b', Low: '#f3d250', 'N/A': '#6e767c' };
+  const SUGAR = '#c28f2c', PINE = '#7fb069';
+  let portal = { fire_risk: false, fire_response: false, moisture_zones: false, rainfall_mm: false, rain_gauges: false, plantation: false };
+  let plantYear = '1937', portalInfo = [], portalError = null;
+  const portalLoaded = new Set();
+  const pinfo = (k) => portalInfo.find((c) => c.id === k);
+  async function ensurePortal(key) {
+    if (portalLoaded.has(key) || !map) return;
+    portalLoaded.add(key);
+    try {
+      if (!portalInfo.length) portalInfo = await fetch('/api/layers/portal').then((r) => r.json());
+      const keys = key === 'plantation' ? ['sugarcane_1900', 'sugarcane_1920', 'sugarcane_1937', 'pineapple_1920', 'pineapple_1937'] : [key];
+      for (const k of keys) {
+        const res = await fetch(`/api/layers/portal/${k}`);
+        if (!res.ok) throw new Error(`${k}: ${res.status}`);
+        map.addSource(`portal-${k}`, { type: 'geojson', data: await res.json() });
+      }
+      const before = 'drought-fill';
+      if (key === 'moisture_zones') {
+        map.addLayer({ id: 'portal-moisture_zones', type: 'fill', source: 'portal-moisture_zones',
+          paint: { 'fill-color': ['match', ['get', 'moisturezone'], ...Object.entries(MOIST).flat(), '#444'], 'fill-opacity': 0.55 } }, before);
+      } else if (key === 'fire_risk') {
+        map.addLayer({ id: 'portal-fire_risk', type: 'fill', source: 'portal-fire_risk',
+          paint: { 'fill-color': ['match', ['get', 'risk_rating'], ...Object.entries(RISK).flat(), '#6e767c'], 'fill-opacity': 0.5 } }, before);
+        map.addLayer({ id: 'portal-fire_risk-line', type: 'line', source: 'portal-fire_risk', paint: { 'line-color': '#111', 'line-width': 0.8 } }, before);
+      } else if (key === 'fire_response') {
+        map.addLayer({ id: 'portal-fire_response', type: 'fill', source: 'portal-fire_response', paint: { 'fill-color': '#f58ab6', 'fill-opacity': 0.12 } }, before);
+        map.addLayer({ id: 'portal-fire_response-line', type: 'line', source: 'portal-fire_response',
+          paint: { 'line-color': '#f58ab6', 'line-width': 1.4, 'line-dasharray': [4, 2] } }, before);
+      } else if (key === 'rainfall_mm') {
+        map.addLayer({ id: 'portal-rainfall_mm', type: 'line', source: 'portal-rainfall_mm', paint: { 'line-color': '#6cb6ff', 'line-width': 1.2 } });
+        map.addLayer({ id: 'portal-rainfall_mm-label', type: 'symbol', source: 'portal-rainfall_mm',
+          layout: { 'symbol-placement': 'line', 'text-field': ['concat', ['to-string', ['get', 'contour']], ' mm'], 'text-size': 11 },
+          paint: { 'text-color': '#cfe6ff', 'text-halo-color': '#0b1013', 'text-halo-width': 1.5 } });
+      } else if (key === 'rain_gauges') {
+        map.addImage('sq-gauge', squareIcon('#6cb6ff', 8), { pixelRatio: 2 });
+        map.addLayer({ id: 'portal-rain_gauges', type: 'symbol', source: 'portal-rain_gauges', layout: { 'icon-image': 'sq-gauge', 'icon-allow-overlap': true } });
+      } else if (key === 'plantation') {
+        for (const [k, col] of [['sugarcane', SUGAR], ['pineapple', PINE]]) {
+          for (const y of ['1900', '1920', '1937']) {
+            if (!map.getSource(`portal-${k}_${y}`)) continue;
+            map.addLayer({ id: `portal-plant-${k}_${y}`, type: 'fill', source: `portal-${k}_${y}`, layout: { visibility: 'none' },
+              paint: { 'fill-color': col, 'fill-opacity': 0.55, 'fill-outline-color': '#000' } }, before);
+          }
+        }
+      }
+      applyPortal();
+    } catch (e) { portalError = e.message; portalLoaded.delete(key); }
+  }
+  function applyPortal() {
+    if (!map) return;
+    const vis2 = (id, on) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    for (const k of ['moisture_zones', 'fire_risk', 'fire_response', 'rainfall_mm', 'rain_gauges']) {
+      vis2(`portal-${k}`, portal[k]); vis2(`portal-${k}-line`, portal[k]); vis2(`portal-${k}-label`, portal[k]);
+    }
+    for (const k of ['sugarcane', 'pineapple']) for (const y of ['1900', '1920', '1937']) vis2(`portal-plant-${k}_${y}`, portal.plantation && y === plantYear);
+  }
+  $: if (ready) { for (const k of Object.keys(portal)) if (portal[k]) ensurePortal(k); portal; plantYear; applyPortal(); }
+
   // Basemap, terrain, 3D
   let basemap = 'relief', basemapError = null, hillshade = true, demError = null;
   let view3d = false, exaggeration = 1.5, pitch = 60;
@@ -780,10 +842,31 @@
       card.source = 'Author’s analysis (Copernicus Sentinel-2)';
     }
     card.rs = remoteAt(lat, lng);
+    card.portal = portalAt(e.point);
     selected = card;
     if (window.innerWidth < 860) sidebarOpen = true;
     const el = await elevationAt(lng, lat);
     if (selected === card) selected = { ...card, elevation: el };
+  }
+
+  /** What the Hawaii state layers say at a click: one entry per visible layer. */
+  function portalAt(point) {
+    const layers = ['portal-fire_risk', 'portal-fire_response', 'portal-moisture_zones', 'portal-rain_gauges',
+      ...['sugarcane', 'pineapple'].flatMap((k) => ['1900', '1920', '1937'].map((y) => `portal-plant-${k}_${y}`))].filter((id) => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
+    if (!layers.length) return [];
+    const out = [];
+    const seen = new Set();
+    for (const f of map.queryRenderedFeatures(point, { layers })) {
+      const p = f.properties, id = f.layer.id;
+      let row;
+      if (id === 'portal-fire_risk') row = ['DLNR fire risk', `${p.risk_rating} · ${p.commu_name} (2007 rating; boundaries reconfirmed 2017, 2022; populated areas only)`];
+      else if (id === 'portal-fire_response') row = ['Fire response', p.description];
+      else if (id === 'portal-moisture_zones') row = ['Moisture zone', `${p.moisturezone} (model of climate zones)`];
+      else if (id === 'portal-rain_gauges') row = ['Rain gauge', `${p.name}: ${Math.round(p.annavgmm)} mm/yr mean at ${p.elevm} m · ${p.nummoswith} months of data (Rainfall Atlas, 1978–2007 base)`];
+      else row = [id.includes('sugarcane') ? 'Former sugarcane land' : 'Former pineapple land', `in production ${id.slice(-4)} (digitised historical maps)`];
+      if (!seen.has(row[0] + row[1])) { seen.add(row[0] + row[1]); out.push(row); }
+    }
+    return out;
   }
 
   function focusStudyArea() {
@@ -1028,6 +1111,36 @@
     </fieldset>
 
     <fieldset>
+      <legend>Hawaiʻi state data</legend>
+      <div class="sub">
+        <label><input type="checkbox" bind:checked={portal.fire_risk} /> <span class="sw" style="background:{RISK.Medium}"></span> DLNR fire-risk areas</label>
+        {#if portal.fire_risk}
+          <ul class="key sub2">{#each Object.entries(RISK) as [name, col]}<li><span class="sw" style="background:{col}"></span>{name === 'N/A' ? 'Not rated' : name}</li>{/each}</ul>
+          <p class="hint sub2">DLNR-DOFAW’s rating for <em>populated areas only</em> (2007; boundaries reconfirmed 2017 and 2022). Land outside these polygons is unrated, not low risk. This is the state’s rating, not this project’s.</p>
+        {/if}
+        <label><input type="checkbox" bind:checked={portal.fire_response} /> <span class="sw line" style="border-color:#f58ab6"></span> Fire response zones</label>
+        {#if portal.fire_response}<p class="hint sub2">Which agency responds first (DLNR-DOFAW, as of April 2026). Pink dashed outlines.</p>{/if}
+        <label><input type="checkbox" bind:checked={portal.moisture_zones} /> <span class="sw" style="background:{MOIST['Moderately Dry']}"></span> Moisture zones</label>
+        {#if portal.moisture_zones}
+          <ul class="key sub2">{#each Object.entries(MOIST) as [name, col]}<li><span class="sw" style="background:{col}"></span>{name}</li>{/each}</ul>
+          <p class="hint sub2">Seven zones from a species-range model (Hawaiʻi Cooperative Studies Unit, UH Hilo / Smithsonian). A modelled classification.</p>
+        {/if}
+        <label><input type="checkbox" bind:checked={portal.rainfall_mm} /> <span class="sw line" style="border-color:#6cb6ff"></span> Mean annual rainfall (mm)</label>
+        <label><input type="checkbox" bind:checked={portal.rain_gauges} /> <span class="sw" style="background:#6cb6ff"></span> Rain gauges ({pinfo('rain_gauges')?.count ?? 226})</label>
+        {#if portal.rainfall_mm || portal.rain_gauges}<p class="hint sub2">Rainfall Atlas of Hawaiʻi (Giambelluca et al., 2011; 1978–2007 average): isohyets every 500 mm; gauges give each station’s mean. Click a gauge for its value.</p>{/if}
+        <label><input type="checkbox" bind:checked={portal.plantation} /> <span class="sw" style="background:{SUGAR}"></span><span class="sw" style="background:{PINE}"></span> Former plantation land</label>
+        {#if portal.plantation}
+          <div class="seg sub2" role="radiogroup" aria-label="Plantation year">
+            {#each ['1900', '1920', '1937'] as y}<label class:on={plantYear === y}><input type="radio" bind:group={plantYear} value={y} />{y}</label>{/each}
+          </div>
+          <p class="hint sub2"><span class="sw" style="background:{SUGAR}"></span> sugarcane · <span class="sw" style="background:{PINE}"></span> pineapple. Land in production in {plantYear}, digitised from historical land-use maps by the state{plantYear === '1900' ? ' (no pineapple on Maui in 1900)' : ''}.</p>
+        {/if}
+        {#if portalError}<p class="empty">State layer couldn’t load: {portalError}. Run <code>scripts/fetch_hawaii_portal.py</code>.</p>{/if}
+        <p class="hint">Source: Hawaii Statewide GIS Program (geodata.hawaii.gov) with the data owners named above. The state gives no warranty of positional or thematic accuracy.</p>
+      </div>
+    </fieldset>
+
+    <fieldset>
       <legend><label><input type="checkbox" bind:checked={community} /> Community context</label></legend>
       <div class="sub" class:dim={!community}>
         {#each KINDS as k}
@@ -1074,6 +1187,10 @@
           {/if}
           {#if selected.rows.length}
             <dl>{#each selected.rows as [k, v]}<dt>{k}</dt><dd>{v}</dd>{/each}</dl>
+          {/if}
+          {#if selected.portal?.length}
+            <p class="meta"><b>Hawaiʻi state data here</b></p>
+            <dl>{#each selected.portal as [k, v]}<dt>{k}</dt><dd>{v}</dd>{/each}</dl>
           {/if}
           {#if selected.rs?.series?.length}
             {@const sp = spark(selected.rs.series)}

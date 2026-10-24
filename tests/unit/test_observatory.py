@@ -164,3 +164,16 @@ def test_remote_sensing_products_report_provenance():
     if info["worldcover"]:
         rows = info["worldcover"]["study_area"]
         assert abs(sum(r["share_of_study_area"] for r in rows) - 1) < 0.01
+
+
+def test_hawaii_state_data_endpoints():
+    cat = api.get("/api/layers/portal").json()
+    assert {c["id"] for c in cat} >= {"fire_risk", "moisture_zones", "rain_gauges"}
+    for key in ("fire_risk", "moisture_zones", "rainfall_mm", "rain_gauges", "sugarcane_1937"):
+        r = api.get(f"/api/layers/portal/{key}")
+        assert r.status_code == 200 and r.json()["features"]
+    assert api.get("/api/layers/portal/not_a_layer").status_code == 404
+    assert api.get("/api/layers/portal-overlays").json()["moisture_zones"]
+    d = api.get("/api/layers/hawaii-drought").json()
+    assert d["available"] and d["maui_d4_weeks"]["2022"] == 20
+    assert api.get("/api/layers/hawaii-drought-weekly").text.startswith("date,hawaii,honolulu")

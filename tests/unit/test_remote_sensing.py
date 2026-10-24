@@ -130,3 +130,40 @@ def test_island_products_cover_maui():
     d = json.loads(p.read_text())
     assert abs(d["land_pixels"] * 0.0036 - 1883) / 1883 < 0.05      # Maui is 1,883 km2; 60 m pixel = 0.0036 km2
     assert d["years"]["2022"]["ndvi"]["median"] < d["years"]["2019"]["ndvi"]["median"]
+
+
+def test_statements_on_the_analysis_page_match_the_state_data_overlays():
+    """The chart notes quote these numbers; fail loudly if the data stops supporting them."""
+    import json
+    d = json.loads((ROOT / "data" / "research" / "portal_overlays.json").read_text())
+    zones = {z["zone"]: z for z in d["moisture_zones"]}
+    assert max(zones, key=lambda k: zones[k]["share_browned"]) == "Moderately Dry"          # browned most
+    assert d["study_area"]["moisture_zone_share"]["Moderately Dry"] > 0.7                      # "73 %"
+    within = {z["zone"]: z for z in d["plantation_within_moisture_zone"]}
+    for zone in ("Arid", "Very Dry", "Moderately Dry"):                                       # driest three
+        assert within[zone]["plantation"]["share_browned"] > within[zone]["other"]["share_browned"]
+    assert within["Seasonal Mesic"]["plantation"]["share_browned"] < within["Seasonal Mesic"]["other"]["share_browned"]
+    assert 0.7 < d["study_area"]["former_plantation_share"] < 0.8                              # "76 %"
+    r = d["fire_risk_rating"]
+    assert r["High"]["share_browned"] < 0.1 and r["Medium"]["share_browned"] > 0.6
+    fires = {f["fire"]: f["share_by_rating"] for f in d["fires_2023_by_rating"]}
+    assert fires["Pulehu"]["Not rated"] > 0.95 and fires["Lahaina"]["High"] > 0.6
+
+
+def test_state_drought_record_since_2000():
+    from lib import statedrought
+    s = statedrought.summary()
+    assert s["available"] and s["first"] == "2000-01-04"
+    assert s["maui_d4_weeks"][2022] == 20 and max(s["maui_d4_weeks"].values()) == 20
+    assert sorted(s["maui_d4_weeks"].values())[-2] == 9                                        # 2010 is next
+    assert s["maui_rank_by_annual_dsci"][2022] == 3                                            # 2010 and 2025 were higher
+    assert {"hawaii", "honolulu", "kauai", "maui"} <= set(s["annual"][0])
+
+
+def test_portal_layers_are_complete_and_dated():
+    import json
+    cat = {c["id"]: c for c in json.loads((ROOT / "data" / "context" / "hawaii_portal.json").read_text())}
+    assert set(cat) >= {"fire_risk", "fire_response", "moisture_zones", "rainfall_mm", "rain_gauges", "sugarcane_1937", "pineapple_1937"}
+    assert all(c["count"] > 0 and c["source"].startswith("https://geodata.hawaii.gov/") and c["publisher"] for c in cat.values())
+    desc = cat["fire_risk"]["description"]
+    assert "2007" in desc and "12/18/17" in desc and "10/31/22" in desc          # rated 2007, reconfirmed 2017 and 2022

@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from app.api.routes.sites import DEFAULT_END, DEFAULT_START, REGION
-from lib import hazards, landsat_baseline, rainfall, relationships
+from lib import hazards, landsat_baseline, rainfall, relationships, statedrought
 from lib.globe_api import client
 from lib.vegetation import browning
 
@@ -112,6 +112,17 @@ def drought_weeks() -> list[dict]:
     return list(weeks)
 
 
+@router.get("/hawaii-drought")
+def hawaii_drought() -> dict:
+    """Weekly and annual drought for all four Hawaii counties since 2000 (lib/statedrought.py)."""
+    return statedrought.summary()
+
+
+@router.get("/hawaii-drought-weekly")
+def hawaii_drought_weekly() -> FileResponse:
+    return FileResponse(_require(statedrought.DSCI, "scripts/fetch_hawaii_drought.py"), media_type="text/csv")
+
+
 @router.get("/ndvi-baseline")
 def ndvi_baseline() -> dict:
     """25 years of dry-season Landsat NDVI for the study area, each year against the
@@ -180,6 +191,9 @@ def site_pins() -> list[dict]:
 
 CONTEXT = DATA / "context"
 CONTEXT_KEYS = ("fire_stations", "ems_stations", "hospitals", "public_schools", "private_schools")
+PORTAL = CONTEXT / "hawaii_portal"
+PORTAL_KEYS = ("fire_risk", "fire_response", "moisture_zones", "rainfall_mm", "rain_gauges", "sugarcane_1900",
+               "sugarcane_1920", "sugarcane_1937", "pineapple_1920", "pineapple_1937")
 RASTERS = {
     "dndvi": browning.DATA_DIR / "dndvi_2019_2022.tif",
     "dnbr": browning.DATA_DIR / "dnbr_2019_2022.tif",
@@ -216,6 +230,28 @@ def context_catalog() -> list[dict]:
     each is in its publisher's own words."""
     path = _require(CONTEXT / "catalog.json", "scripts/fetch_context_layers.py")
     return json.loads(path.read_text())
+
+
+@router.get("/portal")
+def portal_catalog() -> list[dict]:
+    """Hawaii Statewide GIS layers (fire, climate, land history) with publisher, source URL and
+    dates, from scripts/fetch_hawaii_portal.py."""
+    return json.loads(_require(CONTEXT / "hawaii_portal.json", "scripts/fetch_hawaii_portal.py").read_text())
+
+
+@router.get("/portal/{key}")
+def portal_layer(key: str) -> FileResponse:
+    if key not in PORTAL_KEYS:
+        raise HTTPException(status_code=404, detail=f"Unknown portal layer '{key}'")
+    return FileResponse(_require(PORTAL / f"{key}.geojson", "scripts/fetch_hawaii_portal.py"), media_type="application/geo+json")
+
+
+@router.get("/portal-overlays")
+def portal_overlays() -> dict:
+    """What the state layers say about browning: by moisture zone, former plantation land, DLNR
+    fire-risk rating and the 2023 fires (scripts/remote_sensing/portal_overlays.py)."""
+    path = DATA / "research" / "portal_overlays.json"
+    return json.loads(path.read_text()) if path.exists() else {"available": False, "how": "run scripts/remote_sensing/portal_overlays.py"}
 
 
 @router.get("/context/{key}")

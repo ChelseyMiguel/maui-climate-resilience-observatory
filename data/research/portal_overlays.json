@@ -1,0 +1,335 @@
+{
+ "threshold": -0.1,
+ "pixel_m": 60,
+ "land_pixels": 526149,
+ "moisture_zones": [
+  {
+   "zone": "Arid",
+   "pixels": 98782,
+   "area_km2": 355.6,
+   "ndvi_2019": 0.224,
+   "ndvi_2022": 0.16,
+   "median_change": -0.04,
+   "share_browned": 0.187
+  },
+  {
+   "zone": "Very Dry",
+   "pixels": 75482,
+   "area_km2": 271.7,
+   "ndvi_2019": 0.312,
+   "ndvi_2022": 0.216,
+   "median_change": -0.072,
+   "share_browned": 0.3697
+  },
+  {
+   "zone": "Moderately Dry",
+   "pixels": 73351,
+   "area_km2": 264.1,
+   "ndvi_2019": 0.488,
+   "ndvi_2022": 0.352,
+   "median_change": -0.104,
+   "share_browned": 0.5235
+  },
+  {
+   "zone": "Seasonal Mesic",
+   "pixels": 107834,
+   "area_km2": 388.2,
+   "ndvi_2019": 0.616,
+   "ndvi_2022": 0.552,
+   "median_change": -0.056,
+   "share_browned": 0.28
+  },
+  {
+   "zone": "Moist Mesic",
+   "pixels": 45276,
+   "area_km2": 163.0,
+   "ndvi_2019": 0.808,
+   "ndvi_2022": 0.768,
+   "median_change": -0.032,
+   "share_browned": 0.1245
+  },
+  {
+   "zone": "Moderately Wet",
+   "pixels": 53760,
+   "area_km2": 193.5,
+   "ndvi_2019": 0.808,
+   "ndvi_2022": 0.792,
+   "median_change": -0.016,
+   "share_browned": 0.0643
+  },
+  {
+   "zone": "Very Wet",
+   "pixels": 69208,
+   "area_km2": 249.1,
+   "ndvi_2019": 0.792,
+   "ndvi_2022": 0.792,
+   "median_change": -0.008,
+   "share_browned": 0.078
+  }
+ ],
+ "plantation_history": {
+  "any_plantation_1900_1937": {
+   "pixels": 118485,
+   "area_km2": 426.5,
+   "ndvi_2019": 0.368,
+   "ndvi_2022": 0.28,
+   "median_change": -0.056,
+   "share_browned": 0.3055
+  },
+  "sugarcane": {
+   "pixels": 86603,
+   "area_km2": 311.8,
+   "ndvi_2019": 0.28,
+   "ndvi_2022": 0.2,
+   "median_change": -0.056,
+   "share_browned": 0.3133
+  },
+  "pineapple": {
+   "pixels": 33412,
+   "area_km2": 120.3,
+   "ndvi_2019": 0.712,
+   "ndvi_2022": 0.656,
+   "median_change": -0.056,
+   "share_browned": 0.291
+  },
+  "never_plantation": {
+   "pixels": 407664,
+   "area_km2": 1467.6,
+   "ndvi_2019": 0.608,
+   "ndvi_2022": 0.528,
+   "median_change": -0.04,
+   "share_browned": 0.2288
+  },
+  "share_of_island_land_in_plantation": 0.2252
+ },
+ "plantation_within_moisture_zone": [
+  {
+   "zone": "Arid",
+   "plantation": {
+    "pixels": 45681,
+    "area_km2": 164.5,
+    "ndvi_2019": 0.216,
+    "ndvi_2022": 0.152,
+    "median_change": -0.048,
+    "share_browned": 0.2494
+   },
+   "other": {
+    "pixels": 53101,
+    "area_km2": 191.2,
+    "ndvi_2019": 0.224,
+    "ndvi_2022": 0.168,
+    "median_change": -0.04,
+    "share_browned": 0.1333
+   }
+  },
+  {
+   "zone": "Very Dry",
+   "plantation": {
+    "pixels": 20376,
+    "area_km2": 73.4,
+    "ndvi_2019": 0.336,
+    "ndvi_2022": 0.216,
+    "median_change": -0.112,
+    "share_browned": 0.5565
+   },
+   "other": {
+    "pixels": 55106,
+    "area_km2": 198.4,
+    "ndvi_2019": 0.296,
+    "ndvi_2022": 0.216,
+    "median_change": -0.056,
+    "share_browned": 0.3005
+   }
+  },
+  {
+   "zone": "Moderately Dry",
+   "plantation": {
+    "pixels": 15654,
+    "area_km2": 56.4,
+    "ndvi_2019": 0.504,
+    "ndvi_2022": 0.368,
+    "median_change": -0.112,
+    "share_browned": 0.5592
+   },
+   "other": {
+    "pixels": 57697,
+    "area_km2": 207.7,
+    "ndvi_2019": 0.488,
+    "ndvi_2022": 0.344,
+    "median_change": -0.104,
+    "share_browned": 0.5138
+   }
+  },
+  {
+   "zone": "Seasonal Mesic",
+   "plantation": {
+    "pixels": 20252,
+    "area_km2": 72.9,
+    "ndvi_2019": 0.736,
+    "ndvi_2022": 0.688,
+    "median_change": -0.04,
+    "share_browned": 0.1775
+   },
+   "other": {
+    "pixels": 87582,
+    "area_km2": 315.3,
+    "ndvi_2019": 0.592,
+    "ndvi_2022": 0.528,
+    "median_change": -0.064,
+    "share_browned": 0.3037
+   }
+  },
+  {
+   "zone": "Moist Mesic",
+   "plantation": {
+    "pixels": 11950,
+    "area_km2": 43.0,
+    "ndvi_2019": 0.816,
+    "ndvi_2022": 0.808,
+    "median_change": -0.024,
+    "share_browned": 0.0805
+   },
+   "other": {
+    "pixels": 33326,
+    "area_km2": 120.0,
+    "ndvi_2019": 0.8,
+    "ndvi_2022": 0.76,
+    "median_change": -0.04,
+    "share_browned": 0.1402
+   }
+  },
+  {
+   "zone": "Moderately Wet",
+   "plantation": {
+    "pixels": 4499,
+    "area_km2": 16.2,
+    "ndvi_2019": 0.848,
+    "ndvi_2022": 0.832,
+    "median_change": -0.024,
+    "share_browned": 0.0347
+   },
+   "other": {
+    "pixels": 49261,
+    "area_km2": 177.3,
+    "ndvi_2019": 0.8,
+    "ndvi_2022": 0.792,
+    "median_change": -0.016,
+    "share_browned": 0.067
+   }
+  },
+  {
+   "zone": "Very Wet",
+   "plantation": {
+    "pixels": 49,
+    "area_km2": 0.2,
+    "ndvi_2019": 0.888,
+    "ndvi_2022": 0.864,
+    "median_change": -0.008,
+    "share_browned": 0.0
+   },
+   "other": {
+    "pixels": 69159,
+    "area_km2": 249.0,
+    "ndvi_2019": 0.792,
+    "ndvi_2022": 0.792,
+    "median_change": -0.008,
+    "share_browned": 0.078
+   }
+  }
+ ],
+ "fire_risk_rating": {
+  "High": {
+   "pixels": 22167,
+   "area_km2": 79.8,
+   "ndvi_2019": 0.28,
+   "ndvi_2022": 0.256,
+   "median_change": -0.016,
+   "share_browned": 0.0762
+  },
+  "Medium": {
+   "pixels": 26796,
+   "area_km2": 96.5,
+   "ndvi_2019": 0.488,
+   "ndvi_2022": 0.336,
+   "median_change": -0.128,
+   "share_browned": 0.6161
+  },
+  "Low": {
+   "pixels": 50990,
+   "area_km2": 183.6,
+   "ndvi_2019": 0.76,
+   "ndvi_2022": 0.696,
+   "median_change": -0.04,
+   "share_browned": 0.2661
+  },
+  "Not rated": {
+   "pixels": 426196,
+   "area_km2": 1534.3,
+   "ndvi_2019": 0.544,
+   "ndvi_2022": 0.472,
+   "median_change": -0.04,
+   "share_browned": 0.2293
+  }
+ },
+ "fires_2023_by_rating": [
+  {
+   "fire": "Kula",
+   "pixels": 231,
+   "share_by_rating": {
+    "High": 0.0,
+    "Medium": 0.0,
+    "Low": 1.0,
+    "Not rated": 0.0
+   }
+  },
+  {
+   "fire": "Lahaina",
+   "pixels": 2382,
+   "share_by_rating": {
+    "High": 0.706,
+    "Medium": 0.0,
+    "Low": 0.0,
+    "Not rated": 0.294
+   }
+  },
+  {
+   "fire": "Olinda",
+   "pixels": 1222,
+   "share_by_rating": {
+    "High": 0.0,
+    "Medium": 0.117,
+    "Low": 0.354,
+    "Not rated": 0.529
+   }
+  },
+  {
+   "fire": "Pulehu",
+   "pixels": 3638,
+   "share_by_rating": {
+    "High": 0.0,
+    "Medium": 0.009,
+    "Low": 0.0,
+    "Not rated": 0.991
+   }
+  }
+ ],
+ "study_area": {
+  "pixels_60m": 1959,
+  "moisture_zone_share": {
+   "Arid": 0.0,
+   "Very Dry": 0.267,
+   "Moderately Dry": 0.733,
+   "Seasonal Mesic": 0.0,
+   "Moist Mesic": 0.0,
+   "Moderately Wet": 0.0,
+   "Very Wet": 0.0
+  },
+  "fire_risk_share": {
+   "High": 0.0,
+   "Medium": 0.0,
+   "Low": 0.85,
+   "Not rated": 0.15
+  },
+  "former_plantation_share": 0.764
+ }
+}

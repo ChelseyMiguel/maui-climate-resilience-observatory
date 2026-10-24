@@ -395,3 +395,28 @@ Skin temperature at ~10:30 a.m., not air temperature; co-variation, not cause.
   The 300–1000 m belt — Upcountry, including Pukalani and Kula — browned most.
 
 Safe claim: *"Across all of Maui, 2022 was the least green dry season since 2017, and the Upcountry elevation belt browned most."*
+
+
+## Hawaii state data and statewide drought (Oct 2026)
+
+Scripts: `scripts/fetch_hawaii_portal.py` (Hawaii Statewide GIS Program), `scripts/remote_sensing/portal_overlays.py`,
+`scripts/fetch_hawaii_drought.py` (U.S. Drought Monitor, all Hawaii counties, 2000-01-04 to 2026-10-20).
+
+**Drought in context (this corrects an easy over-claim).** Maui County's 2022 annual mean drought index (214) ranks
+**3rd since 2000**, behind 2010 (229) and 2025 (222). What is true and distinctive: 2022 had **20 weeks of exceptional
+(D4) drought, the most of any year since 2000** (2010: 9; 2021: 8). Say "the most D4 weeks since 2000" or "the worst of
+2018–2024", never "the worst drought on record".
+
+**Browning by state moisture zone (60 m, 2019 → 2022, dNDVI < −0.10):** Arid 19%, Very Dry 37%, Moderately Dry 52%, Seasonal Mesic 28%, Moist Mesic 12%, Moderately Wet 6%, Very Wet 8%.
+The study area is 73 % Moderately Dry and 27 % Very Dry, the zones that browned most.
+
+**Former plantation land.** 76% of the study circle was in sugarcane or pineapple at some
+point 1900–1937, which supports "much of Upcountry's old plantation land". Across the island that land browned more than
+never-plantation land only where it is dry: Arid 25% vs 13%, Very Dry 56% vs 30%, Moderately Dry 56% vs 51%; in wetter zones it browned *less*.
+Association from historical land use, not proof that plantation history caused it.
+
+**DLNR fire-risk ratings (2007; reconfirmed 2017, 2022; populated areas only).** Browned: High 8%,
+Medium 62%, Low 27%, unrated 23%. The 2023 fires: Lahaina
+71% in land rated High; Pulehu (Upcountry's largest) 99% outside any rated area.
+Safe claim: *"The state's fire-risk map covers communities, so the largest Upcountry fire burned mostly in land it doesn't rate."*
+Not: that the ratings are wrong, or that browning predicts them.

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "fire_risk",
+    "title": "Fire risk areas (DLNR rating)",
+    "group": "fire",
+    "count": 49,
+    "geometry": "Polygon",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/Hazards/MapServer/7",
+    "publisher": "Hawaii State Department of Land and Natural Resources, Division of Forestry and Wildlife (DLNR-DOFAW); Hawaii Statewide GIS Program",
+    "description": "Ratings of risk from wild-land fires for major populated areas in the Hawaiian islands. Source: Department of Land and Natural Resources, Division of Forestry and Wildlife, Fire Management Program, 2007; Update - boundaries still valid per DLNR-DOFAW - 12/18/17, 10/31/22. Note: May 2024 - Hawaii Statewide GIS Program staff removed extraneous fields that had been added as part of 2016 GIS database conversion and were no longer needed.For additional information, please refer to complete metadata at https://files.hawaii.gov/dbedt/op/gis/data/FireRisk.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustainable Development, State of Hawaii; PO Box 2359, Honolulu, Hi. 96804; (8",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "fire_response",
+    "title": "Fire response zones",
+    "group": "fire",
+    "count": 52,
+    "geometry": "Polygon",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/EmergMgmtPubSafety/MapServer/6",
+    "publisher": "Department of Land and Natural Resources, State of Hawaii",
+    "description": "Fire Response Zones for the Main Hawaiian Islands as of April 2026. Source: Department of Land and Natural Resources, Division of Forestry and Wildlife, Fire Management Program, 2007-2026. For additional information, please refer to metadata at https://files.hawaii.gov/dbedt/op/gis/data/fireresponse_summary.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustainable Development, State of Hawaii; PO Box 2359, Honolulu, Hi. 96804; (808) 587-2846; email: gis@hawaii.gov; Website: https://planning.hawaii.gov/gis.",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "moisture_zones",
+    "title": "Moisture zones",
+    "group": "climate",
+    "count": 20,
+    "geometry": "Polygon",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/LandUseLandCover/MapServer/6",
+    "publisher": "Hawaii Cooperative Studies Unit, University of Hawaii at Hilo Smithsonian Institution, Washington D.C. U.S. Fish and Wildlife Service U.S. Geological Survey",
+    "description": "This map represents the distribution of seven moisture zones for the main Hawaiian Islands. The maps were produced as part of a species range modeling effort for the Hawaiian flora. Details on methodology and related products can be found in: Price, J. P., J. D. Jacobi, S. M. Gon, III, D. Matsuwaki, L. Mehrhoff, W. L. Wagner, M. Lucas, and B. Rowe. 2012, Mapping plant species ranges in the Hawaiian Islands-Developing a methodology and associated GIS layers. U.S. Geological Survey Open File Report OFR 2012-1192, Reston, VA.Please also refer to summary metadata, found at https://files.hawaii.gov/dbedt/op/gis/data/moisture_zones_summary.pdf or contact the Hawaii Statewide GIS Program at gis@haw",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "rainfall_mm",
+    "title": "Mean annual rainfall (isohyets, mm)",
+    "group": "climate",
+    "count": 51,
+    "geometry": "Polyline",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/Climate/MapServer/26",
+    "publisher": "Giambelluca, T.W., Q. Chen, A.G. Frazier, J.P. Price, Y.-L. Chen, P.-S. Chu, J.K. Eischeid, and D.M. Delparte, 2013: Online Rainfall Atlas of Hawai\u2018i. Bull. Amer. Meteor. Soc. 94, 313-316, doi: 10.1175/BAMS-D-11-00228.1.",
+    "description": "Mean Annual Rainfall Isohyets in Millimeters for the Islands of Hawai\u2018i, Kaho\u2018olawe, Kaua\u2018i, L\u0101na\u2018i, Maui, Moloka\u2018i and O\u2018ahu. Statewide GIS program staff downloaded data from UH Geography Department, Rainfall Atlas of Hawaii website, February, 2019. Annual and monthly isohyets of mean rainfall were available for download; the Statewide GIS program makes available only the annual layer \u2013 both the monthly layer and the original annual layers are available from the Rainfall Atlas of Hawai\u2018i (http://rainfall.geography.hawaii.edu/). For more information, see metadata at https://files.hawaii.gov/dbedt/op/gis/data/isohyets.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustain",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "rain_gauges",
+    "title": "Rain gauges (Rainfall Atlas)",
+    "group": "climate",
+    "count": 226,
+    "geometry": "Point",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/Climate/MapServer/27",
+    "publisher": "Rainfall Atlas of Hawai\u2018i University of Hawai\u2018i at M\u0101noa, Department of Geography rainfall@hawaii.edu http://rainfall.geography.hawaii.edu/",
+    "description": "Raingages used in the Rainfall Atlas Analysis on the main Hawaiian Islands. Includes mean rainfall data values and uncertainty values. Source: 2011 Rainfall Atlas of Hawaii. Note: Apr 2024 - Hawaii Statewide GIS Program staff removed extraneous fields that had been added as part of 2016 GIS database conversion and were no longer needed.For more information, see metadata at https://files.hawaii.gov/dbedt/op/gis/data/raingauge.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustainable Development, State of Hawaii; PO Box 2359, Honolulu, Hi. 96804; (808) 587-2846; email: gis@hawaii.gov; Website: https://planning.hawaii.gov/gis.",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "sugarcane_1900",
+    "title": "Sugarcane lands, 1900",
+    "group": "history",
+    "count": 9,
+    "geometry": "Polygon",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/LandUseLandCover/MapServer/23",
+    "publisher": "Hawaii State Department of Health, Hazard Evaluation and Emergency Response Branch; Tetra Tech EM, Inc",
+    "description": "Lands in sugar cane production in Hawaii in 1900. The data was obtained from historical hard copy land utilization maps and digitized for use by the Hawaii State Department of Health. Layers also exist for sugar cane lands in production in 1920 and 1937. For additional information, please refer to metadata at https://files.hawaii.gov/dbedt/op/gis/data/sugarcane_historical.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustainable Development, State of Hawaii; PO Box 2359, Honolulu, Hi. 96804; (808) 587-2846; email: gis@hawaii.gov; Website: https://planning.hawaii.gov/gis.",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "sugarcane_1920",
+    "title": "Sugarcane lands, 1920",
+    "group": "history",
+    "count": 12,
+    "geometry": "Polygon",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/LandUseLandCover/MapServer/24",
+    "publisher": "Hawaii State Department of Health, Hazard Evaluation and Emergency Response Branch; Tetra Tech EM, Inc",
+    "description": "Lands in sugar cane production in Hawaii in 1920. The data was obtained from historical hard copy land utilization maps and digitized for use by the Hawaii State Department of Health. Layers also exist for sugar cane lands in production in 1900 and 1937. For additional information, please refer to metadata at https://files.hawaii.gov/dbedt/op/gis/data/sugarcane_historical.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustainable Development, State of Hawaii; PO Box 2359, Honolulu, Hi. 96804; (808) 587-2846; email: gis@hawaii.gov; Website: https://planning.hawaii.gov/gis.",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "sugarcane_1937",
+    "title": "Sugarcane lands, 1937",
+    "group": "history",
+    "count": 14,
+    "geometry": "Polygon",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/LandUseLandCover/MapServer/25",
+    "publisher": "Hawaii State Department of Health, Hazard Evaluation and Emergency Response Branch; Tetra Tech EM, Inc",
+    "description": "Lands in sugar cane production in Hawaii in 1937. The data was obtained from historical hard copy land utilization maps and digitized for use by the Hawaii State Department of Health. Layers also exist for sugar cane lands in production in 1900 and 1920. For additional information, please refer to metadata at https://files.hawaii.gov/dbedt/op/gis/data/sugarcane_historical.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustainable Development, State of Hawaii; PO Box 2359, Honolulu, Hi. 96804; (808) 587-2846; email: gis@hawaii.gov; Website: https://planning.hawaii.gov/gis.",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "pineapple_1920",
+    "title": "Pineapple lands, 1920",
+    "group": "history",
+    "count": 4,
+    "geometry": "Polygon",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/LandUseLandCover/MapServer/21",
+    "publisher": "Hawaii State Department of Health, Hazard Evaluation and Emergency Response Branch; Tetra Tech EM, Inc",
+    "description": "Lands in pineapple production in Hawaii in 1920. The data was obtained from historical hard copy land utilization maps and digitized for use by the Hawaii State Department of Health. Layers also exist for pineapple lands in production in 1900 and 1937. For additional information, please refer to metadata at https://files.hawaii.gov/dbedt/op/gis/data/pineapple_historical.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustainable Development, State of Hawaii; PO Box 2359, Honolulu, Hi. 96804; (808) 587-2846; email: gis@hawaii.gov; Website: https://planning.hawaii.gov/gis.",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  },
+  {
+    "id": "pineapple_1937",
+    "title": "Pineapple lands, 1937",
+    "group": "history",
+    "count": 16,
+    "geometry": "Polygon",
+    "source": "https://geodata.hawaii.gov/arcgis/rest/services/LandUseLandCover/MapServer/22",
+    "publisher": "Hawaii State Department of Health, Hazard Evaluation and Emergency Response Branch; Tetra Tech EM, Inc",
+    "description": "Lands in pineapple production in Hawaii in 1937. The data was obtained from historical hard copy land utilization maps and digitized for use by the Hawaii State Department of Health. Layers also exist for pineapple lands in production in 1900 and 1920. For additional information, please refer to metadata at https://files.hawaii.gov/dbedt/op/gis/data/pineapple_historical.pdf or contact Hawaii Statewide GIS Program, Office of Planning and Sustainable Development, State of Hawaii; PO Box 2359, Honolulu, Hi. 96804; (808) 587-2846; email: gis@hawaii.gov; Website: https://planning.hawaii.gov/gis.",
+    "last_edit": null,
+    "fetched": "2026-10-24"
+  }
+]

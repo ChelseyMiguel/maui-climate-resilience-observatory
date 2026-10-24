@@ -28,7 +28,7 @@
   let ndviMap = new Map(), nbrMap = new Map(), dsciMap = new Map(), rainRows = [], rainError = null;
   let rasters = {}, elev = null, elevSource = '', elevError = null, pixels = null;
   // Remote-sensing products (scripts/remote_sensing/): annual Sentinel-2 composites, lidar, WorldCover.
-  let annual = null, lidar = null, manifest = {}, rsError = null, cubeStride = 6, baseline = null, island = null;
+  let annual = null, lidar = null, manifest = {}, rsError = null, cubeStride = 6, baseline = null, island = null, overlays = null, hdrought = null, gauges = [];
 
   // Shared state
   const s0 = get(analysis);
@@ -60,6 +60,10 @@
       .then(([a, l, m]) => { annual = a; lidar = l; manifest = m ?? {}; })
       .catch((e) => (rsError = e.message));
     fetch('/api/layers/island-info').then((r) => (r.ok ? r.json() : null)).then((d) => (island = d)).catch(() => (island = null));
+    const j = (u) => fetch(u).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    j('/api/layers/portal-overlays').then((d) => (overlays = d?.moisture_zones ? d : null));
+    j('/api/layers/hawaii-drought').then((d) => (hdrought = d?.available ? d : null));
+    j('/api/layers/portal/rain_gauges').then((d) => (gauges = (d?.features ?? []).map((f) => f.properties)));
     api.ndviBaseline().then((b) => (baseline = b?.available ? b : null)).catch(() => (baseline = null))
       .catch((e) => (rsError = e.message));
   });
@@ -470,6 +474,58 @@
     layout: { xaxis: { title: { text: 'Elevation zone' } }, yaxis: { title: { text: '% of land with dNDVI 2019 → 2022 < −0.10' }, range: [0, 100] } },
   } : null;
 
+  // Hawaii state layers x our satellite results (scripts/remote_sensing/portal_overlays.py).
+  const ZONE_COL = { Arid: '#8c510a', 'Very Dry': '#bf812d', 'Moderately Dry': '#dfc27d', 'Seasonal Mesic': '#c7eae5', 'Moist Mesic': '#80cdc1', 'Moderately Wet': '#35978f', 'Very Wet': '#01665e' };
+  $: mz = overlays?.moisture_zones ?? [];
+  $: studyZones = overlays?.study_area?.moisture_zone_share ?? {};
+  $: moistFig = mz.length ? {
+    data: [{ type: 'bar', x: mz.map((z) => z.zone), y: mz.map((z) => z.share_browned * 100), text: mz.map((z) => `${(z.share_browned * 100).toFixed(0)}%`), textposition: 'outside',
+      marker: { color: mz.map((z) => ZONE_COL[z.zone]), line: { color: mz.map((z) => (studyZones[z.zone] > 0 ? '#e07b2c' : '#000')), width: mz.map((z) => (studyZones[z.zone] > 0 ? 3 : 1)) } },
+      customdata: mz.map((z) => [z.area_km2, z.median_change, z.ndvi_2019, z.ndvi_2022]),
+      hovertemplate: '%{x}: %{y:.1f}% browned<br>%{customdata[0]} km² · NDVI %{customdata[2]} → %{customdata[3]}<extra></extra>' }],
+    layout: { xaxis: { title: { text: 'Moisture zone (driest → wettest)' }, tickangle: -20 }, yaxis: { title: { text: '% of land with dNDVI 2019 → 2022 < −0.10' }, range: [0, 70] }, margin: { b: 80 } },
+  } : null;
+  $: plantFig = overlays?.plantation_within_moisture_zone ? {
+    data: [['plantation', 'Former sugarcane / pineapple', '#c28f2c'], ['other', 'Never in plantation', '#6e767c']].map(([k, name, col]) => ({
+      type: 'bar', name, x: overlays.plantation_within_moisture_zone.map((z) => z.zone), y: overlays.plantation_within_moisture_zone.map((z) => (z[k].share_browned ?? null) === null ? null : z[k].share_browned * 100),
+      customdata: overlays.plantation_within_moisture_zone.map((z) => z[k].pixels), marker: { color: col, line: { color: '#000', width: 1 } },
+      hovertemplate: `%{x}, ${name}: %{y:.1f}% browned (%{customdata} px)<extra></extra>` })),
+    layout: { barmode: 'group', xaxis: { title: { text: 'Moisture zone' }, tickangle: -20 }, yaxis: { title: { text: '% browned 2019 → 2022' }, range: [0, 70] }, legend: { y: -0.4 }, margin: { b: 90 } },
+  } : null;
+  const RATINGS = ['High', 'Medium', 'Low', 'Not rated'], RCOL = { High: '#d4442c', Medium: '#ef9a3b', Low: '#f3d250', 'Not rated': '#6e767c' };
+  $: ratingFig = overlays?.fire_risk_rating ? {
+    data: [{ type: 'bar', x: RATINGS, y: RATINGS.map((n) => overlays.fire_risk_rating[n].share_browned * 100), text: RATINGS.map((n) => `${(overlays.fire_risk_rating[n].share_browned * 100).toFixed(0)}%`), textposition: 'outside',
+      marker: { color: RATINGS.map((n) => RCOL[n]), line: { color: '#000', width: 1 } }, customdata: RATINGS.map((n) => [overlays.fire_risk_rating[n].area_km2, overlays.fire_risk_rating[n].ndvi_2019]),
+      hovertemplate: '%{x}: %{y:.1f}% browned<br>%{customdata[0]} km² · 2019 NDVI %{customdata[1]}<extra></extra>' }],
+    layout: { xaxis: { title: { text: 'DLNR fire-risk rating (populated areas only)' } }, yaxis: { title: { text: '% browned 2019 → 2022' }, range: [0, 80] } },
+  } : null;
+  $: fireRatingFig = overlays?.fires_2023_by_rating?.length ? {
+    data: RATINGS.map((n) => ({ type: 'bar', orientation: 'h', name: n, y: overlays.fires_2023_by_rating.map((f) => f.fire), x: overlays.fires_2023_by_rating.map((f) => f.share_by_rating[n] * 100),
+      marker: { color: RCOL[n], line: { color: '#000', width: 1 } }, hovertemplate: `%{y}: %{x:.0f}% of the burned area was ${n}<extra></extra>` })),
+    layout: { barmode: 'stack', xaxis: { title: { text: '% of each 2023 fire’s area, by DLNR rating of the land' }, range: [0, 100] }, legend: { y: -0.35 }, margin: { l: 70 } },
+  } : null;
+  $: hd = hdrought?.annual ?? [];
+  const CCOL = { maui: '#e07b2c', hawaii: '#5ab4ac', kauai: '#b3bcc1', honolulu: '#6cb6ff' };
+  $: hdFig = hd.length ? {
+    data: ['hawaii', 'honolulu', 'kauai', 'maui'].map((c) => ({ type: 'scatter', mode: 'lines+markers', name: c === 'hawaii' ? 'Hawaiʻi Island' : c === 'honolulu' ? 'Oʻahu (Honolulu)' : c === 'kauai' ? 'Kauaʻi' : 'Maui County',
+      x: hd.map((a) => a.year), y: hd.map((a) => a[c]), line: { color: CCOL[c], width: c === 'maui' ? 3 : 1.5 }, marker: { symbol: 'square', size: c === 'maui' ? 7 : 4 },
+      hovertemplate: '%{x}: DSCI %{y}<extra>' + c + '</extra>' })),
+    layout: { xaxis: { title: { text: 'Year (mean of weekly values; 2026 to Oct)' }, dtick: 2 }, yaxis: { title: { text: 'Drought index DSCI (0–500)' } }, legend: { y: -0.3 },
+      shapes: [{ type: 'rect', xref: 'x', x0: 2021.5, x1: 2022.5, yref: 'paper', y0: 0, y1: 1, fillcolor: 'rgba(224,123,44,0.12)', line: { width: 0 } }] },
+  } : null;
+  $: d4Fig = hdrought ? {
+    data: [{ type: 'bar', x: Object.keys(hdrought.maui_d4_weeks).map(Number), y: Object.values(hdrought.maui_d4_weeks),
+      marker: { color: Object.keys(hdrought.maui_d4_weeks).map((y) => (+y === 2022 ? '#e07b2c' : '#8a959c')), line: { color: '#000', width: 1 } },
+      hovertemplate: '%{x}: %{y} weeks with exceptional drought (D4) somewhere in Maui County<extra></extra>' }],
+    layout: { xaxis: { title: { text: 'Year' }, dtick: 2 }, yaxis: { title: { text: 'Weeks with D4 drought' } } },
+  } : null;
+  $: gaugeFig = gauges.length ? {
+    data: [{ type: 'scatter', mode: 'markers', x: gauges.map((g) => g.elevm), y: gauges.map((g) => g.annavgmm), text: gauges.map((g) => g.name),
+      marker: { symbol: 'square', size: 6, color: gauges.map((g) => g.annavgmm), colorscale: [[0, '#bf812d'], [0.3, '#dfc27d'], [0.6, '#80cdc1'], [1, '#01665e']], colorbar: { title: { text: 'mm/yr', side: 'right' }, thickness: 10, outlinewidth: 0 }, line: { width: 0.5, color: '#000' } },
+      hovertemplate: '%{text}<br>%{x} m · %{y:.0f} mm/yr<extra></extra>' }],
+    layout: { xaxis: { title: { text: 'Gauge elevation (m)' } }, yaxis: { title: { text: 'Mean annual rainfall (mm), 1978–2007' }, type: 'log' } },
+  } : null;
+
   $: studyShare = rasters[index] ? countBelow(rasters[index].values, threshold) : null;
 </script>
 
@@ -577,6 +633,47 @@
       {/if}
 
       {#if rsError}<p class="err small wide">Remote-sensing products couldn’t load: {rsError}</p>{/if}
+      {#if hdFig}
+        <PlotPanel {Plotly} id="hawaii_drought_by_county" title="Drought across Hawaiʻi since 2000" tag="exploratory" height={320}
+          meta="U.S. Drought Monitor drought index (DSCI), annual mean of weekly values, each county as a whole. 2022 shaded. County-wide: it does not describe any single place."
+          data={hdFig.data} layout={hdFig.layout} rows={hd}
+          note={hdrought ? `Maui County’s annual drought index ranks #${hdrought.maui_rank_by_annual_dsci[2022]} for 2022 since 2000 (2010 and 2025 were higher) — but 2022 had more weeks of exceptional (D4) drought than any other year.` : ''} />
+      {/if}
+      {#if d4Fig}
+        <PlotPanel {Plotly} id="maui_d4_weeks" title="Exceptional drought on Maui, week counts" tag="exploratory" height={300}
+          meta="Weeks each year in which any part of Maui County was in D4 (exceptional) drought, U.S. Drought Monitor, 2000–2026."
+          data={d4Fig.data} layout={d4Fig.layout} rows={Object.entries(hdrought.maui_d4_weeks).map(([year, weeks]) => ({ year: +year, weeks_with_d4: weeks }))}
+          note="2022: 20 weeks, more than any other year since 2000 (2010 had 9, 2021 had 8). D4 means some of the county, not all of it." />
+      {/if}
+      {#if moistFig}
+        <PlotPanel {Plotly} id="browning_by_moisture_zone" title="Where Maui browned, by moisture zone" tag="exploratory" height={320}
+          meta="Share of land in each state moisture zone (Hawaiʻi Statewide GIS) whose dry-season NDVI fell more than 0.10 from 2019 to 2022 (Sentinel-2, 60 m). Orange outline: zones inside the 1.5 km study circle."
+          data={moistFig.data} layout={moistFig.layout} rows={mz}
+          note="The study area sits in the Moderately Dry (73 %) and Very Dry (27 %) zones — where Maui browned most." />
+      {/if}
+      {#if plantFig}
+        <PlotPanel {Plotly} id="plantation_vs_browning" title="Former plantation land browned more — where it was dry" tag="exploratory" height={340}
+          meta="Browning 2019 → 2022 (60 m) on land in sugarcane or pineapple production at some time in 1900–1937 (state digitised maps) vs land never in plantation, compared within each moisture zone so dry and wet land are not mixed."
+          data={plantFig.data} layout={plantFig.layout} rows={overlays.plantation_within_moisture_zone.map((z) => ({ zone: z.zone, plantation_share_browned: z.plantation.share_browned ?? null, plantation_px: z.plantation.pixels, other_share_browned: z.other.share_browned ?? null, other_px: z.other.pixels }))}
+          note="In the three driest zones former plantation land browned more (Arid 25 % vs 13 %, Very Dry 56 % vs 30 %, Moderately Dry 56 % vs 51 %); in wetter zones it browned less. Association only, from historical land use — not a cause." />
+      {/if}
+      {#if ratingFig}
+        <PlotPanel {Plotly} id="browning_by_fire_risk" title="Browning inside DLNR’s fire-risk areas" tag="exploratory" height={300}
+          meta="Share browned 2019 → 2022 (60 m) in land DLNR-DOFAW rated High, Medium or Low (2007; reconfirmed 2017 and 2022), and in all unrated land. The ratings cover populated areas only."
+          data={ratingFig.data} layout={ratingFig.layout} rows={RATINGS.map((n) => ({ rating: n, ...overlays.fire_risk_rating[n] }))}
+          note="Browning does not follow the state’s ratings: High-rated land is mostly dry coastal land with little greenness to lose (8 % browned), Medium-rated land browned most (62 %). These are different questions: the rating is not a forecast of browning." />
+      {/if}
+      {#if fireRatingFig}
+        <PlotPanel {Plotly} id="fires_by_rating" title="Where the 2023 fires burned, by DLNR rating" tag="exploratory" height={300}
+          meta="Each 2023 perimeter (NIFC) overlaid on DLNR’s fire-risk areas. The Lahaina fire is outside the terrain box but inside the island grid."
+          data={fireRatingFig.data} layout={fireRatingFig.layout} rows={overlays.fires_2023_by_rating.map((f) => ({ fire: f.fire, pixels: f.pixels, ...f.share_by_rating }))}
+          note="Lahaina burned mostly in land rated High. The Upcountry Pulehu fire — the largest — burned 99 % outside any rated area, because the ratings only cover populated communities." />
+      {/if}
+      {#if gaugeFig}
+        <PlotPanel {Plotly} id="rain_gauges_by_elevation" title="Rainfall across Maui’s gauges" tag="exploratory" height={320}
+          meta="Mean annual rainfall at each Rainfall Atlas gauge (Giambelluca et al. 2011; station means, 1978–2007 base period) against elevation; log scale. Station measurements, unlike the gridded products elsewhere."
+          data={gaugeFig.data} layout={gaugeFig.layout} rows={gauges.map(({ skn, name, elevm, annavgmm, annsd_mm, nummoswith }) => ({ skn, name, elevm, annavgmm, annsd_mm, nummoswith }))} />
+      {/if}
       {#if islandFig}
         <PlotPanel {Plotly} id="island_by_year" title="All of Maui, nine dry seasons" tag="exploratory" height={320}
           meta="Sentinel-2 L2A May–Sep medians over the whole island (tiles 4QGJ, 4QGH, 4QHJ; 60 m; ocean masked). Lines: island median; bands: middle 50 % of land pixels. Windward rain forest and the dry leeward slopes are both in here."
