@@ -32,9 +32,9 @@ The biggest limit is that the 3D views come from terrain and lidar, not from the
 
 Yes. I used Claude (Anthropic) through Claude Code as a pair-programming assistant, September to October 2026. Claude wrote much of the application code from my direction: the Python and FastAPI back end, the GLOBE API client, the Svelte, MapLibre and three.js front end, the 360 degree viewer, the data scripts, and the automated tests. It also helped find bugs, fetch public datasets such as the Hawaii Statewide GIS and the U.S. Drought Monitor, and draft documentation. The app itself uses no AI at runtime.
 
-What I contributed: the NASA SEES research question and the original Earth Engine analysis (NDVI and NBR, 2019 versus 2022), which every result comes from. [Fill in your own: the features you chose, the design and logo and name decisions, what you tested, ran and reviewed, what you can explain.] I set the rules that every number must trace to a source and that nothing is fabricated or simulated, and I checked results against my own study. The research findings, the choice of what to show, and the final decisions are mine. The full disclosure is in docs/ai-disclosure-and-code-tour.md in the repository.
+What I contributed: the NASA SEES research question and the original Earth Engine analysis (NDVI and NBR, 2019 versus 2022), which every result comes from. I wrote the original Earth Engine scripts and ran the Earth Engine exports (NDVI, NBR, rainfall and land-cover classes) that the app's data comes from. I chose the app's name and logo, set the design direction (a dark, flat look with square corners, no gradients), and decided which features and data to add. I ran the app locally, checked what it showed, and asked for fixes. I set the rules that every number must trace to a source and that nothing is fabricated or simulated, and I checked results against my own study. The research findings, the choice of what to show, and the final decisions are mine. The full disclosure is in docs/ai-disclosure-and-code-tour.md in the repository.
 
-*(185 words)*
+*(about 232 words)*
 
 ## What did you learn or take away from participating in the Congressional App Challenge?
 
