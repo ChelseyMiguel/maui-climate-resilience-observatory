@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Rural Hawaiʻi Climate Resilience Observatory — Congressional App Challenge 2026 (due Oct 26, 2026, 12:00 PM EDT).
+Browning Viewer — Congressional App Challenge 2026 (due Oct 26, 2026, 12:00 PM EDT).
 
 ## Stack
 Python 3.11+ / FastAPI (`app/`, `lib/`), Svelte 5 in legacy syntax + Vite + TypeScript + MapLibre + three.js (`web/`, builds to `app/static/site/`), vendored ESM 360° viewer (`app/templates/index.html`, `app/static/js/`), Google Earth Engine scripts (`scripts/gee/`). JSON/GeoJSON files, no database.

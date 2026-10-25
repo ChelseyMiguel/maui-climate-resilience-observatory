@@ -12,7 +12,7 @@ JEOGA, revised) and docs/evidence-claims.md.
 
 ### Slide 1 — Motivation: the problem of browning (0:00–0:30)
 > Hello, my name is Chelsey Miguel from King Kekaulike High School on Maui. In
-> this project I built the Rural Hawaiʻi Climate Resilience Observatory, a web app
+> this project I built the Browning Viewer, a web app
 > showing Upcountry communities how drought, vegetation and wildfire connect. It grew
 > out of my NASA SEES research with Peder Nelson, Dr. Russanne Low and Cassie Soeffing.
 >
@@ -60,7 +60,7 @@ JEOGA, revised) and docs/evidence-claims.md.
 
 ### Close (2:52–3:00)
 > Next, I'm planning a drone survey to turn these sites into real 3D models. The
-> Rural Hawaiʻi Climate Resilience Observatory: making environmental change in
+> Browning Viewer: making environmental change in
 > rural Hawaiʻi visible, and checkable. Mahalo.
 
 ---

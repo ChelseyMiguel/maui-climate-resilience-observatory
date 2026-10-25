@@ -5,7 +5,7 @@ Same five slides as v3, updated with what the app does now. **On slide** = the s
 core ≈ 2:34, with every ✂ kept ≈ 2:57 (counted at 150 words a minute; real speed varies, so time yourself). Use your own words where you can; keep the numbers.
 **Plan to cut at least two ✂ sentences: 2:57 leaves no margin, and 3:00 is a hard limit.**
 
-The app name is still the working title (Rural Hawaiʻi Climate Resilience Observatory). When you pick a name, change it
+The app is now named Browning Viewer. The logo is in docs/logo/. If you rename it again, change it
 in slide 1 and slide 4 and the title card.
 
 ---
@@ -13,7 +13,7 @@ in slide 1 and slide 4 and the title card.
 ## Slide 1 — Why it matters: drought, then fire (0:00–0:30)
 
 **On slide**
-- Title: *[App name]* · Chelsey Miguel, King Kekaulike High School
+- Title: *Browning Viewer* · Chelsey Miguel, King Kekaulike High School
 - NASA SEES Team Terra: Peder Nelson · Dr. Russanne Low · Cassie Soeffing
 - 2022: 20 weeks of exceptional drought, Maui County (most since 2000)
 - Aug 8, 2023: fires in Upcountry Maui and Lahaina

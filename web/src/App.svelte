@@ -1,4 +1,5 @@
 <script>
+  import logo from './assets/browning-viewer-mark.png';
   // The Observatory shell: navigation, the always-visible research-only notice,
   // and a tiny router. The 360° GLOBE site viewer stays its own page (/viewer).
   import { path as currentPath, interceptLinks } from './lib/router.ts';
@@ -31,7 +32,7 @@
   $: loader = PAGES[$currentPath];
   $: pagePromise = loader ? loader() : null;
   $: fullBleed = $currentPath === '/explore' || $currentPath === '/map';
-  $: document.title = `${TITLES[$currentPath] ?? 'Not found'} · Rural Hawaiʻi Climate Resilience Observatory`;
+  $: document.title = `${TITLES[$currentPath] ?? 'Not found'} · Browning Viewer`;
   $: $currentPath, (menuOpen = false);
 </script>
 
@@ -41,12 +42,8 @@
 <header class="site">
   <div class="bar">
     <a class="brand" href="/">
-      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
-        <path d="M2 24c5-7 9-10 14-10s9 3 14 10" fill="none" stroke="currentColor" stroke-width="2"/>
-        <path d="M6 24c4-4 7-6 10-6s6 2 10 6" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".6"/>
-        <circle cx="16" cy="8" r="3.2" fill="currentColor"/>
-      </svg>
-      <span><b>Climate Resilience Observatory</b><small>Rural Hawaiʻi · Upcountry Maui</small></span>
+      <img src={logo} width="32" height="32" alt="" />
+      <span><b>Browning Viewer</b><small>Upcountry Maui · drought, vegetation, wildfire</small></span>
     </a>
     <button class="menu" aria-expanded={menuOpen} aria-controls="nav" on:click={() => (menuOpen = !menuOpen)}>
       Menu

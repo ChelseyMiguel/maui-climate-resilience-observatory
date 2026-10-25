@@ -10,7 +10,7 @@ Answer the question asked, directly, in the first sentence.
 
 ## 1. What is the title of your app?
 
-Rural Hawaiʻi Climate Resilience Observatory. (Keep it identical in the video,
+Browning Viewer. (Keep it identical in the video,
 the form and the GitHub README.)
 
 ## 2. Explain the app's purpose.

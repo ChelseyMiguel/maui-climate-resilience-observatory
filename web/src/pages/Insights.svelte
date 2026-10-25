@@ -43,7 +43,7 @@
                pct: a && b ? (100 * (b.mean - a.mean)) / a.mean : null };
     }) : [];
 
-  const ATTRIBUTION = 'Rural Hawaii Climate Resilience Observatory (student research project)';
+  const ATTRIBUTION = 'Browning Viewer (student research project)';
 
   function exportVegetation() {
     const rows = veg.ndvi.filter((p) => p.date >= from && p.date <= to)

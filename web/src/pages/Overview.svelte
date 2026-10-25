@@ -25,7 +25,7 @@
 <section class="hero">
   <div class="wrap grid">
     <div>
-      <p class="eyebrow">Rural Hawaiʻi Climate Resilience Observatory</p>
+      <p class="eyebrow">Browning Viewer</p>
       <h1>See environmental change.<br />Understand community vulnerability.</h1>
       <p class="lede">
         An interactive research dashboard for Upcountry Maui — Pukalani, Makawao and Kula — that puts

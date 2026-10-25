@@ -1,4 +1,6 @@
-# Rural Hawaiʻi Climate Resilience Observatory
+<img src="docs/logo/browning-viewer-logo.png" alt="Browning Viewer" width="220">
+
+# Browning Viewer
 
 **See environmental change. Understand community vulnerability.**
 

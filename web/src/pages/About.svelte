@@ -3,7 +3,7 @@
   <h1>An independent, student-led project</h1>
   <div class="cols">
     <div>
-      <p>The Rural Hawaiʻi Climate Resilience Observatory is a research and education project by a high-school student
+      <p>The Browning Viewer is a research and education project by a high-school student
         on Maui, built for the Congressional App Challenge. It grows out of research on whether the 2022 drought left
         Upcountry vegetation browned ahead of the August 2023 fires, carried out through the NASA SEES Earth System
         Explorers program.</p>

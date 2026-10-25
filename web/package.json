@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Rural Hawaii Climate Resilience Observatory — Svelte front end (served by the FastAPI app)",
+  "description": "Browning Viewer — Svelte front end (served by the FastAPI app)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

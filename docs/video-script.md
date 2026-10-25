@@ -19,7 +19,7 @@ Every number below is in `docs/evidence-claims.md`. Don't add numbers that aren'
 | Time | Screen | Say (in your own words, this is a guide) |
 |---|---|---|
 | 0:00–0:20 | You on camera, or a photo of Upcountry | "In August 2023, fires burned through Upcountry Maui, where I live. A year before, in 2022, Maui had 20 weeks of exceptional drought. My question was whether that drought left vegetation browned before the fires, and how communities could see that." |
-| 0:20–0:40 | **Overview** page (`/`), scroll slowly | "So I built the Rural Hawaiʻi Climate Resilience Observatory. It puts vegetation change, drought, the 2023 fire perimeters and community facilities in one place, using real public data from NASA, USGS, the Drought Monitor and the State of Hawaiʻi." |
+| 0:20–0:40 | **Overview** page (`/`), scroll slowly | "So I built the Browning Viewer. It puts vegetation change, drought, the 2023 fire perimeters and community facilities in one place, using real public data from NASA, USGS, the Drought Monitor and the State of Hawaiʻi." |
 | 0:40–1:15 | **Map Explorer** (`/explore`): turn on vegetation change, then drought, then fires; click one fire and one GLOBE site | "Here's the satellite vegetation change from 2019 to 2022. In my Pukalani study area, 42.7% of the land browned. I can add the drought map for each year, and the 2023 fire perimeters. Clicking anything shows where the data came from, and how uncertain it is." |
 | 1:15–1:40 | **Region Insights** (`/insights`): Pukalani chart, the 2019 vs 2022 comparison, click CSV | "For each community you can see the trend. Pukalani's dry-season greenness dropped 19% from 2019 to 2022. And anyone can download the data, with its sources attached." |
 | 1:40–2:10 | **3D View** (`/map`): press ▶ Play the guided tour | "This is a 3D tour of the terrain, with the same layers draped over it, so people can see where the fires were relative to where they live." |
@@ -35,5 +35,5 @@ Every number below is in `docs/evidence-claims.md`. Don't add numbers that aren'
 ## Upload checklist
 - [ ] Under 3:00
 - [ ] YouTube → Visibility **Public** (CAC requires a public YouTube or Vimeo video, 1–3 min; PROJECT_BRIEF.md and district pages such as larsen.house.gov and case.house.gov; confirm with your representative's office), made for kids: **No**
-- [ ] Title: "Rural Hawaiʻi Climate Resilience Observatory — Congressional App Challenge 2026"
+- [ ] Title: "Browning Viewer — Congressional App Challenge 2026"
 - [ ] Paste the YouTube link and the GitHub link into the CAC submission form before **Oct 26, 12:00 PM EDT**

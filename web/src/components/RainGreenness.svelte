@@ -51,7 +51,7 @@
       { header: 'month', value: (m) => m.month },
       ...PRODUCTS.map((p) => ({ header: `${p.key}_mm`, value: (m) => m[p.key]?.toFixed(1) })),
     ], [
-      'Monthly rainfall at the Pukalani study-area centre, 2018-2024. Rural Hawaii Climate Resilience Observatory (student research project).',
+      'Monthly rainfall at the Pukalani study-area centre, 2018-2024. Browning Viewer (student research project).',
       'Sources: CHIRPS daily (UCSB-CHG), TerraClimate (U. Idaho), IMERG monthly V07 (NASA GPM), ERA5-Land monthly (ECMWF), via Google Earth Engine.',
       ...data.notes,
     ]));

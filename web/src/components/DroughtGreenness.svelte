@@ -89,7 +89,7 @@
       { header: 'maui_county_dsci_monthly_mean', value: (p) => p.dsci },
       { header: `${which}_study_area_mean`, value: (p) => p.value },
     ], [
-      `Maui County drought (DSCI) against Pukalani study-area ${which.toUpperCase()}, one row per month. Rural Hawaii Climate Resilience Observatory (student research project).`,
+      `Maui County drought (DSCI) against Pukalani study-area ${which.toUpperCase()}, one row per month. Browning Viewer (student research project).`,
       'Sources: U.S. Drought Monitor (UNL/USDA/NOAA) weekly DSCI averaged by month; author\'s Sentinel-2 SR Harmonized analysis (Google Earth Engine).',
       `Pearson r = ${fit?.r ?? 'n/a'} over ${fit?.n ?? 0} months (same month).`,
       ...(data?.notes ?? []),
