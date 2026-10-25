@@ -1,6 +1,6 @@
 /* Data adapters: the only code that knows the API's shapes. Each turns a raw
  * response into the typed interfaces in types.ts. To connect a new or real source,
- * add an adapter here — pages never fetch directly. */
+ * add an adapter here, pages never fetch directly. */
 import type {
   DroughtGreenness, DroughtMapInfo, Rainfall, InfrastructureFeature, InfrastructureKind, InfrastructureLayerInfo,
   Observation, RegionInsights, TimeseriesPoint,

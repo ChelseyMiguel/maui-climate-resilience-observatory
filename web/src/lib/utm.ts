@@ -1,7 +1,7 @@
 /* WGS84 <-> UTM conversion, so the project's rasters (EPSG:32604, UTM zone 4N)
  * can be placed on a lat/lon map and queried at a clicked point.
  *
- * Standard transverse Mercator series (Snyder, "Map Projections — A Working
+ * Standard transverse Mercator series (Snyder, "Map Projections, A Working
  * Manual", USGS Professional Paper 1395, pp. 61-64). Accurate to well under a
  * metre within a UTM zone, far finer than the 10 m pixels it is used for.
  * No imports, so it runs under plain `node --test` as well as in the browser.

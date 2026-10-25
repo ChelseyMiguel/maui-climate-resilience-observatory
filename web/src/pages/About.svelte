@@ -22,7 +22,7 @@
         <li>Research and education only.</li>
         <li>Not an emergency alert, evacuation routing, or fire-risk service.</li>
         <li>No individual property assessments.</li>
-        <li>Historical data — nothing here is live.</li>
+        <li>Historical data. Nothing here is live.</li>
       </ul>
       <p class="small">For emergencies: <a href="https://www.mauicounty.gov/983/MEMA-Alerts" target="_blank" rel="noopener noreferrer">MEMA Alerts</a> ·
         <a href="https://www.mauicounty.gov/70/Emergency-Management-Agency" target="_blank" rel="noopener noreferrer">Maui Emergency Management Agency</a></p>

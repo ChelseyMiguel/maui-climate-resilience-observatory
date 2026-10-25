@@ -77,7 +77,7 @@
   <footer class="wrap">
     <p class="small muted">An independent, student-led research and education project. Data from NASA GLOBE,
       the National Interagency Fire Center, the U.S. Drought Monitor, the USDA Forest Service, the Hawaiʻi
-      Statewide GIS Program, and the author’s own Sentinel-2 analysis — see <a href="/sources">Sources</a>.
+      Statewide GIS Program, and the author’s own Sentinel-2 analysis. See <a href="/sources">Sources</a>.
       No institutional endorsement is implied.</p>
   </footer>
 {/if}

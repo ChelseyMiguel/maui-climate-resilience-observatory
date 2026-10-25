@@ -75,7 +75,7 @@ STUDY_AREAS: dict[str, dict] = {
         "lat": 20.827,
         "lon": -156.336,
         "radius_km": 25.0,
-        "note": "Anchor study area — 2022 drought / 2023 Upcountry wildfire AOI.",
+        "note": "Anchor study area: 2022 drought / 2023 Upcountry wildfire AOI.",
     },
     "kula": {
         "name": "Kula, Maui",

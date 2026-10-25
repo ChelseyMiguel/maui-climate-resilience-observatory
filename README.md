@@ -4,8 +4,8 @@
 
 **See environmental change. Understand community vulnerability.**
 
-An interactive GIS research dashboard for Upcountry Maui — Pukalani, Makawao and
-Kula — that puts historical vegetation change, drought, the August 2023 fires and
+An interactive GIS research dashboard for Upcountry Maui (Pukalani, Makawao and
+Kula) that puts historical vegetation change, drought, the August 2023 fires and
 community context side by side, with every source and caveat in view. At its
 centre is a **GLOBE site viewer** that rebuilds a NASA GLOBE Observer citizen
 scientist's six land-cover photos into a 360° view.
@@ -22,7 +22,7 @@ the 2022 drought left Upcountry vegetation browned ahead of the 2023 fires.
 Quickest: `./run.sh` (sets everything up on first run), then open http://localhost:8000.
 
 
-Needs Python 3.11+. Node.js is only needed to *change* the front end — the built
+Needs Python 3.11+. Node.js is only needed to *change* the front end; the built
 site is committed, so the app runs without it.
 
 ```bash
@@ -80,7 +80,7 @@ cd web && npm run check && npm test && npm run build
 | `/sources` | Sources | Provenance table: provider, resolution, coverage, period, currency, licence, link |
 | `/about` | About | Independent student project; acknowledgements without implied endorsement |
 
-## Data — all real, nothing simulated
+## Data: all real, nothing simulated
 
 There is **no synthetic or demo data** anywhere. Where a layer doesn't exist for a
 place or year, the app shows an empty state instead.
@@ -110,7 +110,7 @@ the outputs are committed, so the app needs none of this to run.
 | `worldcover.py` | ESA WorldCover 2021 (`esa-worldcover`) | 10 m land cover; browning share per class |
 | `maui_inset.py` | Copernicus DEM GLO-90 | Locator inset |
 
-## Key findings — and their limits
+## Key findings, and their limits
 
 Stated carefully; `docs/evidence-claims.md` lists what can and cannot be claimed.
 
@@ -118,7 +118,7 @@ Stated carefully; `docs/evidence-claims.md` lists what can and cannot be claimed
   drought index, and 20 weeks of D4 "exceptional" drought. D4 also occurred in
   2019, 2020 and 2021, but far less (1–8 weeks).
 - **42.7% of the 1.5 km Pukalani study area browned** between the 2019 and 2022 dry
-  seasons. Dry-season NDVI fell 19% (0.405 → 0.327) and NBR 42% — the moisture-
+  seasons. Dry-season NDVI fell 19% (0.405 → 0.327) and NBR 42%; the moisture-
   sensitive index responds more strongly.
 - **The study area did not burn.** The nearest 2023 perimeter (Olinda) starts ~1.5 km
   outside it, and no browned patch lies inside any perimeter. The Olinda fire did
@@ -170,7 +170,7 @@ adapter, not page changes.
    `data/imagery/before_2023.tif` and `after_2023.tif`. The 3D view picks them up
    automatically and shows the burn scars on the terrain.
 3. **Run `scripts/gee/fire_perimeter_browning.js`.** It runs the browning method
-   inside each 2023 perimeter against a 1 km unburned ring — the direct test of the
+   inside each 2023 perimeter against a 1 km unburned ring, the direct test of the
    research question, which nothing in the app can answer yet.
 
 ## Scientific and public-safety limitations

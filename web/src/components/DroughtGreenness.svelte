@@ -138,7 +138,7 @@
           <line x1={sx(v)} x2={sx(v)} y1={T} y2={H - B} class="grid v" />
           <text x={sx(v)} y={H - B + 16} class="tick mid">{v}</text>
         {/each}
-        <text x={(L + W - R) / 2} y={H - 6} class="axis mid">Maui County drought index (DSCI), monthly mean — drier →</text>
+        <text x={(L + W - R) / 2} y={H - 6} class="axis mid">Maui County drought index (DSCI), monthly mean, drier →</text>
         <text x="14" y={(T + H - B) / 2} class="axis mid" transform="rotate(-90 14 {(T + H - B) / 2})">{which.toUpperCase()}</text>
 
         {#if line}<line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} class="fit" />{/if}
@@ -209,7 +209,7 @@
               <th scope="row">{row.year}</th>
               <td>{which === 'ndvi' ? row.months : row.nbrMonths}</td>
               <td><span class="inbar"><i class="amber" style="width:{(row.dsci / dsciMax) * 100}%"></i></span> {row.dsci.toFixed(0)}</td>
-              <td>{#if dryIndex(row) !== null}<span class="inbar"><i class="green" style="width:{(Math.max(dryIndex(row), 0) / dryMax) * 100}%"></i></span> {dryIndex(row).toFixed(3)}{:else}—{/if}</td>
+              <td>{#if dryIndex(row) !== null}<span class="inbar"><i class="green" style="width:{(Math.max(dryIndex(row), 0) / dryMax) * 100}%"></i></span> {dryIndex(row).toFixed(3)}{:else}n/a{/if}</td>
             </tr>
           {/each}
         </tbody>

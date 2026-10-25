@@ -1,4 +1,4 @@
-# Slides + script v4 — 5 slides, 3:00 max
+# Slides + script v4: 5 slides, 3:00 max
 
 Same five slides as v3, updated with what the app does now. **On slide** = the short text to put on the slide.
 **Say** = the words to read. **✂** = cut this sentence first if you run long. Read it aloud once with a timer:
@@ -10,7 +10,7 @@ in slide 1 and slide 4 and the title card.
 
 ---
 
-## Slide 1 — Why it matters: drought, then fire (0:00–0:30)
+## Slide 1: Why it matters: drought, then fire (0:00–0:30)
 
 **On slide**
 - Title: *Browning Viewer* · Chelsey Miguel, King Kekaulike High School
@@ -20,14 +20,14 @@ in slide 1 and slide 4 and the title card.
 - Photo: Pukalani, or the burn scar from space (Sentinel-2, after the fires)
 
 **Say**
-> Hello, my name is Chelsey Miguel from King Kekaulike High School on Maui. I built the Rural Hawaiʻi Climate Resilience
-> Observatory, a web app that shows Upcountry communities how drought, vegetation and wildfire connect. It grew out of my
+> Hello, my name is Chelsey Miguel from King Kekaulike High School on Maui. I built Browning
+> Viewer, a web app that shows Upcountry communities how drought, vegetation and wildfire connect. It grew out of my
 > NASA SEES research with Peder Nelson, Dr. Russanne Low and Cassie Soeffing.
 >
 > In 2022, Maui County had twenty weeks of exceptional drought, more than any year since 2000. The next summer, on August
 > 8, 2023, wildfires burned in Upcountry Maui and Lahaina. ✂ *Much of Upcountry's old plantation land is now dry grass.*
 
-## Slide 2 — My NASA SEES research (0:30–1:03)
+## Slide 2: My NASA SEES research (0:30–1:03)
 
 **On slide**
 - Question: did the 2022 drought brown the land before the fires?
@@ -49,7 +49,7 @@ in slide 1 and slide 4 and the title card.
 > 0.47. Browning wasn't just one park. Across the whole island, 2022 was the least green dry season of nine years, and at Pukalani the lowest in 26 years of Landsat. ✂ *The ground was also the hottest of thirteen dry seasons, 44 degrees Celsius.* ✂ *A USDA Forest Service map partly agreed.* That doesn't show the browned land burned. It shows the land was
 > drying before the fires.
 
-## Slide 3 — How other sites turn satellite data into a product, and the gap (1:03–1:25)
+## Slide 3: How other sites turn satellite data into a product, and the gap (1:03–1:25)
 
 **On slide**
 - NASA FIRMS: satellite fire detections, mapped within hours
@@ -72,7 +72,7 @@ say (FIRMS: active-fire detections; GFW: forest-loss alerts; USDM: weekly author
 so there is nothing to trace, but the descriptions must be true in the sites' own words. Add a screenshot of each site.
 Time: about 43 seconds with the ✂ sentence, 34 without (the slot is 22), so it needs a real cut: drop the FIRMS or Global Forest Watch sentence, or give slide 3 more time. Cut the ✂ sentence. The totals in the header were counted before this slide changed, so re-time the whole script.
 
-## Slide 4 — How it grew into an app (1:25–1:57)
+## Slide 4: How it grew into an app (1:25–1:57)
 
 **On slide**
 - For residents, teachers, GLOBE observers, planners
@@ -88,7 +88,7 @@ Time: about 43 seconds with the ✂ sentence, 34 without (the slot is 22), so it
 > Python and FastAPI, JavaScript and Svelte, and Google Earth Engine. ✂ *It has nearly three hundred automated tests.*
 > It's for learning, not fire alerts.
 
-## Slide 5 — Demo (1:57–2:52)
+## Slide 5: Demo (1:57–2:52)
 
 **On slide** (mostly screen recording; small captions)
 - Map Explorer: island NDVI 2017→2025 (press play) · caption "2022 least green since 2017"

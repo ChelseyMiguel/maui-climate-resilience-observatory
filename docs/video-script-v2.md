@@ -20,7 +20,7 @@ pauses. Time yourself once; if over 3:00, cut the 3D-view line first.
 | 2:00–2:16 | Region Insights → Drought and greenness, then Rain and greenness | "Month by month, drought and greenness move together: r = −0.69 over 61 months. [Only if that is your chosen number — see the DECISION section.] And rain over the previous two to three months matches greenness best." |
 | 2:16–2:36 | Site Viewer: drag the 360° view, then the "What satellites call this spot" panel | "This is a real GLOBE site rebuilt in 360°. Three satellite maps disagree about what is here: two say grassland, Google's Dynamic World says built. The photos settle it." |
 | 2:36–2:52 | Slide with the result | "Across 15 GLOBE sites, two satellite maps agreed on 13, but Dynamic World matched them at as few as 4. At this scale satellites can't settle what's on the ground; citizen-science photos can. Next, I'm planning a drone survey and a capture rig to turn these sites into real 3D models." |
-| 2:52–3:00 | Title card + GitHub link | "The Browning Viewer: making environmental change in rural Hawaiʻi visible, and checkable. Mahalo." |
+| 2:52–3:00 | Title card + GitHub link | "The Browning Viewer: making environmental change in Maui visible, and checkable. Mahalo." |
 
 ## Rubric check (CAC video requirements)
 

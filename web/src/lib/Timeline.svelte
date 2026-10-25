@@ -2,8 +2,8 @@
   // Drought vs vegetation, 2018-2024, with the August 2023 fires marked.
   //
   // Two series on one time axis, each with its own scale:
-  //   * Maui County drought (U.S. Drought Monitor DSCI, weekly, 0-500) — area
-  //   * Study-area mean NDVI (this project's Sentinel-2 series, monthly) — line
+  //   * Maui County drought (U.S. Drought Monitor DSCI, weekly, 0-500), area
+  //   * Study-area mean NDVI (this project's Sentinel-2 series, monthly), line
   // They are different places (whole county vs a 1.5 km circle) and different
   // units, so the chart shows TIMING, not a correlation. The manuscript's
   // r = -0.47 comes from a proper analysis; this picture only illustrates it.
@@ -79,7 +79,7 @@
     {#if fireWeek}
       <span class="note">Fire week: DSCI {fireWeek.dsci} ({dsciLabel(fireWeek.dsci)}) and rising.</span>
     {/if}
-    <span class="note">Shows timing only — county-wide drought vs a 1.5 km study area, different units.</span>
+    <span class="note">Shows timing only: county-wide drought vs a 1.5 km study area, in different units.</span>
   </figcaption>
 </figure>
 

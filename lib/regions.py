@@ -177,7 +177,7 @@ def _insights(key: str) -> dict | None:
         "land_km2": props.get("land_km2"),
         "vegetation": veg,
         "drought": {
-            "scope": "Maui County as a whole — not specific to this place",
+            "scope": "Maui County as a whole, not specific to this place",
             "source": "U.S. Drought Monitor DSCI (weekly, 0-500)",
             "weekly": [{"date": d, "dsci": v} for d, v in hazards.drought_series()],
         },

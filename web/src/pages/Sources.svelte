@@ -29,7 +29,7 @@
               {#if d.caveat}<p class="cav">{d.caveat}</p>{/if}
               {#if d.linkChecked === false}<p class="cav">Link added Oct 2026, not yet re-checked.</p>{/if}
             </td>
-            <td class="kind">{d.kind ?? '—'}</td>
+            <td class="kind">{d.kind ?? 'n/a'}</td>
             <td>{d.provider}</td><td>{d.spatialResolution}</td><td>{d.coverage}</td>
             <td>{d.temporal}</td><td>{d.currency}</td><td>{d.license}</td>
           </tr>
@@ -53,14 +53,14 @@
       </table>
     </div>
   {:else}
-    <p class="card muted">Layer catalogue unavailable — run <code>scripts/fetch_context_layers.py</code>.</p>
+    <p class="card muted">Layer catalogue unavailable. Run <code>scripts/fetch_context_layers.py</code>.</p>
   {/if}
 
   <h2 class="section">Candidate sources not yet connected</h2>
   <ul>
-    <li><b>NOAA / NWS observations and red-flag warnings</b> — would add weather context; not integrated, and warnings would need to be clearly historical.</li>
-    <li><b>Maui County GIS: roads, evacuation zones, shelters</b> — deliberately not shown until an authoritative, current source is verified. Out-of-date evacuation or shelter data on a disaster page could mislead.</li>
-    <li><b>Per-place vegetation series for Makawao and Kula</b> — script ready (<code>scripts/gee/region_timeseries.js</code>); needs to be run in Earth Engine.</li>
+    <li><b>NOAA / NWS observations and red-flag warnings</b>: would add weather context; not integrated, and warnings would need to be clearly historical.</li>
+    <li><b>Maui County GIS: roads, evacuation zones, shelters</b>: deliberately not shown until an authoritative, current source is verified. Out-of-date evacuation or shelter data on a disaster page could mislead.</li>
+    <li><b>Per-place vegetation series for Makawao and Kula</b>: script ready (<code>scripts/gee/region_timeseries.js</code>); needs to be run in Earth Engine.</li>
   </ul>
 </section>
 

@@ -78,11 +78,11 @@
       if (!imageryCache[choice]) {
         if (choice === 'landcover') {
           const lc = await loadBands('worldcover_2021');
-          if (!lc) throw new Error('land cover not built — run scripts/remote_sensing/worldcover.py');
+          if (!lc) throw new Error('land cover not built. Run scripts/remote_sensing/worldcover.py');
           imageryCache[choice] = onBox(paint(lc.bands[0], lc.width, lc.height, worldcoverColour), lc.corners);
         } else if (choice === 'regional') {
           const rc = await loadBands('s2_regional_change');
-          if (!rc) throw new Error('regional change not built — run scripts/remote_sensing/sentinel2_composites.py');
+          if (!rc) throw new Error('regional change not built. Run scripts/remote_sensing/sentinel2_composites.py');
           imageryCache[choice] = onBox(paint(rc.bands[0], rc.width, rc.height, (v) => [...rampColor(v), 255]), rc.corners);
         } else {
           imageryCache[choice] = await imageryCanvasOf(imageryInfo.available.find((i) => i.id === choice));
@@ -98,7 +98,7 @@
     if (points) return;
     try {
       lidarInfo = (await remoteManifest())?.lidar;
-      if (!lidarInfo) throw new Error('lidar not built — run scripts/remote_sensing/lidar_canopy.py');
+      if (!lidarInfo) throw new Error('lidar not built. Run scripts/remote_sensing/lidar_canopy.py');
       const p = await lidarPoints(lidarInfo.points_file.z_min_m);
       const [e0, n0] = lidarInfo.points_file.origin_utm;
       const lon = new Float32Array(p.count), lat = new Float32Array(p.count);
@@ -132,12 +132,12 @@
   $: STEPS = data ? [
     { title: 'Upcountry Maui', at: [20.80, -156.34], view: { distanceKm: 17, headingDeg: 135, pitchDeg: 30 },
       // Scoped to the years actually pulled (2018–2024). D4 occurred in 2019–2022;
-      // 2022 had by far the most weeks of it — say that, not "the only year".
+      // 2022 had by far the most weeks of it, say that, not "the only year".
       text: `The leeward slopes of Haleakalā above Pukalani, Makawao and Kula. In ${data.drought.worst_year}, Maui County had its worst drought of 2018–2024: the highest average drought index, and ${data.drought.exceptional_weeks?.[data.drought.worst_year]?.weeks ?? 'several'} weeks of D4 “exceptional” drought (U.S. Drought Monitor).` },
     { title: 'The study area', at: [data.studyArea.lat, data.studyArea.lon], view: { distanceKm: 3.4, headingDeg: 150, pitchDeg: 48 },
-      text: `Inside this 1.5 km circle, ${Math.round(data.studyArea.browned_fraction * 100)}% of the ground browned between the 2019 and 2022 dry seasons (orange) — 879 patches measured from Sentinel-2.` },
+      text: `Inside this 1.5 km circle, ${Math.round(data.studyArea.browned_fraction * 100)}% of the ground browned between the 2019 and 2022 dry seasons (orange): 879 patches measured from Sentinel-2.` },
     { title: 'The Olinda fire', at: centroidOf('Olinda'), view: { distanceKm: 5.5, headingDeg: 110, pitchDeg: 40 },
-      text: `8 August 2023. The Olinda fire burned about ${Math.round(data.fires.features.find((f) => f.properties.name === 'Olinda').properties.acres).toLocaleString()} acres. Its edge is about ${(data.studyArea.fire.distance_km - data.studyArea.radius_m / 1000).toFixed(1)} km outside the study area — the browned ground itself did not burn.` },
+      text: `8 August 2023. The Olinda fire burned about ${Math.round(data.fires.features.find((f) => f.properties.name === 'Olinda').properties.acres).toLocaleString()} acres. Its edge is about ${(data.studyArea.fire.distance_km - data.studyArea.radius_m / 1000).toFixed(1)} km outside the study area, the browned ground itself did not burn.` },
     // Framed on the midpoint of the two perimeters so both are in view. Directions
     // and elevations checked against the terrain grid: Kula burned UPslope of the
     // study area (~730–1,050 m, south-east); Pulehu DOWNslope (~60–410 m, south-west).
@@ -145,7 +145,7 @@
       view: { distanceKm: 12, headingDeg: 20, pitchDeg: 42 },
       text: 'The same day, the Kula fire burned upslope to the south-east, between roughly 730 and 1,050 m, and the Pulehu fire burned downslope to the south-west, between roughly 60 and 410 m. Perimeters from the National Interagency Fire Center.' },
     { title: 'A citizen-science site', at: [20.83841, -156.34459], view: { distanceKm: 1.3, headingDeg: 160, pitchDeg: 32 },
-      text: 'A NASA GLOBE Observer land cover site inside the study area, visited 8 times in July 2026. Step inside it to see what the ground actually looks like.',
+      text: 'A NASA GLOBE Observer land cover site inside the study area, with 8 observations in July 2026. Step inside it to see what the ground actually looks like.',
       link: data.sites.find((s) => s.site_name === '04QGJ763065') },
   ].filter((s) => s.at) : [];
 
@@ -220,8 +220,8 @@
           <label><input type="radio" name="img" checked={imageryChoice === 'landcover'} on:change={() => setImagery('landcover')} /> Land cover 2021 (WorldCover)</label>
           <label><input type="radio" name="img" checked={imageryChoice === 'regional'} on:change={() => setImagery('regional')} /> dNDVI 2019 → 2022, regional (20 m)</label>
           {#if imageryInfo && !imageryInfo.available.length}
-            <p class="hint">No Sentinel-2 images yet — run <code>scripts/remote_sensing/sentinel2_composites.py</code>.</p>
-          {:else if imageryInfo}<p class="hint">Sentinel-2 L2A cloud-masked medians, 20 m, draped on the terrain.</p>{/if}
+            <p class="hint">No Sentinel-2 images yet. Run <code>scripts/remote_sensing/sentinel2_composites.py</code>.</p>
+          {/if}
           {#if imageryError}<p class="hint err">{imageryError}</p>{/if}
         </fieldset>
       </div>
@@ -259,9 +259,9 @@
               <dt>Period</dt><dd>dry season 2022 − 2019</dd>
             {/if}
             <dt>Lat, lon</dt><dd>{inspected.lat.toFixed(5)}, {inspected.lon.toFixed(5)}</dd>
-            <dt>Elevation</dt><dd>{inspected.elevation ? (Number.isFinite(inspected.elevation.z) ? `${inspected.elevation.z.toFixed(1)} m` : '—') : '…'}</dd>
+            <dt>Elevation</dt><dd>{inspected.elevation ? (Number.isFinite(inspected.elevation.z) ? `${inspected.elevation.z.toFixed(1)} m` : 'n/a') : '…'}</dd>
           </dl>
-          {#if !inspected.cell}<p class="muted small">Outside the 1.5 km change raster — no vegetation value here.</p>{/if}
+          {#if !inspected.cell}<p class="muted small">Outside the 1.5 km change raster. No vegetation value here.</p>{/if}
           {#if inspected.elevation}<p class="muted small">Elevation: {inspected.elevation.source}. Location is read from the 68 m terrain mesh, so it can be off by up to ~1 grid cell on steep slopes.</p>{/if}
         </section>
       {/if}
@@ -273,11 +273,11 @@
           {#if pct(selected.browned_fraction) !== null}
             <p><b>{pct(selected.browned_fraction)}%</b> of this 100 m site browned, 2019→2022
               <span class="muted small">(study area overall {Math.round(data.studyArea.browned_fraction * 100)}%)</span></p>
-          {:else}<p class="muted">Outside the browning study area — no vegetation measurement here.</p>{/if}
+          {:else}<p class="muted">Outside the browning study area. No vegetation measurement here.</p>{/if}
           {#if selected.fire?.available}
             <p>Nearest Aug 2023 fire: <b>{selected.fire.nearest_fire}</b>,
               {selected.fire.inside_perimeter ? 'inside its perimeter' : `${selected.fire.distance_km} km away`}.
-              <span class="muted small">Distance to where fire went — not a risk score.</span></p>
+              <span class="muted small">Distance to where fire went, not a risk score.</span></p>
           {/if}
           <a class="btn" href={`/viewer?obs=${encodeURIComponent(selected.land_cover_id)}`}>Open the 360° view →</a>
         </section>
@@ -285,8 +285,7 @@
       <section class="card">
         <h2>The August 8, 2023 fires</h2>
         <ul class="fires">{#each fires2023 as f}<li><b>{f.name}</b><span>{acres(f.acres)} acres</span></li>{/each}</ul>
-        <p class="callout"><b>The Pukalani study area did not burn.</b> The nearest perimeter, Olinda, starts about
-          {(data.studyArea.fire.distance_km - data.studyArea.radius_m / 1000).toFixed(1)} km outside it.</p>
+        <p class="callout">The study area did not burn. Olinda's edge is {(data.studyArea.fire.distance_km - data.studyArea.radius_m / 1000).toFixed(1)} km away.</p>
         <p class="muted small">Perimeters: National Interagency Fire Center. Dates in Hawaiʻi time.</p>
       </section>
       <section class="card dark">
@@ -309,7 +308,7 @@
   .close { position: absolute; top: 4px; right: 8px; border: 0; background: none; font-size: 1.3rem; color: var(--muted); }
   .fires { list-style: none; padding: 0; margin: 0 0 8px; }
   .fires li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed var(--line); }
-  .callout { background: #2a1715; border-left: 3px solid var(--fire); padding: 8px 10px; border-radius: 0; font-size: .92rem; }
+  .callout { border-left: 2px solid var(--fire); padding: 2px 8px; border-radius: 0; font-size: .8rem; color: var(--muted); }
   .controls { position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; flex-direction: column; gap: 4px; width: 230px;
     background: var(--card); border: 1px solid var(--line); border-radius: 0; padding: 10px 12px; font-size: .85rem; }
   .controls label { display: flex; gap: 6px; align-items: center; }

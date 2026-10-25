@@ -111,7 +111,7 @@
     <div class="tablewrap">
       <table>
         <thead><tr><th>Date</th>{#each visible as s}<th>{s.label}</th>{/each}</tr></thead>
-        <tbody>{#each tableRows as row}<tr>{#each row as v, i}<td>{i === 0 ? v : v === undefined ? '—' : format(v)}</td>{/each}</tr>{/each}</tbody>
+        <tbody>{#each tableRows as row}<tr>{#each row as v, i}<td>{i === 0 ? v : v === undefined ? 'n/a' : format(v)}</td>{/each}</tr>{/each}</tbody>
       </table>
     </div>
   {/if}

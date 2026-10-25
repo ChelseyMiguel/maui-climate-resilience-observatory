@@ -1,7 +1,7 @@
 <script>
   // Elevation profile along a user-drawn transect, with the change value of the
   // 10 m pixel under each sample beneath it on the same distance axis. Elevation
-  // is terrain; dNDVI is a spectral index — they share an x axis, never a y axis.
+  // is terrain; dNDVI is a spectral index, they share an x axis, never a y axis.
   import { createEventDispatcher } from 'svelte';
   import { classify } from '../lib/threshold.js';
   import { toCsv } from '../lib/series.js';
@@ -108,7 +108,7 @@
         {@const p = pts[hover]}
         <span>{(p.d / 1000).toFixed(3)} km</span><span>{p.lat.toFixed(5)}, {p.lon.toFixed(5)}</span>
         <span>{Number.isFinite(p.z) ? `${p.z.toFixed(1)} m` : 'no elevation'}</span>
-        <span>{label} {p.v === null ? '—' : p.v.toFixed(3)}{p.v !== null ? ` · ${classify(p.v, threshold)}` : ''}</span>
+        <span>{label} {p.v === null ? 'n/a' : p.v.toFixed(3)}{p.v !== null ? ` · ${classify(p.v, threshold)}` : ''}</span>
       {:else}<span class="muted">Hover the profile to locate a sample on the map.</span>{/if}
     </div>
     {#if profile.error}<p class="err small">{profile.error}</p>{/if}

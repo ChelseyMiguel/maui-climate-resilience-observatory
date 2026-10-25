@@ -205,7 +205,7 @@
           {@const r = view[hover]}
           <b>{r.month}</b>
           {#each PANELS as p}{#each p.series as s}{#if on[s.col]}
-            <span><i style="background:{s.color}"></i>{s.label} {r[s.col] === null ? '—' : p.fmt(r[s.col])}</span>
+            <span><i style="background:{s.color}"></i>{s.label} {r[s.col] === null ? 'n/a' : p.fmt(r[s.col])}</span>
           {/if}{/each}{/each}
         {:else}
           <span class="muted">Hover or use the arrow keys to read every month. Drag to zoom to a period; click a month to set the map’s year (shaded: {year}).</span>

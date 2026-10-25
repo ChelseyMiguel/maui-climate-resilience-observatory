@@ -1,6 +1,6 @@
 <script>
   // Interactive Map Explorer. Every layer is real: the project's own analysis or a
-  // verified public source. Nothing is simulated — where data doesn't exist for a
+  // verified public source. Nothing is simulated, where data doesn't exist for a
   // year or place, the sidebar says so instead.
   import { onMount, onDestroy } from 'svelte';
   import { get } from 'svelte/store';
@@ -173,10 +173,8 @@
   $: annualFirst = Math.min(...Object.keys(rs.manifest?.sentinel2?.products ?? { aoi_2017: 1 })
     .filter((k) => k.startsWith('aoi_')).map((k) => +k.slice(4)));
   $: yearIdx = annualYears.indexOf(annualYear);
-  $: annualQuality = rs.annual && yearIdx >= 0 ? median(rs.annual.bands[2 * annualYears.length + yearIdx]) : null;
   $: lcRows = rs.manifest?.worldcover?.study_area ?? [];
   $: lidarMeta = rs.manifest?.lidar;
-  $: s2Valid = rs.manifest?.sentinel2?.validation_vs_study_dndvi;
 
   // Data
   let rasters = {}, catalog = [], droughtIndex = [], observations = [], terrain = null, studyArea = null;
@@ -813,7 +811,7 @@
     } else if ((f = pick('fires-fill'))) {
       card.title = `${f.properties.name} fire`; card.kind = 'Wildfire perimeter';
       card.rows = [['year', f.properties.year], ['discovered', f.properties.discovered ? `${f.properties.discovered} (Hawaiʻi time)` : 'not given'],
-                   ['area', f.properties.acres ? `${Math.round(f.properties.acres).toLocaleString()} acres` : '—']];
+                   ['area', f.properties.acres ? `${Math.round(f.properties.acres).toLocaleString()} acres` : 'n/a']];
       card.period = `${f.properties.year} incident`;
       card.uncertainty = 'Final mapped perimeter: shows where fire burned, not how it spread or what started it.';
       card.source = 'National Interagency Fire Center';
@@ -822,7 +820,7 @@
       card.title = DM_LABELS[f.properties.dm] ?? f.properties.label; card.kind = 'U.S. Drought Monitor category';
       card.rows = [['map week', entry?.week]];
       card.period = `Week of ${entry?.week} (nearest 8 August ${year})`;
-      card.uncertainty = 'A broad-scale expert assessment blending many indicators — not a field measurement for this spot.';
+      card.uncertainty = 'A broad-scale expert assessment blending many indicators, not a field measurement for this spot.';
       card.source = 'U.S. Drought Monitor (NDMC, USDA, NOAA)';
     } else if ((f = pick('regions-fill'))) {
       card.title = f.properties.name; card.kind = '2020 Census Designated Place';
@@ -942,7 +940,7 @@
             {/if}
             {#if rs.islandInfo?.years?.[islandYear]}
               {@const yi = rs.islandInfo.years[islandYear]}
-              <p class="hint">Island median {islandIdx.toUpperCase()} <b class="num">{yi[islandIdx]?.median?.toFixed(3)}</b> · {yi.scenes} scenes from tiles {rs.islandInfo.tiles.join(', ')} · median {yi.clear_obs_median} clear looks per pixel. Sentinel-2 L2A May–Sep median, cloud-masked, 60 m; ocean masked (Copernicus DEM). Gaps: never cloud-free that season.</p>
+              <p class="hint">Island median {islandIdx.toUpperCase()} <b class="num">{yi[islandIdx]?.median?.toFixed(3)}</b> from {yi.scenes} satellite scenes. Blank spots were cloudy all season.</p>
             {/if}
           </div>
         {/if}
@@ -955,9 +953,9 @@
         {#if imgId !== 'none'}
           {@const im = rs.imagery.find((i) => i.id === imgId)}
           <label>Opacity <input type="range" min="0.2" max="1" step="0.05" bind:value={imgOpacity} /></label>
-          {#if im}<p class="hint">{im.period}. {im.bands ?? ''} · {im.scenes ?? '?'} cloud-masked scenes{#if im.dates}, {im.dates[0]} – {im.dates[1]}{/if} · median, 20 m.</p>{/if}
+          {#if im}<p class="hint">{im.period}, from {im.scenes ?? '?'} satellite scenes.</p>{/if}
         {:else if !rsLoading && !rs.imagery.length}
-          <p class="empty">No imagery yet — run <code>scripts/remote_sensing/sentinel2_composites.py</code>.</p>
+          <p class="empty">No imagery yet. Run <code>scripts/remote_sensing/sentinel2_composites.py</code>.</p>
         {/if}
 
         <label class="lyr"><input type="checkbox" bind:checked={annualOn} disabled={!rs.annual} /> Annual dry-season {annualIdx.toUpperCase()}, study area</label>
@@ -971,8 +969,6 @@
             </div>
             <div class="ramp" aria-hidden="true">{#each NDVI_STOPS as [v, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
             <div class="ramp-labels"><span>0 bare / dry</span><span>0.4</span><span>0.8 green</span></div>
-            <p class="hint">Sentinel-2 L2A, May–Sep median, 10 m on the study grid. Data quality {annualYear}: median <b>{annualQuality ?? '—'}</b> clear observations per pixel.
-              {#if s2Valid}Check vs the study raster (2022 − 2019): r = {s2Valid.pearson_r}, {(s2Valid['class_agreement_at_-0.10'] * 100).toFixed(0)}% same class at −0.10.{/if}</p>
             <button class="linkish" on:click={() => (facets = !facets)}>{facets ? 'Hide' : 'Show'} all years side by side</button>
           </div>
         {/if}
@@ -989,8 +985,7 @@
               <div class="ramp" aria-hidden="true">{#each [-3, -2, -1, 0, 1, 2, 3] as z}<span style="background:{swatch((z / 3) * 0.4)}"></span>{/each}</div>
               <div class="ramp-labels"><span>−3 SD drier</span><span>normal</span><span>+3 SD greener</span></div>
             {/if}
-            <p class="hint">USGS Landsat 5/7/8/9 Collection 2 surface reflectance (Microsoft Planetary Computer), May–Sep median, cloud-masked, 30 m.
-              “vs normal”: each pixel’s z-score against its own 2000–2018 dry seasons. {rs.manifest?.landsat?.years?.[landsatYear]?.length ?? '?'} scenes in {landsatYear}.</p>
+            <p class="hint">USGS Landsat, 2000 to 2025. “vs normal” compares each spot with its own dry seasons from 2000 to 2018.</p>
           </div>
         {/if}
 
@@ -1002,7 +997,7 @@
               <table class="classes"><thead><tr><th>Fire</th><th>ha</th><th>mod.+ ha</th></tr></thead>
                 <tbody>{#each burnFires as f}<tr><td>{f.name}</td><td>{f.area_ha}</td><td>{(f.class_ha['Moderate-low'] + f.class_ha['Moderate-high'] + f.class_ha.High).toFixed(0)}</td></tr>{/each}</tbody></table>
             {/if}
-            <p class="hint">Sentinel-2 NBR before (1 May–7 Aug) minus after (15 Aug–31 Oct 2023), minus the dNBR of unburned ground ({rs.manifest?.burn_severity?.unburned_offset}) to remove seasonal drying; shown inside the 2023 perimeters only. USGS FIREMON classes, calibrated for forest — a guide on grass, not field-verified.</p>
+            <p class="hint">How hard each spot burned in August 2023, from satellite images before and after. A rough guide on grass, not checked on the ground.</p>
           </div>
         {/if}
 
@@ -1013,7 +1008,7 @@
               <b class="num">{lstYear}</b> <span class="num muted">{rs.manifest?.lst?.find((r) => r.year === lstYear)?.lst_c?.toFixed(1)} °C</span></div>
             <div class="ramp" aria-hidden="true">{#each LST_STOPS as [, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
             <div class="ramp-labels"><span>25 °C</span><span>38</span><span>50 °C</span></div>
-            <p class="hint">Dry-season (May–Sep) median ground/canopy skin temperature at the ~10:30 a.m. overpass — not air temperature.</p>
+            <p class="hint">Ground surface temperature in the dry season, not air temperature.</p>
           </div>
         {/if}
 
@@ -1027,7 +1022,7 @@
             <tbody>{#each lcRows as row}<tr><td><span class="sw" style="background:{row.colour}"></span>{row.name}</td>
               <td>{(row.share_of_study_area * 100).toFixed(1)}</td><td>{(row['share_browned_dndvi_lt_-0.10'] * 100).toFixed(0)}</td></tr>{/each}</tbody>
           </table>
-          <p class="hint">Inside the study area; “browned” = study dNDVI &lt; −0.10. Classes from 2021 Sentinel-1/2 (CC BY 4.0).</p>
+          <p class="hint">Land cover inside the study area (ESA WorldCover 2021) and how much of each type browned.</p>
         {/if}
 
         <label class="lyr"><input type="checkbox" bind:checked={lidarOn} disabled={!rs.lidar} /> Lidar, {lidarMeta?.acquired_utc?.[0]?.slice(0, 7) ?? '2023'} (USGS 3DEP)</label>
@@ -1041,7 +1036,7 @@
               <div class="ramp" aria-hidden="true">{#each CHM_STOPS as [, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
               <div class="ramp-labels"><span>0 m</span><span>5</span><span>10</span><span>20+ m</span></div>
             {/if}
-            <p class="hint">Height of the highest return above the ground model (trees <em>and</em> buildings: this survey doesn’t class buildings separately), 2 m grid; {lidarMeta?.density_pts_m2 ?? '~5'} points/m² used. Flown {lidarMeta?.acquired_utc?.[0]} – {lidarMeta?.acquired_utc?.[2]}: after the 2022 drought, before the Aug 2023 fires.</p>
+            <p class="hint">Height of trees and buildings above the ground, from a 2023 lidar flight between the drought and the fires.</p>
           </div>
         {/if}
       </div>
@@ -1050,9 +1045,9 @@
     <fieldset>
       <legend><label><input type="checkbox" bind:checked={veg} /> Vegetation change</label></legend>
       <div class="sub" class:dim={!veg}>
-        <label><input type="radio" bind:group={vegIndex} value="dndvi" disabled={!veg} /> dNDVI — greenness</label>
-        <label><input type="radio" bind:group={vegIndex} value="dnbr" disabled={!veg} /> dNBR — moisture-sensitive</label>
-        <p class="hint">{PERIOD}. Sentinel-2, 10 m, UTM 4N; 1.5 km study area only.</p>
+        <label><input type="radio" bind:group={vegIndex} value="dndvi" disabled={!veg} /> dNDVI (greenness)</label>
+        <label><input type="radio" bind:group={vegIndex} value="dnbr" disabled={!veg} /> dNBR (moisture-sensitive)</label>
+        <p class="hint">{PERIOD}, 1.5 km study area.</p>
         <div class="seg" role="radiogroup" aria-label="Vegetation display">
           <label class:on={vegMode === 'classes'}><input type="radio" bind:group={vegMode} value="classes" disabled={!veg} />Classes</label>
           <label class:on={vegMode === 'below'}><input type="radio" bind:group={vegMode} value="below" disabled={!veg} />Browned only</label>
@@ -1086,7 +1081,6 @@
             </tbody>
             <tfoot><tr><td>Valid pixels</td><td>{thrView.valid.toLocaleString()}</td><td>{ha(thrView.valid)}</td><td>100</td></tr></tfoot>
           </table>
-          <p class="hint">10 m pixels (0.01 ha). The greening cut-off mirrors the browning one and is a display choice, not part of the study’s method. At −0.10 the study reports 30,037 of 70,280 pixels (42.7%).</p>
         {/if}
         <label><input type="checkbox" bind:checked={vegPatches} disabled={!veg} /> Outline the study’s browned patches (−0.10)</label>
       </div>
@@ -1103,7 +1097,7 @@
         {#if droughtIndex.find((d) => d.year === year)}
           <p class="hint">Map for the week of {droughtIndex.find((d) => d.year === year).week}.
             {droughtCats.length ? `Present on Maui: ${droughtCats.map((c) => 'D' + c).join(', ')}.` : 'No drought mapped on Maui that week.'}
-            County-scale polygons — not a reading at any 10 m pixel.</p>
+            County-scale polygons, not a reading at any 10 m pixel.</p>
         {:else}
           <p class="empty">Drought map not available for {year}.</p>
         {/if}
@@ -1150,7 +1144,6 @@
             {KIND_LABEL[k]}s <span class="muted">({catalog.find((c) => c.id === k)?.count ?? '…'} · {currencyOf(k)})</span>
           </label>
         {/each}
-        <p class="hint">Locations only — not open/closed status, staffing, or shelter use. Shelters and roads are not shown: no authoritative, current source has been verified.</p>
       </div>
     </fieldset>
 
@@ -1247,7 +1240,7 @@
            aria-valuenow={Math.round(split)} on:pointerdown={(e) => { dragging = true; e.currentTarget.setPointerCapture(e.pointerId); }}
            on:keydown={splitKey}><span>⟷</span></div>
       <div class="side left">{leftLabel}</div>
-      <div class="side right">{rightLabel}{#if compareError} — {compareError}{/if}</div>
+      <div class="side right">{rightLabel}{#if compareError}: {compareError}{/if}</div>
     {/if}
 
     <div class="toolbar" role="toolbar" aria-label="Map tools">
@@ -1300,7 +1293,7 @@
     {#if cursor}
       <div class="cursor" aria-hidden="true">
         <span>{cursor.lat.toFixed(5)}, {cursor.lon.toFixed(5)}</span>
-        <span>{cursor.z === null ? 'elev …' : Number.isFinite(cursor.z) ? `${Math.round(cursor.z)} m` : 'elev —'}</span>
+        <span>{cursor.z === null ? 'elev …' : Number.isFinite(cursor.z) ? `${Math.round(cursor.z)} m` : 'elev n/a'}</span>
         {#if cursor.v !== null}
           <span>{label} <b class={classify(cursor.v, threshold)}>{cursor.v >= 0 ? '+' : ''}{cursor.v.toFixed(3)}</b> {classify(cursor.v, threshold)}</span>
         {/if}
@@ -1316,16 +1309,16 @@
   {/if}
   {#if facets && rs.annual}
     <div class="dock"><section class="facets" aria-label="Dry-season {annualIdx.toUpperCase()} by year">
-      <header><h2>Dry-season {annualIdx.toUpperCase()} by year · study area · Sentinel-2 10 m</h2><button class="x" on:click={() => (facets = false)} aria-label="Close">×</button></header>
+      <header><h2>Dry-season {annualIdx.toUpperCase()} by year</h2><button class="x" on:click={() => (facets = false)} aria-label="Close">×</button></header>
       <div class="fgrid">
         {#each annualYears as y, k}
           <button class="fcell" class:on={y === annualYear} on:click={() => { annualYear = y; annualOn = true; }}>
             <canvas use:facet={y}></canvas>
-            <span>{y}</span><small>{median(rs.annual.bands[2 * annualYears.length + k])} obs</small>
+            <span>{y}</span>
           </button>
         {/each}
       </div>
-      <p class="hint">Same colour scale in every panel (0 brown → 0.8 green). Each is the median of that year’s May–Sep cloud-free observations; “obs” is the median number of clear looks per pixel (fewer = less certain). Click a year to show it on the map.</p>
+      <p class="hint">Same colours in every panel: brown is dry, green is healthy. Click a year to show it on the map.</p>
     </section></div>
   {/if}
   {#if dataOpen}
@@ -1444,7 +1437,7 @@
   .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; margin-top: 6px; }
   .fcell { background: var(--paper); border: 1px solid var(--line); padding: 3px; display: grid; grid-template-columns: 1fr auto; gap: 0 4px; text-align: left; color: var(--ink); }
   .fcell canvas { grid-column: 1 / -1; width: 100%; height: auto; image-rendering: pixelated; }
-  .fcell span { font: 600 .78rem var(--mono); } .fcell small { font: .66rem var(--mono); color: var(--muted); align-self: center; }
+  .fcell span { font: 600 .78rem var(--mono); }
   .fcell.on { border-color: var(--forest); box-shadow: inset 0 -2px 0 var(--forest); }
   :global(.region-label) {
     font: 700 13px/1 var(--sans); color: #5fb7c2; text-shadow: 0 0 3px #000, 0 0 3px #000;

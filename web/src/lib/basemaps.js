@@ -22,9 +22,9 @@ export const BASEMAPS = [
   { id: 'topo', label: 'Topographic (USGS)', kind: 'Topographic map', tiles: [usgs('USGSTopo')], maxzoom: 16,
     attribution: 'USGS The National Map (public domain)', note: 'USGS topographic base: contours, roads, names.' },
   { id: 's2-2019', label: 'Sentinel-2 2019', kind: 'Annual cloud-free mosaic', tiles: [eox(2019)], maxzoom: 14, attribution: EOX_ATTR(2019),
-    note: '10 m Sentinel-2 cloud-free mosaic of 2019 — a whole-year composite, not the study’s May–Sep median.' },
+    note: '10 m Sentinel-2 cloud-free mosaic of 2019, a whole-year composite, not the study’s May–Sep median.' },
   { id: 's2-2022', label: 'Sentinel-2 2022', kind: 'Annual cloud-free mosaic', tiles: [eox(2022)], maxzoom: 14, attribution: EOX_ATTR(2022),
-    note: '10 m Sentinel-2 cloud-free mosaic of 2022 — a whole-year composite, not the study’s May–Sep median.' },
+    note: '10 m Sentinel-2 cloud-free mosaic of 2022, a whole-year composite, not the study’s May–Sep median.' },
 ];
 
 export const DEM_TILES = {

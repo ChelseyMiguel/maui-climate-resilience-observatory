@@ -28,7 +28,7 @@ TERRAIN_BIN = DATA / "terrain" / "upcountry_dem.i16"
 
 def _require(path: Path, how: str) -> Path:
     if not path.exists():
-        raise HTTPException(status_code=503, detail=f"{path.name} missing — run {how}")
+        raise HTTPException(status_code=503, detail=f"{path.name} missing. Run {how}")
     return path
 
 
@@ -65,7 +65,7 @@ def drought() -> dict:
     """Weekly Maui County drought index plus annual means and the fire weeks."""
     series = hazards.drought_series()
     if not series:
-        raise HTTPException(status_code=503, detail="drought data missing — run scripts/fetch_drought.py")
+        raise HTTPException(status_code=503, detail="drought data missing. Run scripts/fetch_drought.py")
     return {
         "series": [{"date": d, "dsci": v} for d, v in series],
         "ndvi": [{"date": d, "value": v} for d, v in browning.ndvi_series()],
@@ -415,5 +415,5 @@ def imagery_file(key: str) -> FileResponse:
         raise HTTPException(status_code=404, detail=f"Unknown imagery '{key}'")
     path = _image_file(key)
     if path is None:
-        raise HTTPException(status_code=503, detail=f"{key} missing — run scripts/remote_sensing/sentinel2_composites.py")
+        raise HTTPException(status_code=503, detail=f"{key} missing. Run scripts/remote_sensing/sentinel2_composites.py")
     return FileResponse(path, media_type=_IMAGE_TYPES[path.suffix])

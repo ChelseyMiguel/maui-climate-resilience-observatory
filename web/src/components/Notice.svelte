@@ -5,7 +5,7 @@
 
 <div class="notice" class:compact role="note" aria-label="Important limitations">
   <strong>Research and education only.</strong>
-  <span>Not an emergency alert, evacuation routing, or fire-risk service — and not for
+  <span>Not an emergency alert, evacuation routing, or fire-risk service, and not for
     emergency decision-making. For current alerts, use
     <a href="https://www.mauicounty.gov/983/MEMA-Alerts" target="_blank" rel="noopener noreferrer">MEMA Alerts</a>.</span>
 </div>

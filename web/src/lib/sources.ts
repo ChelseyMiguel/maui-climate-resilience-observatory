@@ -12,7 +12,7 @@ export const DATASETS: DatasetMetadata[] = [
     temporal: 'Dry season (May–Sep) 2022 minus 2019', currency: 'Fixed analysis period',
     license: 'Author’s work; built on Copernicus Sentinel-2 data',
     link: 'https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED',
-    caveat: 'Change in greenness/moisture — not a measure of fuel load or fire risk.',
+    caveat: 'Change in greenness/moisture, not a measure of fuel load or fire risk.',
   },
   {
     id: 'series', kind: 'Satellite-derived index', name: 'Monthly NDVI / NBR series', provider: 'This project (author’s analysis)',
@@ -40,7 +40,7 @@ export const DATASETS: DatasetMetadata[] = [
     id: 'fires', kind: 'Mapped observation', name: 'Wildfire perimeters', provider: 'National Interagency Fire Center (WFIGS)',
     provenance: 'verified-public', spatialResolution: 'Mapped incident perimeters', coverage: 'Maui',
     temporal: '2019, 2023, 2024 incidents', currency: 'As published by NIFC',
-    license: 'U.S. government open data — see provider terms', link: 'https://data-nifc.opendata.arcgis.com/',
+    license: 'U.S. government open data. See provider terms', link: 'https://data-nifc.opendata.arcgis.com/',
     caveat: 'Final mapped extents; not progression or ignition data.',
   },
   {
@@ -55,20 +55,20 @@ export const DATASETS: DatasetMetadata[] = [
     id: 'lcms', kind: 'Modelled classification', name: 'LCMS land change (v2024-10)', provider: 'USDA Forest Service',
     provenance: 'verified-public', spatialResolution: '30 m (shown here as county totals)', coverage: 'Maui County',
     temporal: 'Annual, 2018–2024', currency: 'Dashboard reports generated July 2026',
-    license: 'U.S. government data — see provider terms', link: 'https://research.fs.usda.gov/rmrs/centers/lcms',
+    license: 'U.S. government data. See provider terms', link: 'https://research.fs.usda.gov/rmrs/centers/lcms',
     caveat: 'County-wide totals, not values for any one site.',
   },
   {
     id: 'terrain', kind: 'Elevation model', name: 'Terrain elevation', provider: 'AWS Terrain Tiles (Tilezen); largely USGS 3DEP in Hawaiʻi',
     provenance: 'verified-public', spatialResolution: '3D view and offline relief: ~19 m tiles resampled to a 320 × 293 grid (~68 m). Map Explorer 3D, hillshade, profiles, pixel elevations: terrarium tiles at z14 (~9 m pixels), bilinear',
     coverage: 'Upcountry Maui', temporal: 'Static', currency: 'As published',
-    license: 'Mixed sources — see Tilezen attribution', link: 'https://github.com/tilezen/joerd/blob/master/docs/attribution.md',
+    license: 'Mixed sources. See Tilezen attribution', link: 'https://github.com/tilezen/joerd/blob/master/docs/attribution.md',
     caveat: 'Matches GLOBE observers’ recorded elevations to a median of 1 m at 30 sites.',
   },
   {
     id: 'hawaii-gis', kind: 'Reference / administrative', name: 'Fire & EMS stations, hospitals, schools', provider: 'Hawaiʻi Statewide GIS Program',
     provenance: 'verified-public', spatialResolution: 'Point locations', coverage: 'Upcountry Maui',
-    temporal: 'Varies by layer', currency: 'Per layer — see below', license: 'See provider terms',
+    temporal: 'Varies by layer', currency: 'Per layer. See below', license: 'See provider terms',
     link: 'https://geoportal.hawaii.gov/',
     caveat: 'Locations only. Says nothing about whether a facility is open, staffed, or in use as a shelter.',
   },
@@ -97,13 +97,13 @@ export const DATASETS: DatasetMetadata[] = [
   {
     id: 'imerg', kind: 'Satellite estimate', name: 'GPM IMERG V07 monthly precipitation', provider: 'NASA Goddard (GPM), via Google Earth Engine',
     provenance: 'verified-public', spatialResolution: '0.1° (~11 km); one pixel', coverage: 'Global', temporal: 'Monthly 2018–2024',
-    currency: 'As exported', license: 'NASA open data — see provider terms', link: 'https://developers.google.com/earth-engine/datasets/catalog/NASA_GPM_L3_IMERG_MONTHLY_V07', linkChecked: false,
+    currency: 'As exported', license: 'NASA open data. See provider terms', link: 'https://developers.google.com/earth-engine/datasets/catalog/NASA_GPM_L3_IMERG_MONTHLY_V07', linkChecked: false,
     caveat: 'Monthly mean rate (mm/h) × hours in the month = mm.',
   },
   {
     id: 'era5land', kind: 'Reanalysis', name: 'ERA5-Land monthly total precipitation', provider: 'ECMWF / Copernicus Climate Change Service, via Google Earth Engine',
     provenance: 'verified-public', spatialResolution: '0.1° (~11 km); one pixel', coverage: 'Global land', temporal: 'Monthly 2018–2024',
-    currency: 'As exported', license: 'Copernicus licence — see provider terms', link: 'https://developers.google.com/earth-engine/datasets/catalog/ECMWF_ERA5_LAND_MONTHLY_AGGR', linkChecked: false,
+    currency: 'As exported', license: 'Copernicus licence. See provider terms', link: 'https://developers.google.com/earth-engine/datasets/catalog/ECMWF_ERA5_LAND_MONTHLY_AGGR', linkChecked: false,
     caveat: 'Model reanalysis: physically consistent but not an observation; coarse over steep terrain.',
   },
   {
@@ -121,7 +121,7 @@ export const DATASETS: DatasetMetadata[] = [
   {
     id: 'esri-dark', kind: 'Basemap cartography', name: 'Minimal dark basemap (World Dark Gray Canvas)', provider: 'Esri, with HERE, Garmin and OpenStreetMap data',
     provenance: 'verified-public', spatialResolution: 'Raster tiles to zoom 16', coverage: 'Global', temporal: 'Current', currency: 'As served',
-    license: 'Esri terms of use, attribution required — see provider terms', link: 'https://www.arcgis.com/home/item.html?id=5e9b3685f4c24d8781073dd928ebda50', linkChecked: false,
+    license: 'Esri terms of use, attribution required. See provider terms', link: 'https://www.arcgis.com/home/item.html?id=5e9b3685f4c24d8781073dd928ebda50', linkChecked: false,
   },
   // Added Oct 21, 2026 with scripts/remote_sensing/ (fetched from the public AWS
   // archives; links not re-checked from the build environment).
@@ -139,7 +139,7 @@ export const DATASETS: DatasetMetadata[] = [
     provenance: 'verified-public', spatialResolution: '~5 points/m² used (of ~8 nominal); 2 m grids', coverage: 'The 3 km study box',
     temporal: 'Flown 19 Feb – 30 Mar 2023 (from point GPS times)', currency: 'As published', license: 'Public domain (3DEP)',
     link: 'https://www.fisheries.noaa.gov/inport/item/75941', linkChecked: false,
-    caveat: 'Height above ground includes buildings (not classified separately here). Ground is ~5 m above the AWS terrain tiles at a test point — a vertical-datum difference; each elevation is labelled with its source.',
+    caveat: 'Height above ground includes buildings (not classified separately here). Ground is ~5 m above the AWS terrain tiles at a test point, a vertical-datum difference; each elevation is labelled with its source.',
   },
   {
     id: 'worldcover', kind: 'Land-cover classification', name: 'ESA WorldCover 2021 v200',
@@ -152,7 +152,7 @@ export const DATASETS: DatasetMetadata[] = [
     id: 'copdem', kind: 'Elevation model', name: 'Copernicus DEM GLO-90 (locator inset)',
     provider: 'ESA / Airbus (Copernicus); AWS Open Data (copernicus-dem-90m)', provenance: 'verified-public',
     spatialResolution: '90 m', coverage: 'Maui', temporal: '2011–2015 acquisitions', currency: 'As published',
-    license: 'Copernicus DEM licence (free, attribution) — see provider terms', link: 'https://registry.opendata.aws/copernicus-dem/', linkChecked: false,
+    license: 'Copernicus DEM licence (free, attribution). See provider terms', link: 'https://registry.opendata.aws/copernicus-dem/', linkChecked: false,
     caveat: 'Only used to draw the island in the locator inset.',
   },
   {
@@ -161,7 +161,7 @@ export const DATASETS: DatasetMetadata[] = [
     spatialResolution: '30 m', coverage: 'Path 063 / row 046 (study area)', temporal: 'Dry seasons (May–Sep) 2000–2025, Tier 1 only',
     currency: 'Archive as of Oct 2026', license: 'Public domain (USGS); Planetary Computer terms of use',
     link: 'https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2', linkChecked: true,
-    caveat: 'Same method as the Earth Engine notebook (QA bits 1, 3, 4 masked). No Landsat 5 over this scene in 2000–2011; Landsat 8/9 (2013 on) read NDVI higher than Landsat 7 — 2014 stands out for that reason.',
+    caveat: 'Same method as the Earth Engine notebook (QA bits 1, 3, 4 masked). No Landsat 5 over this scene in 2000–2011; Landsat 8/9 (2013 on) read NDVI higher than Landsat 7, which is why 2014 stands out.',
   },
   {
     id: 'landsat-lst', kind: 'Satellite imagery (reflectance)', name: 'Landsat 8/9 surface temperature (ST_B10)',

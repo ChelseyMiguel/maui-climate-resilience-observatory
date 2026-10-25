@@ -12,11 +12,11 @@
 
   const CARDS = [
     { href: '/explore', title: 'Vegetation Change', icon: 'leaf',
-      text: 'Where greenness and moisture dropped between the 2019 and 2022 dry seasons, at 10 m — and how much of each place it covers.' },
+      text: 'Where greenness and moisture dropped between the 2019 and 2022 dry seasons, at 10 m, and how much of each place it covers.' },
     { href: '/insights', title: 'Drought Conditions', icon: 'sun',
       text: 'Weekly drought for Maui County alongside vegetation for the study area, with a dry-season comparison you can export.' },
     { href: '/explore', title: 'Infrastructure & Access', icon: 'pin',
-      text: 'Fire and EMS stations, a hospital, and schools from the Hawaiʻi Statewide GIS Program — locations only, with their source dates.' },
+      text: 'Fire and EMS stations, a hospital, and schools from the Hawaiʻi Statewide GIS Program: locations only, with their source dates.' },
     { href: '/viewer', title: 'GLOBE Site Reconstruction', icon: 'globe',
       text: 'Step inside a citizen-science land cover site: six NASA GLOBE Observer photos rebuilt into a 360° view.' },
   ];
@@ -28,7 +28,7 @@
       <p class="eyebrow">Browning Viewer</p>
       <h1>See environmental change.<br />Understand community vulnerability.</h1>
       <p class="lede">
-        An interactive research dashboard for Upcountry Maui — Pukalani, Makawao and Kula — that puts
+        An interactive research dashboard for Upcountry Maui (Pukalani, Makawao and Kula) that puts
         historical vegetation change, drought, and community context side by side, with every source and
         caveat in plain view.
       </p>
@@ -51,7 +51,7 @@
   <h2>Why start in rural Upcountry Maui</h2>
   <p>
     Upcountry is rural, on the drier leeward slopes of Haleakalā, and much of its former plantation land is now
-    unmanaged grass — the land-use shift the USDA Forest Service’s LCMS records as agriculture falling 60% across
+    unmanaged grass, the land-use shift the USDA Forest Service’s LCMS records as agriculture falling 60% across
     Maui County since 2018. The 2022 drought, the browning that followed, and the August 2023 fires all happened
     here, which makes it a place to <em>look carefully</em> at what satellite and citizen-science records can and
     cannot tell a community.
@@ -66,7 +66,7 @@
     {/each}
   </ul>
   <p class="small muted">
-    The study area itself did not burn — the nearest perimeter, Olinda, is about 1.5 km outside it. Browning is
+    The study area itself did not burn. The nearest perimeter, Olinda, is about 1.5 km outside it. Browning is
     shown as the landscape the fires burned near, not as the cause of any fire.
   </p>
 </section>
@@ -98,7 +98,7 @@
 
 <section class="wrap isnot">
   <div class="card">
-    <h2>What this is — and isn’t</h2>
+    <h2>What this is, and isn’t</h2>
     <div class="two">
       <div>
         <h3>It is</h3>

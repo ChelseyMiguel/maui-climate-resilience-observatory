@@ -61,7 +61,7 @@ JEOGA, revised) and docs/evidence-claims.md.
 ### Close (2:52–3:00)
 > Next, I'm planning a drone survey to turn these sites into real 3D models. The
 > Browning Viewer: making environmental change in
-> rural Hawaiʻi visible, and checkable. Mahalo.
+> Maui visible, and checkable. Mahalo.
 
 ---
 

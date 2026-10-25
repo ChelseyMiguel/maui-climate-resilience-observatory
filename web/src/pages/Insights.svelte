@@ -116,7 +116,7 @@
         <p>{current.fire.overlapsRegion
           ? `The ${current.fire.nearestFire} fire (Aug 2023) burned within this place’s boundary.`
           : `Nearest Aug 2023 fire: ${current.fire.nearestFire}, about ${current.fire.distanceKm} km from this place’s boundary.`}
-          <span class="muted small">Source: NIFC perimeters. Distance to where fire went — not a risk score.</span></p>
+          <span class="muted small">Source: NIFC perimeters. Distance to where fire went, not a risk score.</span></p>
       {/if}
     </div>
 
@@ -160,9 +160,9 @@
             {#each compare as r}
               <tr>
                 <td>{r.idx}</td>
-                <td>{r.a ? r.a.mean.toFixed(3) : '—'} <span class="muted small">({r.a?.months ?? 0} mo)</span></td>
-                <td>{r.b ? r.b.mean.toFixed(3) : '—'} <span class="muted small">({r.b?.months ?? 0} mo)</span></td>
-                <td>{r.diff === null ? '—' : `${r.diff >= 0 ? '+' : ''}${r.diff.toFixed(3)} (${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(0)}%)`}</td>
+                <td>{r.a ? r.a.mean.toFixed(3) : 'n/a'} <span class="muted small">({r.a?.months ?? 0} mo)</span></td>
+                <td>{r.b ? r.b.mean.toFixed(3) : 'n/a'} <span class="muted small">({r.b?.months ?? 0} mo)</span></td>
+                <td>{r.diff === null ? 'n/a' : `${r.diff >= 0 ? '+' : ''}${r.diff.toFixed(3)} (${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(0)}%)`}</td>
               </tr>
             {/each}
           </tbody>

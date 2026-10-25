@@ -89,7 +89,7 @@
       try {
         const t = await getTerrain();
         elev = Float32Array.from(lonlat, ([lon, lat]) => sampleElevation(t.grid, t.meta, lon, lat) ?? NaN);
-        elevSource = 'local 68 m DEM grid (terrain tiles unreachable) — coarser than the 10 m pixels';
+        elevSource = 'local 68 m DEM grid (terrain tiles unreachable), coarser than the 10 m pixels';
       } catch { elevError = `Elevation unavailable: ${e.message}`; }
     }
   }
@@ -549,7 +549,7 @@
     <p class="muted pad">{loading}</p>
   {:else}
     <p class="lede">Figures tagged <span class="t study">Study data</span> use the project’s own Sentinel-2 results, unchanged.
-      <span class="t exploratory">Exploratory dataset</span> figures add public data at a different scale — read their provenance line.
+      <span class="t exploratory">Exploratory dataset</span> figures add public data at a different scale. Read their provenance line.
       Correlations here describe co-variation over 2018–2023; they do not show that drought or browning caused any fire.</p>
 
     <div class="grid">
@@ -597,7 +597,7 @@
 
       {#if elevFig}
         <PlotPanel {Plotly} id="elevation_vs_change" title="Elevation vs vegetation change" tag="mixed" height={340}
-          meta="Each 10 m pixel’s {label} against its elevation — {elevSource}. Line: median per 20 m band; bars: share below {threshold.toFixed(2)}."
+          meta="Each 10 m pixel’s {label} against its elevation, {elevSource}. Line: median per 20 m band; bars: share below {threshold.toFixed(2)}."
           data={elevFig.data} layout={elevFig.layout} rows={bandRows} />
       {:else}
         <section class="plot-wait"><h3>Elevation vs vegetation change</h3><p class="muted small">{elevError ?? 'Sampling elevation at 70,280 pixel centres…'}</p></section>
@@ -611,7 +611,7 @@
             <table class="picks">
               <thead><tr><th>#</th><th>lat, lon</th><th>px</th><th>dNDVI</th><th>dNBR</th><th>% &lt; {threshold.toFixed(2)}</th><th>elev m</th><th></th></tr></thead>
               <tbody>{#each picks as p, i}<tr><td>{i + 1}</td><td>{p.lat.toFixed(4)}, {p.lon.toFixed(4)}</td><td>{p.pixels}</td><td>{p.dndvi.toFixed(3)}</td>
-                <td>{p.dnbr.toFixed(3)}</td><td>{(p.browned * 100).toFixed(0)}</td><td>{p.elevation === null ? '—' : p.elevation.toFixed(0)}</td>
+                <td>{p.dnbr.toFixed(3)}</td><td>{(p.browned * 100).toFixed(0)}</td><td>{p.elevation === null ? 'n/a' : p.elevation.toFixed(0)}</td>
                 <td><button on:click={() => (picks = picks.filter((_, j) => j !== i))} aria-label="Remove location {i + 1}">×</button></td></tr>{/each}</tbody>
             </table>
             <div class="ctl"><button on:click={savePicks}>CSV of locations</button><button on:click={() => (picks = [])}>Clear</button></div>
@@ -621,7 +621,7 @@
 
       {#if cloudFig}
         <PlotPanel {Plotly} id="terrain_change_3d" title="3D terrain with vegetation change" tag="mixed" height={460}
-          meta="Every 2nd pixel each way (~17,600 of 70,280) at its true UTM position and terrain elevation ({elevSource}). Height is terrain only — {label} is shown by colour, never as height."
+          meta="Every 2nd pixel each way (~17,600 of 70,280) at its true UTM position and terrain elevation ({elevSource}). Height is terrain only; {label} is shown by colour, never as height."
           data={cloudFig.data} layout={cloudFig.layout}
           rows={cloud.map((k) => ({ easting_km: +pixels.east[k].toFixed(3), northing_km: +pixels.north[k].toFixed(3), elevation_m: +elev[k].toFixed(1), [index]: +vals[k].toFixed(4) }))}>
           <div class="ctl">
@@ -637,7 +637,7 @@
         <PlotPanel {Plotly} id="hawaii_drought_by_county" title="Drought across Hawaiʻi since 2000" tag="exploratory" height={320}
           meta="U.S. Drought Monitor drought index (DSCI), annual mean of weekly values, each county as a whole. 2022 shaded. County-wide: it does not describe any single place."
           data={hdFig.data} layout={hdFig.layout} rows={hd}
-          note={hdrought ? `Maui County’s annual drought index ranks #${hdrought.maui_rank_by_annual_dsci[2022]} for 2022 since 2000 (2010 and 2025 were higher) — but 2022 had more weeks of exceptional (D4) drought than any other year.` : ''} />
+          note={hdrought ? `Maui County’s annual drought index ranks #${hdrought.maui_rank_by_annual_dsci[2022]} for 2022 since 2000 (2010 and 2025 were higher), but 2022 had more weeks of exceptional (D4) drought than any other year.` : ''} />
       {/if}
       {#if d4Fig}
         <PlotPanel {Plotly} id="maui_d4_weeks" title="Exceptional drought on Maui, week counts" tag="exploratory" height={300}
@@ -649,13 +649,13 @@
         <PlotPanel {Plotly} id="browning_by_moisture_zone" title="Where Maui browned, by moisture zone" tag="exploratory" height={320}
           meta="Share of land in each state moisture zone (Hawaiʻi Statewide GIS) whose dry-season NDVI fell more than 0.10 from 2019 to 2022 (Sentinel-2, 60 m). Orange outline: zones inside the 1.5 km study circle."
           data={moistFig.data} layout={moistFig.layout} rows={mz}
-          note="The study area sits in the Moderately Dry (73 %) and Very Dry (27 %) zones — where Maui browned most." />
+          note="The study area sits in the Moderately Dry (73 %) and Very Dry (27 %) zones, where Maui browned most." />
       {/if}
       {#if plantFig}
-        <PlotPanel {Plotly} id="plantation_vs_browning" title="Former plantation land browned more — where it was dry" tag="exploratory" height={340}
+        <PlotPanel {Plotly} id="plantation_vs_browning" title="Former plantation land browned more, where it was dry" tag="exploratory" height={340}
           meta="Browning 2019 → 2022 (60 m) on land in sugarcane or pineapple production at some time in 1900–1937 (state digitised maps) vs land never in plantation, compared within each moisture zone so dry and wet land are not mixed."
           data={plantFig.data} layout={plantFig.layout} rows={overlays.plantation_within_moisture_zone.map((z) => ({ zone: z.zone, plantation_share_browned: z.plantation.share_browned ?? null, plantation_px: z.plantation.pixels, other_share_browned: z.other.share_browned ?? null, other_px: z.other.pixels }))}
-          note="In the three driest zones former plantation land browned more (Arid 25 % vs 13 %, Very Dry 56 % vs 30 %, Moderately Dry 56 % vs 51 %); in wetter zones it browned less. Association only, from historical land use — not a cause." />
+          note="In the three driest zones former plantation land browned more (Arid 25 % vs 13 %, Very Dry 56 % vs 30 %, Moderately Dry 56 % vs 51 %); in wetter zones it browned less. Association only, from historical land use, not a cause." />
       {/if}
       {#if ratingFig}
         <PlotPanel {Plotly} id="browning_by_fire_risk" title="Browning inside DLNR’s fire-risk areas" tag="exploratory" height={300}
@@ -667,7 +667,7 @@
         <PlotPanel {Plotly} id="fires_by_rating" title="Where the 2023 fires burned, by DLNR rating" tag="exploratory" height={300}
           meta="Each 2023 perimeter (NIFC) overlaid on DLNR’s fire-risk areas. The Lahaina fire is outside the terrain box but inside the island grid."
           data={fireRatingFig.data} layout={fireRatingFig.layout} rows={overlays.fires_2023_by_rating.map((f) => ({ fire: f.fire, pixels: f.pixels, ...f.share_by_rating }))}
-          note="Lahaina burned mostly in land rated High. The Upcountry Pulehu fire — the largest — burned 99 % outside any rated area, because the ratings only cover populated communities." />
+          note="Lahaina burned mostly in land rated High. The Upcountry Pulehu fire, the largest, burned 99 % outside any rated area, because the ratings only cover populated communities." />
       {/if}
       {#if gaugeFig}
         <PlotPanel {Plotly} id="rain_gauges_by_elevation" title="Rainfall across Maui’s gauges" tag="exploratory" height={320}
@@ -688,24 +688,24 @@
       {/if}
       {#if zoneChangeFig}
         <PlotPanel {Plotly} id="island_change_by_elevation" title="Where Maui browned 2019 → 2022" tag="exploratory" height={300}
-          meta="Share of land pixels in each elevation zone whose dry-season NDVI fell by more than 0.10 from 2019 to 2022 — the study’s threshold applied island-wide (60 m, exploratory)."
+          meta="Share of land pixels in each elevation zone whose dry-season NDVI fell by more than 0.10 from 2019 to 2022, the study’s threshold applied island-wide (60 m, exploratory)."
           data={zoneChangeFig.data} layout={zoneChangeFig.layout} rows={changeZones} />
       {/if}
       {#if lsFig}
         <PlotPanel {Plotly} id="landsat_26_years" title="26 dry seasons: was 2022 unusual?" tag="mixed" height={340}
-          meta="USGS Landsat Collection 2 surface reflectance via Microsoft Planetary Computer (scripts/remote_sensing/landsat_baseline.py, same method as the Earth Engine notebook): May–Sep per-pixel median NDVI, mean over the 1.5 km study area. Dashed white: Sentinel-2 for the overlapping years. Landsat 8/9 (2013 on) read NDVI higher than Landsat 7 — that is why 2014 stands out — so recent years are, if anything, flattered."
+          meta="USGS Landsat Collection 2 surface reflectance via Microsoft Planetary Computer (scripts/remote_sensing/landsat_baseline.py, same method as the Earth Engine notebook): May–Sep per-pixel median NDVI, mean over the 1.5 km study area. Dashed white: Sentinel-2 for the overlapping years. Landsat 8/9 (2013 on) read NDVI higher than Landsat 7, that is why 2014 stands out, so recent years are, if anything, flattered."
           data={lsFig.data} layout={lsFig.layout} rows={baseline.rows.map(({ year, ndvi, z, rank_lowest, n_scenes, sensors }) => ({ year, ndvi, z, rank_lowest, n_scenes, sensors }))}
           note={(() => { const r = baseline.rows.find((x) => x.year === 2022); return r ? `2022: NDVI ${r.ndvi}, z = ${r.z} against the 2000–2018 normal, rank ${r.rank_lowest} lowest of ${baseline.years_with_data} years.` : ''; })()} />
       {/if}
       {#if sevFig}
         <PlotPanel {Plotly} id="burn_severity_by_fire" title="How severely the Aug 2023 fires burned" tag="exploratory" height={300}
-          meta="Sentinel-2 dNBR (NBR 1 May–7 Aug minus 15 Aug–31 Oct 2023, minus the dNBR of unburned ground to remove seasonal drying), 20 m, inside each NIFC perimeter within the map area (Lahaina is outside it). USGS FIREMON classes, calibrated for forest — on grass a guide, not field-verified."
+          meta="Sentinel-2 dNBR (NBR 1 May–7 Aug minus 15 Aug–31 Oct 2023, minus the dNBR of unburned ground to remove seasonal drying), 20 m, inside each NIFC perimeter within the map area (Lahaina is outside it). USGS FIREMON classes, calibrated for forest, on grass a guide, not field-verified."
           data={sevFig.data} layout={sevFig.layout} rows={fires.map((f) => ({ fire: f.name, area_ha: f.area_ha, mean_dnbr: f.mean_dnbr, ...f.class_ha }))}
           note="Burned area from the satellite matches the official perimeters (Pulehu 1,312 ha vs 3,238 acres = 1,310 ha; Olinda 440 vs 438; Kula 84 vs 84)." />
       {/if}
       {#if priorFig}
         <PlotPanel {Plotly} id="browning_vs_burn_severity" title="Did browned ground burn more severely?" tag="exploratory" height={300}
-          meta="Inside each 2023 perimeter: share of 20 m pixels burned moderate-low or worse (dNBR ≥ 0.27), by how much they browned 2019 → 2022 (regional Sentinel-2, not the study raster). Small bins are noisy — hover for pixel counts."
+          meta="Inside each 2023 perimeter: share of 20 m pixels burned moderate-low or worse (dNBR ≥ 0.27), by how much they browned 2019 → 2022 (regional Sentinel-2, not the study raster). Small bins are noisy. Hover for pixel counts."
           data={priorFig.data} layout={priorFig.layout}
           rows={fires.flatMap((f) => f.by_prior_browning.map((b) => ({ fire: f.name, dndvi_from: b.dndvi_2019_2022[0], dndvi_to: b.dndvi_2019_2022[1], pixels: b.pixels, mean_dnbr: b.mean_dnbr, share_moderate_or_high: b.share_moderate_or_high })))}
           note="No consistent pattern: in Kula the most-browned ground burned less severely than moderately browned ground, in Olinda the least-browned burned worst, and in Pulehu moderately browned ground burned more than unchanged ground. Browning alone does not predict burn severity here." />
@@ -736,12 +736,12 @@
       {/if}
       {#if chmFig}
         <PlotPanel {Plotly} id="canopy_vs_browning" title="Browning by lidar height above ground" tag="mixed" height={340}
-          meta="USGS 3DEP lidar (Feb–Mar 2023, ~5 pts/m² used): mean height of the highest returns above ground in each 10 m pixel (vegetation and buildings — the survey doesn’t separate them); boxes: {label}; squares: share below {threshold.toFixed(2)}. Canopy is measured after the change it is compared with."
+          meta="USGS 3DEP lidar (Feb–Mar 2023, ~5 pts/m² used): mean height of the highest returns above ground in each 10 m pixel (vegetation and buildings; the survey doesn’t separate them); boxes: {label}; squares: share below {threshold.toFixed(2)}. Canopy is measured after the change it is compared with."
           data={chmFig.data} layout={chmFig.layout} rows={chmStats.map(({ vals, ...b }) => ({ ...b, browned: b.browned === null ? null : +b.browned.toFixed(4) }))} />
       {/if}
       {#if cubeFig}
         <PlotPanel {Plotly} id="space_time_cube" title="Space-time cube: dry-season NDVI {aYears[0]}–{aYears[nY - 1]}" tag="mixed" height={520}
-          meta="Each square is one 10 m pixel (every {cubeStride}th row and column) at its true UTM position, stacked by year. Drag to rotate; hover for values. Built from real annual composites — nothing interpolated between years."
+          meta="Each square is one 10 m pixel (every {cubeStride}th row and column) at its true UTM position, stacked by year. Drag to rotate; hover for values. Built from real annual composites; nothing interpolated between years."
           data={cubeFig.data} layout={cubeFig.layout}>
           <div class="ctl"><label>Sampling <select bind:value={cubeStride}>{#each [4, 6, 8, 12] as k}<option value={k}>every {k}th pixel</option>{/each}</select></label></div>
         </PlotPanel>

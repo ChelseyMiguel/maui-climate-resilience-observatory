@@ -3,7 +3,7 @@
   //
   // Elevation: a 320 x 293 grid (scripts/fetch_terrain.py), checked against GLOBE
   // observers' phone elevations at 30 sites (median difference 1 m).
-  // Everything else — browning patches, fire perimeters, the study-area circle —
+  // Everything else, browning patches, fire perimeters, the study-area circle,
   // is painted onto one canvas texture. Because the grid is linear in lat/lon, a
   // canvas pixel maps straight onto the mesh with no reprojection.
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
@@ -22,7 +22,7 @@
   export let exaggeration = 2;
   export let selectedId = null;
   // Optional real imagery (a canvas covering exactly the terrain bbox, linear in
-  // lat/lon — see scripts/gee/imagery_before_after.js). Replaces the elevation tint.
+  // lat/lon. See scripts/gee/imagery_before_after.js). Replaces the elevation tint.
   export let imagery = null;
   // Optional pixel-level browning: { canvas, corners } from raster.renderBelow, with
   // corners as [lon, lat] NW, NE, SE, SW. Replaces the patch polygons when given.

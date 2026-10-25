@@ -6,7 +6,7 @@
  * it. The result is a look-around reconstruction of the site.
  *
  * This is deliberately NOT photogrammetry. Six photos from a single point have
- * no parallax, so there is no recoverable depth — this reprojects the photos
+ * no parallax, so there is no recoverable depth, this reprojects the photos
  * onto a cube so a viewer can look around, and the seams between faces are real
  * (phone FOV is narrower than the 90 degrees a true cube face needs). Honest
  * framing of that limit is part of the project's story.
@@ -252,7 +252,7 @@ function BrowningReadout({ vegetation }) {
   if (!vegetation || !vegetation.available) return null;
   if (!vegetation.in_analysis_area) {
     return html`<div className="veg-row veg-muted">
-      Outside the Pukalani browning study area — no vegetation measurement here.
+      Outside the Pukalani browning study area. No vegetation measurement here.
     </div>`;
   }
 
@@ -273,7 +273,7 @@ function BrowningReadout({ vegetation }) {
     }
     const where = `GPS point is inside a ${vegetation.patch_area_ha} ha patch`;
     if (conf === "confident") return `${where}, ${edge} m from its edge.`;
-    if (conf === "uncertain") return `${where}, but ±${Math.round(acc)} m of GPS error reaches past its edge (${edge} m) — approximate.`;
+    if (conf === "uncertain") return `${where}, but ±${Math.round(acc)} m of GPS error reaches past its edge (${edge} m), so this is approximate.`;
     return `${where}; no GPS accuracy was recorded.`;
   })();
 
@@ -388,7 +388,7 @@ function ViewHud({ apiRef, view, missing, trueFov, onToggleFov, spinning, onTogg
   const btn = (name, label) => html`
     <button key=${name}
             className=${"hud-btn" + (missing.includes(name) ? " hud-missing" : "")}
-            title=${missing.includes(name) ? `${name} — no photo for this direction` : `Look ${name.toLowerCase()}`}
+            title=${missing.includes(name) ? `${name}, no photo for this direction` : `Look ${name.toLowerCase()}`}
             onClick=${() => apiRef.current && apiRef.current.face(name)}>${label}</button>`;
   return html`
     <div className="viewer-hud">
@@ -564,7 +564,7 @@ export function CubeMapViewer({ observation }) {
   return html`<${LoadedViewer} observation=${observation} />`;
 }
 
-/* LCMS trajectories for Maui County — independent USFS corroboration of the
+/* LCMS trajectories for Maui County, independent USFS corroboration of the
  * browning story. Deliberately rendered in the sidebar rather than the per-site
  * badge, because these are COUNTY-WIDE figures: putting them on a site would
  * imply a measurement at that site, which LCMS-via-dashboard cannot support.
@@ -614,7 +614,7 @@ export function LcmsPanel() {
 }
 
 /* Shared fetch path. fetch() only rejects on network failure, so a 4xx/5xx has to
- * be turned into an Error here — and it should carry the API's own `detail`
+ * be turned into an Error here, and it should carry the API's own `detail`
  * ("GLOBE data unavailable and not cached…") rather than a bare status code,
  * since that message says what to do about it. */
 async function getJson(url) {

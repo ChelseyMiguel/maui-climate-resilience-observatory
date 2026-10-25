@@ -84,7 +84,7 @@
   {#if showTable}
     <div class="tablewrap"><table>
       <thead><tr><th>Year</th><th>NDVI</th><th>SD from normal</th><th>Scenes</th><th>Sensors</th></tr></thead>
-      <tbody>{#each rows as r}<tr class:hl={r.year === 2022}><td>{r.year}</td><td>{r.ndvi?.toFixed(3) ?? '—'}</td><td>{r.z == null ? '—' : fmt(r.z)}</td><td>{r.n_scenes}</td><td>{r.sensors || '—'}</td></tr>{/each}</tbody>
+      <tbody>{#each rows as r}<tr class:hl={r.year === 2022}><td>{r.year}</td><td>{r.ndvi?.toFixed(3) ?? 'n/a'}</td><td>{r.z == null ? 'n/a' : fmt(r.z)}</td><td>{r.n_scenes}</td><td>{r.sensors || 'n/a'}</td></tr>{/each}</tbody>
     </table></div>
   {/if}
 </div>

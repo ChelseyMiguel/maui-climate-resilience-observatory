@@ -3,7 +3,7 @@
  * The GeoTIFFs are in UTM zone 4N at 10 m. They are colourised into a canvas and
  * placed with their four corners converted to lon/lat (src/lib/utm.ts). Over the
  * 3 km extent the UTM grid is effectively affine in lon/lat, so corner placement
- * is accurate to well under a pixel — checked: the raster centre lands 2.7 m from
+ * is accurate to well under a pixel, checked: the raster centre lands 2.7 m from
  * the study-area point, against 10 m pixels. */
 import { fromArrayBuffer } from 'geotiff';
 import { fromUtm, toUtm } from './utm.ts';

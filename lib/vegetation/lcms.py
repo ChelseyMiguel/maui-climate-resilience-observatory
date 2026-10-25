@@ -40,7 +40,7 @@ HIGHLIGHTS: tuple[tuple[str, str, str], ...] = (
     (
         "Vegetation Change",
         "Insect, Disease, or Drought Stress",
-        "Drought-stressed vegetation — the fuel-loading signal.",
+        "Drought-stressed vegetation: the fuel-loading signal.",
     ),
     (
         "Vegetation Change",

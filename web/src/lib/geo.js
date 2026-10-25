@@ -9,7 +9,7 @@
 
 export const KM_PER_DEG_LAT = 111.32;
 
-/* Local projection centred on the box. x = east (km), z = SOUTH (km) — three.js
+/* Local projection centred on the box. x = east (km), z = SOUTH (km), three.js
  * looks down -z by default, so north must be -z for "up the screen = north". */
 export function makeProjection(bbox) {
   const lon0 = (bbox.west + bbox.east) / 2;

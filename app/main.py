@@ -72,7 +72,7 @@ def _site() -> FileResponse:
     if not _SITE_INDEX.exists():
         raise HTTPException(
             status_code=503,
-            detail="Observatory not built — run: cd web && npm install && npm run build",
+            detail="Site not built. Run: cd web && npm install && npm run build",
         )
     return FileResponse(_SITE_INDEX, media_type="text/html")
 
