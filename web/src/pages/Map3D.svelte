@@ -145,8 +145,7 @@
       view: { distanceKm: 12, headingDeg: 20, pitchDeg: 42 },
       text: 'The same day, the Kula fire burned upslope to the south-east, between roughly 730 and 1,050 m, and the Pulehu fire burned downslope to the south-west, between roughly 60 and 410 m. Perimeters from the National Interagency Fire Center.' },
     { title: 'A citizen-science site', at: [20.83841, -156.34459], view: { distanceKm: 1.3, headingDeg: 160, pitchDeg: 32 },
-      text: 'A NASA GLOBE Observer land cover site inside the study area, with 8 observations in July 2026. Step inside it to see what the ground actually looks like.',
-      link: data.sites.find((s) => s.site_name === '04QGJ763065') },
+      text: 'A NASA GLOBE Observer land cover site inside the study area, with 8 observations in July 2026.' },
   ].filter((s) => s.at) : [];
 
   let touring = false, stepIndex = 0, autoplay = false, timer = 0;
@@ -231,9 +230,6 @@
           <p class="eyebrow">Stop {stepIndex + 1} of {STEPS.length}</p>
           <h2>{STEPS[stepIndex].title}</h2>
           <p>{STEPS[stepIndex].text}</p>
-          {#if STEPS[stepIndex].link}
-            <a class="btn" href={`/viewer?obs=${encodeURIComponent(STEPS[stepIndex].link.land_cover_id)}`}>Step inside the site →</a>
-          {/if}
           <div class="tournav">
             <button on:click={() => { autoplay = false; go(stepIndex - 1); }} disabled={stepIndex === 0}>← Back</button>
             <button on:click={() => { autoplay = !autoplay; if (autoplay) go(stepIndex); }}>{autoplay ? 'Pause' : 'Play'}</button>
@@ -279,7 +275,6 @@
               {selected.fire.inside_perimeter ? 'inside its perimeter' : `${selected.fire.distance_km} km away`}.
               </p>
           {/if}
-          <a class="btn" href={`/viewer?obs=${encodeURIComponent(selected.land_cover_id)}`}>Open the 360° view →</a>
         </section>
       {/if}
       <section class="card">
@@ -331,7 +326,6 @@
   .tournav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .tournav button { border: 1px solid var(--line); background: var(--card); border-radius: 0; padding: .3em .7em; font-size: .88rem; }
   .keys { font-size: .75rem; color: var(--muted); margin: 6px 0 0; }
-  .caption .btn { font-size: .9rem; }
   .hint-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: .75rem; color: #9fb1b8; pointer-events: none; }
   .state { padding: 60px; text-align: center; color: var(--muted); }
   .state.err { color: var(--fire); }

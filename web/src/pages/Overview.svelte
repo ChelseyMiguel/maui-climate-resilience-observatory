@@ -17,13 +17,11 @@
       text: 'Weekly drought for Maui County alongside vegetation for the study area, with a dry-season comparison you can export.' },
     { href: '/explore', title: 'Infrastructure & Access', icon: 'pin',
       text: 'Fire and EMS stations, a hospital, and schools from the Hawaiʻi Statewide GIS Program: locations only, with their source dates.' },
-    { href: '/viewer', title: 'GLOBE Site Reconstruction', icon: 'globe',
-      text: 'Step inside a citizen-science land cover site: six NASA GLOBE Observer photos rebuilt into a 360° view.' },
   ];
 </script>
 
 <section class="hero">
-  <div class="wrap grid">
+  <div class="wrap">
     <div>
       <p class="eyebrow">Browning Viewer</p>
       <h1>See environmental change.<br />Understand community vulnerability.</h1>
@@ -35,15 +33,8 @@
       <div class="cta">
         <a class="btn" href="/explore">Open the Map Explorer</a>
         <a class="btn ghost" href="/insights">Region Insights</a>
-        <a class="btn ghost" href="/viewer">Step into a site</a>
       </div>
     </div>
-    <svg class="contours" viewBox="0 0 400 300" aria-hidden="true">
-      {#each Array(9) as _, i}
-        <path d="M{-20 + i * 6},{260 - i * 22} C{90 + i * 8},{200 - i * 26} {200 - i * 4},{230 - i * 30} {420},{150 - i * 16}"
-              fill="none" stroke="currentColor" stroke-width="1" opacity={0.18 + i * 0.07} />
-      {/each}
-    </svg>
   </div>
 </section>
 
@@ -123,15 +114,13 @@
 
 <style>
   .hero { background: var(--card); border-bottom: 1px solid var(--line); padding: 56px 0 40px; }
-  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items: center; }
   .lede { font-size: 1.15rem; color: var(--ink-2); max-width: 38em; }
   .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-  .contours { width: 100%; color: var(--teal); }
   section.wrap { margin-top: 32px; }
   .facts { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0 10px; }
   .facts li { display: flex; flex-direction: column; gap: 4px; }
   .facts b { font-size: 1.8rem; color: var(--forest); }
-  .cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   .feature { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
   .feature:hover { border-color: var(--forest); }
   .feature p { color: var(--ink-2); font-size: .95rem; flex: 1; }
@@ -140,8 +129,7 @@
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   .isnot ul { padding-left: 1.1em; }
   @media (max-width: 900px) {
-    .grid, .two { grid-template-columns: 1fr; }
-    .contours { display: none; }
+    .two { grid-template-columns: 1fr; }
     .facts { grid-template-columns: 1fr; }
     .cards { grid-template-columns: 1fr 1fr; }
   }

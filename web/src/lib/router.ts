@@ -20,7 +20,7 @@ export function navigate(to: string): void {
 window.addEventListener('popstate', () => path.set(normalise(window.location.pathname)));
 
 /** Paths the Svelte app handles; anything else (e.g. /viewer) is a full page load. */
-export const APP_PATHS = new Set(['/', '/explore', '/insights', '/map', '/methods', '/sources', '/about']);
+export const APP_PATHS = new Set(['/', '/explore', '/insights', '/map', '/methods', '/sources']);
 
 export function interceptLinks(event: MouseEvent): void {
   const a = (event.target as HTMLElement).closest('a');

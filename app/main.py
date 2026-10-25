@@ -65,7 +65,7 @@ app.include_router(layers.router, prefix="/api/layers", tags=["layers"])
 # browser router inside it decides which page to show. Node is only needed to
 # rebuild it, never to run it.
 _SITE_INDEX = _static_dir / "site" / "index.html"
-SITE_PATHS = ("/", "/explore", "/insights", "/map", "/analysis", "/methods", "/sources", "/about")
+SITE_PATHS = ("/", "/explore", "/insights", "/map", "/analysis", "/methods", "/sources")
 
 
 def _site() -> FileResponse:

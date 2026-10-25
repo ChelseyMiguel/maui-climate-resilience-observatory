@@ -26,7 +26,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(**LAUNCH,args=["--no-sandbox","--use-gl=swiftshader","--enable-unsafe-swiftshader","--ignore-gpu-blocklist"])
     for w,h in ((1440,900),(390,844)):
         pg=b.new_page(viewport={"width":w,"height":h})
-        for path in ["/","/explore","/insights","/map","/analysis","/methods","/sources","/about","/viewer"]:
+        for path in ["/","/explore","/insights","/map","/analysis","/methods","/sources"]:
             pg.goto(BASE+""+path, wait_until="load"); pg.wait_for_timeout(9000 if path in ("/analysis","/explore","/map") else 3000)
             bad=pg.evaluate(JS)
             ov=pg.evaluate("document.documentElement.scrollWidth - window.innerWidth")

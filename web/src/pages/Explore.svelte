@@ -807,7 +807,6 @@
       card.period = `Observed ${f.properties.date}`;
       card.uncertainty = 'Citizen-science GPS; recorded accuracy for Upcountry sites ranges from 3 m to over 1 km.';
       card.source = 'NASA GLOBE Observer';
-      card.links = [{ href: `/viewer?obs=${encodeURIComponent(f.properties.id)}`, label: 'Open the 360° site view' }];
     } else if ((f = pick('fires-fill'))) {
       card.title = `${f.properties.name} fire`; card.kind = 'Wildfire perimeter';
       card.rows = [['year', f.properties.year], ['discovered', f.properties.discovered ? `${f.properties.discovered} (Hawaiʻi time)` : 'not given'],

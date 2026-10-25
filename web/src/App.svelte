@@ -16,16 +16,15 @@
     '/analysis': () => import('./pages/Analysis.svelte'),
     '/methods': () => import('./pages/Methods.svelte'),
     '/sources': () => import('./pages/Sources.svelte'),
-    '/about': () => import('./pages/About.svelte'),
   };
   const NAV = [
     ['/', 'Overview'], ['/explore', 'Map Explorer'], ['/insights', 'Region Insights'],
-    ['/map', '3D View'], ['/analysis', 'Analysis'], ['/viewer', 'Site Viewer'], ['/methods', 'Methods'],
-    ['/sources', 'Sources'], ['/about', 'About'],
+    ['/map', '3D View'], ['/analysis', 'Analysis'], ['/methods', 'Methods'],
+    ['/sources', 'Sources'],
   ];
   const TITLES = {
     '/': 'Overview', '/explore': 'Map Explorer', '/insights': 'Region Insights', '/map': '3D View', '/analysis': 'Analysis Workspace',
-    '/methods': 'Methods & Transparency', '/sources': 'Data Sources', '/about': 'About',
+    '/methods': 'Methods & Transparency', '/sources': 'Data Sources',
   };
 
   let menuOpen = false;
