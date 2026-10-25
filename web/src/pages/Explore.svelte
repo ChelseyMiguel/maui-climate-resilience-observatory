@@ -898,7 +898,7 @@
         {/each}
       </div>
       <button class="play" aria-pressed={droughtPlaying} on:click={toggleDroughtPlay}>{droughtPlaying ? '❚❚ Pause' : '▶ Animate years'}</button>
-      <p class="hint">Sets the drought map, fire perimeters and GLOBE observations. The vegetation layer is a fixed 2019 → 2022 comparison.</p>
+      <p class="hint">Drought, fires and GLOBE for this year.</p>
     </fieldset>
 
     <fieldset>
@@ -940,7 +940,7 @@
             {/if}
             {#if rs.islandInfo?.years?.[islandYear]}
               {@const yi = rs.islandInfo.years[islandYear]}
-              <p class="hint">Island median {islandIdx.toUpperCase()} <b class="num">{yi[islandIdx]?.median?.toFixed(3)}</b> from {yi.scenes} satellite scenes. Blank spots were cloudy all season.</p>
+              <p class="hint">Island median {islandIdx.toUpperCase()} <b class="num">{yi[islandIdx]?.median?.toFixed(3)}</b></p>
             {/if}
           </div>
         {/if}
@@ -953,7 +953,7 @@
         {#if imgId !== 'none'}
           {@const im = rs.imagery.find((i) => i.id === imgId)}
           <label>Opacity <input type="range" min="0.2" max="1" step="0.05" bind:value={imgOpacity} /></label>
-          {#if im}<p class="hint">{im.period}, from {im.scenes ?? '?'} satellite scenes.</p>{/if}
+          {#if im}<p class="hint">{im.period}, {im.scenes ?? '?'} satellite scenes.</p>{/if}
         {:else if !rsLoading && !rs.imagery.length}
           <p class="empty">No imagery yet. Run <code>scripts/remote_sensing/sentinel2_composites.py</code>.</p>
         {/if}
@@ -985,7 +985,7 @@
               <div class="ramp" aria-hidden="true">{#each [-3, -2, -1, 0, 1, 2, 3] as z}<span style="background:{swatch((z / 3) * 0.4)}"></span>{/each}</div>
               <div class="ramp-labels"><span>−3 SD drier</span><span>normal</span><span>+3 SD greener</span></div>
             {/if}
-            <p class="hint">USGS Landsat, 2000 to 2025. “vs normal” compares each spot with its own dry seasons from 2000 to 2018.</p>
+            <p class="hint">Landsat, 2000 to 2025. “vs normal”: against 2000 to 2018.</p>
           </div>
         {/if}
 
@@ -997,7 +997,7 @@
               <table class="classes"><thead><tr><th>Fire</th><th>ha</th><th>mod.+ ha</th></tr></thead>
                 <tbody>{#each burnFires as f}<tr><td>{f.name}</td><td>{f.area_ha}</td><td>{(f.class_ha['Moderate-low'] + f.class_ha['Moderate-high'] + f.class_ha.High).toFixed(0)}</td></tr>{/each}</tbody></table>
             {/if}
-            <p class="hint">How hard each spot burned in August 2023, from satellite images before and after. A rough guide on grass, not checked on the ground.</p>
+            <p class="hint">Burn severity, August 2023.</p>
           </div>
         {/if}
 
@@ -1008,12 +1008,12 @@
               <b class="num">{lstYear}</b> <span class="num muted">{rs.manifest?.lst?.find((r) => r.year === lstYear)?.lst_c?.toFixed(1)} °C</span></div>
             <div class="ramp" aria-hidden="true">{#each LST_STOPS as [, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
             <div class="ramp-labels"><span>25 °C</span><span>38</span><span>50 °C</span></div>
-            <p class="hint">Ground surface temperature in the dry season, not air temperature.</p>
+            <p class="hint">Dry-season ground temperature.</p>
           </div>
         {/if}
 
         <label class="lyr"><input type="checkbox" bind:checked={regionalOn} disabled={!rs.regional} /> Regional {label} 2019 → 2022 (20 m)</label>
-        {#if regionalOn}<p class="hint sub2">Exploratory: the same Sentinel-2 change across the whole terrain box, not the study raster. Colours as the vegetation ramp below.</p>{/if}
+        {#if regionalOn}<p class="hint sub2">Change 2019 to 2022 across the map area.</p>{/if}
 
         <label class="lyr"><input type="checkbox" bind:checked={landcoverOn} disabled={!rs.landcover} /> Land cover 2021 (ESA WorldCover, 10 m)</label>
         {#if landcoverOn && lcRows.length}
@@ -1022,7 +1022,7 @@
             <tbody>{#each lcRows as row}<tr><td><span class="sw" style="background:{row.colour}"></span>{row.name}</td>
               <td>{(row.share_of_study_area * 100).toFixed(1)}</td><td>{(row['share_browned_dndvi_lt_-0.10'] * 100).toFixed(0)}</td></tr>{/each}</tbody>
           </table>
-          <p class="hint">Land cover inside the study area (ESA WorldCover 2021) and how much of each type browned.</p>
+          <p class="hint">Land cover 2021 and share browned.</p>
         {/if}
 
         <label class="lyr"><input type="checkbox" bind:checked={lidarOn} disabled={!rs.lidar} /> Lidar, {lidarMeta?.acquired_utc?.[0]?.slice(0, 7) ?? '2023'} (USGS 3DEP)</label>
@@ -1036,7 +1036,7 @@
               <div class="ramp" aria-hidden="true">{#each CHM_STOPS as [, c]}<span style="background:rgb({c.join(',')})"></span>{/each}</div>
               <div class="ramp-labels"><span>0 m</span><span>5</span><span>10</span><span>20+ m</span></div>
             {/if}
-            <p class="hint">Height of trees and buildings above the ground, from a 2023 lidar flight between the drought and the fires.</p>
+            <p class="hint">Tree and building height, lidar 2023.</p>
           </div>
         {/if}
       </div>
@@ -1069,7 +1069,7 @@
           <button class="linkish tiny" on:click={() => (threshold = RESEARCH_THRESHOLD)} disabled={threshold === RESEARCH_THRESHOLD}>reset to the study’s −0.10</button><span>0</span></div>
 
         <ThresholdHistogram {bins} {threshold} {label} on:change={(e) => (threshold = e.detail)} />
-        <p class="hint">Drag the marker, click the histogram, or use the arrow keys (Shift = 0.05). Dashed line: the study’s −0.10.</p>
+        <p class="hint">Dashed line: the study’s −0.10.</p>
 
         {#if thrView}
           <table class="classes">
@@ -1110,27 +1110,27 @@
         <label><input type="checkbox" bind:checked={portal.fire_risk} /> <span class="sw" style="background:{RISK.Medium}"></span> DLNR fire-risk areas</label>
         {#if portal.fire_risk}
           <ul class="key sub2">{#each Object.entries(RISK) as [name, col]}<li><span class="sw" style="background:{col}"></span>{name === 'N/A' ? 'Not rated' : name}</li>{/each}</ul>
-          <p class="hint sub2">DLNR-DOFAW’s rating for <em>populated areas only</em> (2007; boundaries reconfirmed 2017 and 2022). Land outside these polygons is unrated, not low risk. This is the state’s rating, not this project’s.</p>
+          <p class="hint sub2">DLNR rating, populated areas only (2007, reconfirmed 2022).</p>
         {/if}
         <label><input type="checkbox" bind:checked={portal.fire_response} /> <span class="sw line" style="border-color:#f58ab6"></span> Fire response zones</label>
-        {#if portal.fire_response}<p class="hint sub2">Which agency responds first (DLNR-DOFAW, as of April 2026). Pink dashed outlines.</p>{/if}
+        {#if portal.fire_response}<p class="hint sub2">First-response agency, April 2026.</p>{/if}
         <label><input type="checkbox" bind:checked={portal.moisture_zones} /> <span class="sw" style="background:{MOIST['Moderately Dry']}"></span> Moisture zones</label>
         {#if portal.moisture_zones}
           <ul class="key sub2">{#each Object.entries(MOIST) as [name, col]}<li><span class="sw" style="background:{col}"></span>{name}</li>{/each}</ul>
-          <p class="hint sub2">Seven zones from a species-range model (Hawaiʻi Cooperative Studies Unit, UH Hilo / Smithsonian). A modelled classification.</p>
+          <p class="hint sub2">Seven moisture zones, Arid to Very Wet.</p>
         {/if}
         <label><input type="checkbox" bind:checked={portal.rainfall_mm} /> <span class="sw line" style="border-color:#6cb6ff"></span> Mean annual rainfall (mm)</label>
         <label><input type="checkbox" bind:checked={portal.rain_gauges} /> <span class="sw" style="background:#6cb6ff"></span> Rain gauges ({pinfo('rain_gauges')?.count ?? 226})</label>
-        {#if portal.rainfall_mm || portal.rain_gauges}<p class="hint sub2">Rainfall Atlas of Hawaiʻi (Giambelluca et al., 2011; 1978–2007 average): isohyets every 500 mm; gauges give each station’s mean. Click a gauge for its value.</p>{/if}
+        {#if portal.rainfall_mm || portal.rain_gauges}<p class="hint sub2">Mean annual rainfall, 1978 to 2007.</p>{/if}
         <label><input type="checkbox" bind:checked={portal.plantation} /> <span class="sw" style="background:{SUGAR}"></span><span class="sw" style="background:{PINE}"></span> Former plantation land</label>
         {#if portal.plantation}
           <div class="seg sub2" role="radiogroup" aria-label="Plantation year">
             {#each ['1900', '1920', '1937'] as y}<label class:on={plantYear === y}><input type="radio" bind:group={plantYear} value={y} />{y}</label>{/each}
           </div>
-          <p class="hint sub2"><span class="sw" style="background:{SUGAR}"></span> sugarcane · <span class="sw" style="background:{PINE}"></span> pineapple. Land in production in {plantYear}, digitised from historical land-use maps by the state{plantYear === '1900' ? ' (no pineapple on Maui in 1900)' : ''}.</p>
+          <p class="hint sub2"><span class="sw" style="background:{SUGAR}"></span> sugarcane · <span class="sw" style="background:{PINE}"></span> pineapple. Land in production in {plantYear}{plantYear === '1900' ? ' (no pineapple on Maui in 1900)' : ''}.</p>
         {/if}
         {#if portalError}<p class="empty">State layer couldn’t load: {portalError}. Run <code>scripts/fetch_hawaii_portal.py</code>.</p>{/if}
-        <p class="hint">Source: Hawaii Statewide GIS Program (geodata.hawaii.gov) with the data owners named above. The state gives no warranty of positional or thematic accuracy.</p>
+        <p class="hint">Source: Hawaii Statewide GIS Program.</p>
       </div>
     </fieldset>
 
@@ -1227,7 +1227,7 @@
           {#each selected.links as l}<a class="btn" href={l.href}>{l.label} →</a>{/each}
         </div>
       {:else}
-        <p class="hint">Click any symbol, shaded area or vegetation pixel to see its value, class, elevation, period, uncertainty and source.</p>
+        <p class="hint">Click the map for values.</p>
       {/if}
     </section>
   </aside>
@@ -1261,7 +1261,7 @@
           <input type="range" min="1" max="3" step="0.1" bind:value={exaggeration} on:input={setExaggeration} /></label>
         <label>Tilt <b class="num">{pitch}°</b>
           <input type="range" min="0" max="80" step="1" bind:value={pitch} on:input={setPitch} /></label>
-        <p class="hint">Right-drag or Ctrl-drag to rotate. Terrain: AWS Terrain Tiles; vegetation pixels stay at their ground coordinates.</p>
+        <p class="hint">Right-drag to rotate.</p>
       </div>
     {/if}
     {#if compare}
@@ -1318,7 +1318,7 @@
           </button>
         {/each}
       </div>
-      <p class="hint">Same colours in every panel: brown is dry, green is healthy. Click a year to show it on the map.</p>
+      <p class="hint">Brown: dry. Green: healthy. Click a year to map it.</p>
     </section></div>
   {/if}
   {#if dataOpen}

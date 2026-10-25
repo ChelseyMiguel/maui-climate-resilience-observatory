@@ -79,7 +79,7 @@
     {#if fireWeek}
       <span class="note">Fire week: DSCI {fireWeek.dsci} ({dsciLabel(fireWeek.dsci)}) and rising.</span>
     {/if}
-    <span class="note">Shows timing only: county-wide drought vs a 1.5 km study area, in different units.</span>
+    
   </figcaption>
 </figure>
 

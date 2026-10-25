@@ -74,7 +74,7 @@ with sync_playwright() as p:
     for k in ("hawaii_drought_by_county", "maui_d4_weeks", "browning_by_moisture_zone", "plantation_vs_browning", "browning_by_fire_risk", "fires_by_rating", "rain_gauges_by_elevation"):
         pg.wait_for_selector(f"[data-plot={k}] .main-svg", state="attached", timeout=60000)
         ok(pg.locator(f"[data-plot={k}]").count() == 1, f"state-data figure {k}")
-    ok("ranks #3" in pg.locator(".plot:has([data-plot=hawaii_drought_by_county]) .note").inner_text(), "drought note says 2022 ranks #3 by annual index")
+    ok("#3 by annual index" in pg.locator(".plot:has([data-plot=hawaii_drought_by_county]) .note").inner_text(), "drought note says 2022 ranks #3 by annual index")
     ok(not errs, f"no page errors {errs[:2]}")
     b.close()
 sys.exit(1 if FAILS else 0)

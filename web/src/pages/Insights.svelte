@@ -116,7 +116,7 @@
         <p>{current.fire.overlapsRegion
           ? `The ${current.fire.nearestFire} fire (Aug 2023) burned within this place’s boundary.`
           : `Nearest Aug 2023 fire: ${current.fire.nearestFire}, about ${current.fire.distanceKm} km from this place’s boundary.`}
-          <span class="muted small">Source: NIFC perimeters. Distance to where fire went, not a risk score.</span></p>
+          <span class="muted small">Source: NIFC.</span></p>
       {/if}
     </div>
 

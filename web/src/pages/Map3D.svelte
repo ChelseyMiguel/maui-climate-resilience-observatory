@@ -261,8 +261,8 @@
             <dt>Lat, lon</dt><dd>{inspected.lat.toFixed(5)}, {inspected.lon.toFixed(5)}</dd>
             <dt>Elevation</dt><dd>{inspected.elevation ? (Number.isFinite(inspected.elevation.z) ? `${inspected.elevation.z.toFixed(1)} m` : 'n/a') : '…'}</dd>
           </dl>
-          {#if !inspected.cell}<p class="muted small">Outside the 1.5 km change raster. No vegetation value here.</p>{/if}
-          {#if inspected.elevation}<p class="muted small">Elevation: {inspected.elevation.source}. Location is read from the 68 m terrain mesh, so it can be off by up to ~1 grid cell on steep slopes.</p>{/if}
+          {#if !inspected.cell}<p class="muted small">Outside the study area.</p>{/if}
+          {#if inspected.elevation}<p class="muted small">Elevation: {inspected.elevation.source}.</p>{/if}
         </section>
       {/if}
       {#if selected}
@@ -273,11 +273,11 @@
           {#if pct(selected.browned_fraction) !== null}
             <p><b>{pct(selected.browned_fraction)}%</b> of this 100 m site browned, 2019→2022
               <span class="muted small">(study area overall {Math.round(data.studyArea.browned_fraction * 100)}%)</span></p>
-          {:else}<p class="muted">Outside the browning study area. No vegetation measurement here.</p>{/if}
+          {:else}<p class="muted">Outside the study area.</p>{/if}
           {#if selected.fire?.available}
             <p>Nearest Aug 2023 fire: <b>{selected.fire.nearest_fire}</b>,
               {selected.fire.inside_perimeter ? 'inside its perimeter' : `${selected.fire.distance_km} km away`}.
-              <span class="muted small">Distance to where fire went, not a risk score.</span></p>
+              </p>
           {/if}
           <a class="btn" href={`/viewer?obs=${encodeURIComponent(selected.land_cover_id)}`}>Open the 360° view →</a>
         </section>
@@ -286,7 +286,7 @@
         <h2>The August 8, 2023 fires</h2>
         <ul class="fires">{#each fires2023 as f}<li><b>{f.name}</b><span>{acres(f.acres)} acres</span></li>{/each}</ul>
         <p class="callout">The study area did not burn. Olinda's edge is {(data.studyArea.fire.distance_km - data.studyArea.radius_m / 1000).toFixed(1)} km away.</p>
-        <p class="muted small">Perimeters: National Interagency Fire Center. Dates in Hawaiʻi time.</p>
+        <p class="muted small">Source: NIFC.</p>
       </section>
       <section class="card dark">
         <h2>Drought, then fire</h2>

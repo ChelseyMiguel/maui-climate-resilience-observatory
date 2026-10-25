@@ -252,7 +252,7 @@ function BrowningReadout({ vegetation }) {
   if (!vegetation || !vegetation.available) return null;
   if (!vegetation.in_analysis_area) {
     return html`<div className="veg-row veg-muted">
-      Outside the Pukalani browning study area. No vegetation measurement here.
+      Outside the study area.
     </div>`;
   }
 

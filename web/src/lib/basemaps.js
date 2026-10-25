@@ -9,22 +9,22 @@ const usgs = (svc) => `https://basemap.nationalmap.gov/arcgis/rest/services/${sv
 
 export const BASEMAPS = [
   { id: 'relief', label: 'Terrain (offline)', kind: 'Elevation tint',
-    note: 'Elevation tint from the app’s own 68 m DEM grid (AWS Terrain Tiles). Works with no connection.' },
+    note: 'Elevation tint. Works offline.' },
   // CARTO's dark tiles now carry an "API key required" watermark; Esri's dark
   // canvas needs no key.
   { id: 'dark', label: 'Minimal dark', kind: 'Reference map',
     tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'], maxzoom: 16,
     attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community',
-    note: 'Roads and coastlines on a dark canvas, no imagery (Esri World Dark Gray Canvas).' },
+    note: 'Roads and coastlines.' },
   { id: 'imagery', label: 'Satellite (USGS)', kind: 'Aerial / satellite imagery', tiles: [usgs('USGSImageryOnly')], maxzoom: 16,
     attribution: 'USGS The National Map: Orthoimagery (public domain)',
-    note: 'High-resolution orthoimagery; capture date varies by tile and is not matched to 2019 or 2022.' },
+    note: 'Aerial imagery, mixed dates.' },
   { id: 'topo', label: 'Topographic (USGS)', kind: 'Topographic map', tiles: [usgs('USGSTopo')], maxzoom: 16,
-    attribution: 'USGS The National Map (public domain)', note: 'USGS topographic base: contours, roads, names.' },
+    attribution: 'USGS The National Map (public domain)', note: 'Contours, roads, names.' },
   { id: 's2-2019', label: 'Sentinel-2 2019', kind: 'Annual cloud-free mosaic', tiles: [eox(2019)], maxzoom: 14, attribution: EOX_ATTR(2019),
-    note: '10 m Sentinel-2 cloud-free mosaic of 2019, a whole-year composite, not the study’s May–Sep median.' },
+    note: 'Sentinel-2, 2019.' },
   { id: 's2-2022', label: 'Sentinel-2 2022', kind: 'Annual cloud-free mosaic', tiles: [eox(2022)], maxzoom: 14, attribution: EOX_ATTR(2022),
-    note: '10 m Sentinel-2 cloud-free mosaic of 2022, a whole-year composite, not the study’s May–Sep median.' },
+    note: 'Sentinel-2, 2022.' },
 ];
 
 export const DEM_TILES = {
