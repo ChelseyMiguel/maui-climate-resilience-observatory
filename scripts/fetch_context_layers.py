@@ -1,14 +1,3 @@
-"""Download community-context and boundary layers from the Hawaii Statewide GIS
-Program (geodata.hawaii.gov), clipped to Upcountry Maui.
-
-Only authoritative, published layers are used, each saved with the publisher's
-own last-edit date so the app can show how current it is. Locations only: none
-of these layers says anything about current status (open, staffed, in use as a
-shelter), and the app must not imply it does.
-
-    python scripts/fetch_context_layers.py
-"""
-
 from __future__ import annotations
 
 import json
@@ -20,12 +9,10 @@ import httpx
 
 OUT = Path(__file__).resolve().parents[1] / "data" / "context"
 BASE = "https://geodata.hawaii.gov/arcgis/rest/services"
-# Upcountry Maui with margin: Pukalani, Makawao, Kula, and the 2023 fires.
+
 BBOX = "-156.45,20.62,-156.22,20.92"
 
-# key: (service, layer id, title, the field that holds a readable name)
-# Each publisher names things differently, so the name field is per layer rather
-# than guessed.
+
 LAYERS = {
     "fire_stations": ("EmergMgmtPubSafety", 7, "Fire stations", "alt_name"),
     "ems_stations": ("EmergMgmtPubSafety", 8, "EMS stations", "unit_name"),
@@ -51,11 +38,6 @@ def query(service: str, layer: int, **params) -> list[dict]:
 
 
 def currency(meta: dict) -> str | None:
-    """How current the layer is, in the publisher's own words.
-
-    These services carry no machine-readable edit date; the description says it
-    instead ("as of December 2025"). Quote that rather than invent a date.
-    """
     ms = (meta.get("editingInfo") or {}).get("lastEditDate")
     if ms:
         return "edited " + datetime.fromtimestamp(ms / 1000, tz=timezone.utc).date().isoformat()
@@ -68,7 +50,7 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     catalog = []
 
-    # Region boundaries: 2020 Census Designated Places.
+
     service, layer, title = PLACES
     meta = layer_meta(service, layer)
     names = ",".join(f"'{n}'" for n in REGION_NAMES)
@@ -86,7 +68,7 @@ def main() -> None:
                     "currency": "2020 Census (decennial boundaries)",
                     "names": sorted(r["properties"]["name"] for r in regions)})
 
-    # Community context points.
+
     for key, (service, layer, title, name_field) in LAYERS.items():
         meta = layer_meta(service, layer)
         feats = query(service, layer, geometry=BBOX, geometryType="esriGeometryEnvelope",

@@ -1,23 +1,3 @@
-"""Structure-from-motion experiment on a GLOBE site with repeat visits.
-
-WHY THIS IS AN EXPERIMENT, NOT A FEATURE
-One GLOBE observation is six photos from ONE standing point. With no change of
-viewpoint there is no parallax, so no depth can be recovered — that is why the
-main viewer is a cube map, not a 3D model. SfM needs the same scene from
-several positions.
-
-Site 04QGJ763065 is the one place in the Pukalani data where that exists: eight
-visits over two days, standing up to ~92 m apart, each facing N/E/S/W. That is a
-real (if small) baseline. This script tries to reconstruct it and reports
-honestly how much it recovers.
-
-Optional dependency — NOT in requirements.txt (large, native):
-    python -m venv .sfmenv && .sfmenv/bin/pip install pycolmap
-    .sfmenv/bin/python scripts/sfm/run_sfm.py --site 04QGJ763065
-
-Outputs under data/sfm/<site>/ : the COLMAP model and points.ply (sparse cloud).
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -33,8 +13,7 @@ HORIZONTAL = ("North", "East", "South", "West")
 
 
 def collect_images(site_name: str, work: Path) -> list[dict]:
-    """Copy the mirrored horizontal photos for every visit to `site_name`."""
-    from lib.globe_api import client  # stdlib + httpx only
+    from lib.globe_api import client
 
     sites = client.fetch_sites("2017-01-01", "2026-12-31", bbox=client.HAWAII)
     visits = [s for s in sites if s.site_name == site_name]

@@ -1,37 +1,3 @@
-"""Sentinel-2 L2A composites for the Observatory, from the public AWS archive.
-
-No account or Earth Engine needed: the Element 84 / AWS "sentinel-cogs" bucket
-holds every Level-2A scene as Cloud-Optimised GeoTIFFs, and only the pixels
-inside our windows are read (HTTP range requests).
-
-Method (mirrors scripts/gee/imagery_before_after.js and the study):
-  * tile 4QGJ (UTM 4N, EPSG:32604 -- the same grid as the study rasters);
-  * scenes with tile cloud cover < 60 % (GEE: CLOUDY_PIXEL_PERCENTAGE < 60);
-  * per-pixel mask from the Scene Classification Layer: SCL 0 (no data),
-    1 (saturated/defective), 3 (cloud shadow), 8/9 (cloud), 10 (cirrus);
-  * reflectance = DN * 0.0001. From processing baseline 04.00 ESA adds +1000 to
-    the DNs; this archive has already removed it when the item says
-    earthsearch:boa_offset_applied (checked: open-ocean NIR DNs are ~700 under
-    baselines 03.00, 04.00 and 05.09 alike), so the raster:bands offset is NOT
-    applied again. Same harmonisation as GEE's S2_SR_HARMONIZED;
-  * one scene per acquisition: where a date was reprocessed (_0_/_1_ items),
-    only the highest processing baseline is kept;
-  * per-band median of the clear observations, then indices from the medians.
-
-Products (all written under data/):
-  research/s2_aoi_annual.tif        dry-season (May-Sep) NDVI for 2017-2025 at
-                                    10 m on the study raster's exact grid, plus
-                                    NBR and clear-observation counts per year
-  research/s2_regional_change.tif   2019 -> 2022 dry-season dNDVI and dNBR, 20 m,
-                                    for the whole terrain box (exploratory)
-  imagery/<id>.jpg + <id>.json      true-colour and colour-infrared images on the
-                                    terrain box's EPSG:4326 grid (2048 x 1877), for
-                                    the Map Explorer and the 3D view
-  research/s2_manifest.json         every scene used, filters and validation
-
-Run:  .venv/bin/pip install -r requirements-data.txt
-      .venv/bin/python scripts/remote_sensing/sentinel2_composites.py
-"""
 from __future__ import annotations
 
 import json
@@ -56,17 +22,17 @@ TILE = "sentinel-s2-l2a-cogs/4/Q/GJ"
 UTM = "EPSG:32604"
 MAX_CLOUD = 60
 BAD_SCL = (0, 1, 3, 8, 9, 10)
-# The terrain box (data/terrain/upcountry_dem.json) and the 3D view's image grid.
+
 BBOX = (-156.45, 20.70, -156.24, 20.88)
 IMAGE_SIZE = (2048, 1877)
-DRY = (5, 9)                       # May..September, the study's dry season
+DRY = (5, 9)
 YEARS = range(2017, 2026)
 
 os.environ.setdefault("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
 os.environ.setdefault("CPL_VSIL_CURL_ALLOWED_EXTENSIONS", ".tif")
 os.environ.setdefault("GDAL_HTTP_MAX_RETRY", "4")
 os.environ.setdefault("GDAL_HTTP_RETRY_DELAY", "2")
-if Path("/root/.ccr/ca-bundle.crt").exists():          # sandbox proxy CA
+if Path("/root/.ccr/ca-bundle.crt").exists():
     os.environ.setdefault("CURL_CA_BUNDLE", "/root/.ccr/ca-bundle.crt")
 
 
@@ -76,7 +42,6 @@ def _get(url: str) -> bytes:
 
 
 def scene_items(year: int, months: range) -> list[dict]:
-    """STAC items for tile 4QGJ in the given months, cloud < MAX_CLOUD."""
     out = []
     for m in months:
         xml = _get(f"{BUCKET}/?list-type=2&prefix={TILE}/{year}/{m}/&delimiter=/").decode()
@@ -89,8 +54,6 @@ def scene_items(year: int, months: range) -> list[dict]:
 
 
 def latest_per_acquisition(items: list[dict]) -> list[dict]:
-    """One item per acquisition time: where a date was reprocessed (_0_/_1_
-    items), keep the highest processing baseline. Sorted by time."""
     best: dict[str, dict] = {}
     for it in items:
         key = it["properties"]["datetime"][:19]
@@ -100,15 +63,12 @@ def latest_per_acquisition(items: list[dict]) -> list[dict]:
 
 
 def reflectance_offset(item: dict, asset: dict) -> float:
-    """The additive reflectance offset still to apply: none when the archive has
-    already removed ESA's +1000 DN offset (earthsearch:boa_offset_applied)."""
     if item["properties"].get("earthsearch:boa_offset_applied"):
         return 0.0
     return (asset.get("raster:bands") or [{}])[0].get("offset", 0.0)
 
 
 def _read(item: dict, asset: str, bounds, res: float) -> np.ndarray:
-    """One asset over UTM `bounds` at `res` metres, as reflectance (or SCL codes)."""
     a = item["assets"][asset]
     w = round((bounds[2] - bounds[0]) / res)
     h = round((bounds[3] - bounds[1]) / res)
@@ -125,7 +85,6 @@ def _read(item: dict, asset: str, bounds, res: float) -> np.ndarray:
 
 
 def composite(items: list[dict], bounds, res: float, assets: list[str]) -> tuple[dict, np.ndarray, list[str]]:
-    """Median of clear observations per asset, the clear count, and the scenes used."""
     def scene(item):
         scl = _read(item, "scl", bounds, res)
         clear = ~np.isin(scl, BAD_SCL)
@@ -152,7 +111,6 @@ def composite(items: list[dict], bounds, res: float, assets: list[str]) -> tuple
 
 
 def _date(scene_id: str) -> str:
-    """S2A_4QGJ_20190705_0_L2A -> 2019-07-05."""
     d = scene_id.split("_")[2]
     return f"{d[:4]}-{d[4:6]}-{d[6:]}"
 
@@ -181,8 +139,6 @@ def write_tif(path: Path, bands: list[np.ndarray], bounds, crs: str, names: list
 
 
 def to_image(rgb: list[np.ndarray], src_bounds, out: Path, meta: dict, lo=0.0, hi=0.3, gamma=1.3) -> None:
-    """Stretch three reflectance bands (as GEE visualize) and reproject to the terrain
-    box's EPSG:4326 grid, saved as a JPEG with a JSON sidecar."""
     from PIL import Image
 
     W, H = IMAGE_SIZE
@@ -206,7 +162,7 @@ def main() -> int:
     imagery = DATA / "imagery"
     imagery.mkdir(exist_ok=True)
 
-    # 1. Study area, every dry season, on the study raster's exact 10 m grid.
+
     sbounds, _, _, study = study_grid()
     ndvi, nbr, counts, names = [], [], [], []
     for year in YEARS:
@@ -222,14 +178,14 @@ def main() -> int:
     mask = np.isnan(study)
     for arrs in (ndvi, nbr):
         for a in arrs:
-            a[mask] = np.nan                                  # same AOI circle as the study
+            a[mask] = np.nan
     write_tif(DATA / "research" / "s2_aoi_annual.tif",
               ndvi + nbr + [c.astype("float32") for c in counts], sbounds, UTM,
               [f"ndvi_{n}" for n in names] + [f"nbr_{n}" for n in names] + [f"clear_obs_{n}" for n in names],
               {"description": "Sentinel-2 L2A dry-season (May-Sep) median composites, study AOI, 10 m",
                "years": ",".join(names)})
 
-    # Validation against the study's own dNDVI (same grid, same period).
+
     mine = ndvi[names.index("2022")] - ndvi[names.index("2019")]
     ok = ~np.isnan(mine) & ~np.isnan(study)
     r = float(np.corrcoef(mine[ok], study[ok])[0, 1])
@@ -244,7 +200,7 @@ def main() -> int:
     }
     print("validation:", manifest["validation_vs_study_dndvi"], flush=True)
 
-    # 2. Regional composites on the terrain box (20 m): imagery and exploratory change.
+
     rbounds = transform_bounds("EPSG:4326", UTM, *BBOX, densify_pts=21)
     rbounds = tuple(float(np.floor(v / 20) * 20) if i < 2 else float(np.ceil(v / 20) * 20) for i, v in enumerate(rbounds))
     periods = {

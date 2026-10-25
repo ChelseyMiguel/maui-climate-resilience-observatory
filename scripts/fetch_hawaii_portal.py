@@ -1,22 +1,3 @@
-"""Fire, drought-climate and land-history layers from the Hawaii Statewide GIS
-Program (geodata.hawaii.gov), clipped to Maui.
-
-Every layer is the publisher's own, saved with its source, its date in the
-publisher's words, and its licence note. Nothing is derived or re-scored here.
-
-  fire_risk       DLNR-DOFAW "Fire Risk Areas": a 2007 rating of wildland-fire risk
-                  for populated areas, boundaries reconfirmed 2017 and 2022.
-  fire_response   DLNR-DOFAW Fire Response Zones: who responds first (as of April 2026).
-  moisture_zones  Seven moisture zones (Arid ... Very Wet), from a species-range model.
-  rainfall_mm     Mean annual rainfall isohyets (mm), Rainfall Atlas of Hawaii 2011
-                  (base period 1978-2007), as 20 m-simplified lines.
-  rain_gauges     Gauges used in the Atlas with mean monthly/annual rainfall.
-  sugarcane_*     Lands in sugarcane in 1900, 1920 and 1937 (digitised from historical maps).
-  pineapple_*     Lands in pineapple in 1920 and 1937 (none on Maui in 1900).
-
-Output: data/context/hawaii_portal/<key>.geojson and data/context/hawaii_portal.json
-Run:    .venv/bin/python scripts/fetch_hawaii_portal.py
-"""
 from __future__ import annotations
 
 import json
@@ -29,9 +10,9 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "context"
 BASE = "https://geodata.hawaii.gov/arcgis/rest/services"
-MAUI = "-156.72,20.55,-155.95,21.05"          # all of Maui, with a margin
+MAUI = "-156.72,20.55,-155.95,21.05"
 
-# key: (service, layer, title, group, extra where-clause or None)
+
 LAYERS = {
     "fire_risk": ("Hazards", 7, "Fire risk areas (DLNR rating)", "fire", "island = 'Maui'"),
     "fire_response": ("EmergMgmtPubSafety", 6, "Fire response zones", "fire", "island = 'Maui'"),
@@ -59,9 +40,9 @@ def fetch(service: str, layer: int, where: str | None) -> tuple[dict, list[dict]
               "spatialRel": "esriSpatialRelIntersects", "outFields": "*", "outSR": 4326, "returnGeometry": "true",
               "f": "geojson", "geometryPrecision": 5}
     if meta.get("geometryType") != "esriGeometryPoint":
-        params["maxAllowableOffset"] = 0.0002          # ~20 m: far below the map's resolution
+        params["maxAllowableOffset"] = 0.0002
     feats, offset = [], 0
-    while True:                                         # page, in case a layer has more than maxRecordCount
+    while True:
         r = httpx.get(f"{BASE}/{service}/MapServer/{layer}/query", params={**params, "resultOffset": offset}, timeout=120)
         r.raise_for_status()
         page = r.json().get("features", [])
@@ -83,7 +64,7 @@ def main() -> None:
             feats = [{"type": "Feature", "geometry": f["geometry"],
                       "properties": {k: f["properties"].get(k) for k in GAUGE_KEEP}} for f in feats
                      if f["properties"].get("annavgmm") not in (None, 0)]
-            # Maui Nui's neighbours share the box; keep Maui island (east of Lanai/Molokai).
+
             feats = [f for f in feats if -156.72 < f["geometry"]["coordinates"][0] < -155.95 and 20.55 < f["geometry"]["coordinates"][1] < 21.05]
         for f in feats:
             f["properties"].pop("shape", None)

@@ -1,10 +1,3 @@
-"""How often do the satellite land-cover maps agree with each other at the GLOBE sites?
-
-Uses the same coarse classes as lib/crosscheck.py. No GLOBE data needed.
-
-    python scripts/compare_satellite_maps.py
-"""
-
 from __future__ import annotations
 
 import itertools

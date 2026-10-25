@@ -1,16 +1,3 @@
-"""Weekly drought across the whole state of Hawaii, 2000 to now.
-
-The U.S. Drought Monitor's DSCI (0-500: 0 none, 500 all of the county in D4) for each
-Hawaii county, plus Maui County's share of land in each category D0-D4, so Maui's
-2022 drought can be read against the other islands and against 25 years.
-
-Source: USDM data services, University of Nebraska-Lincoln (public, no key).
-County values are county-wide: they do not describe any single place within it.
-
-    python scripts/fetch_hawaii_drought.py
-Output: data/research/hawaii_dsci_weekly.csv  (date, hawaii, honolulu, kauai, maui, kalawao)
-        data/research/maui_categories_2000.csv (date, d0..d4)
-"""
 from __future__ import annotations
 
 import csv

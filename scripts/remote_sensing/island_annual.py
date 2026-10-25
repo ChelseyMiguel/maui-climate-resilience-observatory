@@ -1,22 +1,3 @@
-"""Whole-island dry-season NDVI and NBR for Maui, 2017-2025 (Sentinel-2, 60 m).
-
-Same method as sentinel2_composites.py (tile cloud < 60 %, SCL mask, one scene
-per acquisition, per-band median, indices from the medians), over all of Maui:
-tiles 4QGJ, 4QGH and 4QHJ, all UTM zone 4, merged on one 60 m EPSG:32604 grid.
-Ocean is masked with Copernicus DEM GLO-90 (land = elevation > 0), which also
-gives the elevation for the elevation-zone statistics.
-
-Values are stored as uint8 codes to keep the repository small:
-  code = round((value + 1) * 125), value = code / 125 - 1 (step 0.008), 255 = no data.
-60 m suits the whole island; the 10 m study-area products stay the reference.
-
-Products:
-  data/research/island_annual.tif      bands ndvi_2017..ndvi_2025, nbr_2017..nbr_2025,
-                                       then elevation (uint8 = metres / 13, 255 = sea)
-  data/research/island_annual.json     per-year island medians and percentiles, per
-                                       elevation zone, scenes and clear-observation counts
-Run:  .venv/bin/python scripts/remote_sensing/island_annual.py
-"""
 from __future__ import annotations
 
 import importlib.util
@@ -38,7 +19,7 @@ _spec.loader.exec_module(s2)
 
 TILES = ("GJ", "GH", "HJ")
 RES = 60.0
-# Maui in UTM 4N, snapped to 60 m: about -156.70..-155.97 E, 20.56..21.04 N.
+
 WEST, SOUTH, EAST, NORTH = 735000.0, 2274000.0, 812040.0, 2328000.0
 YEARS = range(2017, 2026)
 ZONES = [(0, 300), (300, 600), (600, 1000), (1000, 1500), (1500, 2200), (2200, 3100)]
@@ -102,7 +83,7 @@ def main() -> int:
                                       "land_pixels_without_data": int((land & ~np.isfinite(a)).sum())}
         print(year, len(used), report["years"][str(year)]["ndvi"], flush=True)
 
-    # Where the island browned most from 2019 to 2022, by elevation zone.
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         d = ndvi[list(YEARS).index(2022)] - ndvi[list(YEARS).index(2019)]

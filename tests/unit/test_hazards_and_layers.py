@@ -79,7 +79,7 @@ def test_simplified_gee_perimeters_keep_their_area():
     import math
 
     sys.path.insert(0, str(ROOT / "scripts"))
-    from export_fires_for_gee import UPCOUNTRY, polygons, simplify
+    from fires_for_earth_engine import UPCOUNTRY, polygons, simplify
 
     def area(ring):
         kx = 111_320 * math.cos(math.radians(ring[0][1]))

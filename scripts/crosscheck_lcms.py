@@ -53,15 +53,15 @@ def main() -> None:
     except client.GlobeUnavailableError as exc:
         sys.exit(f"error: no cached GLOBE observations ({exc}). "
                  "Run scripts/ingest_maui.py once while online, then try again.")
-    # The CSV only covers the sites that were pasted into the Earth Engine script;
-    # observations elsewhere in the area show up as no_lcms_row, not as errors.
+
+
     results = crosscheck.crosscheck_products(observations, table)
 
     for product, result in results.items():
         print(f"\n=== {product} ===")
         for row in result["rows"]:
             if row["verdict"] == "no_lcms_row":
-                continue  # counted in the summary; mostly observations outside the sampled sites
+                continue
             print(f"{row['verdict']:<10} {row['site']:<13} {row['date'] or '—':<11} "
                   f"GLOBE: {row['globe_label'] or '—'}  |  {row['lcms_year']}: {row['lcms_class']}")
         s = result["summary"]

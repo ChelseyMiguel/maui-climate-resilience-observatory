@@ -1,16 +1,3 @@
-"""Build an elevation grid for Upcountry Maui from public terrain tiles.
-
-Source: AWS Open Data "Terrain Tiles" (Tilezen / Mapzen), Terrarium encoding,
-where each PNG pixel stores elevation as  (R*256 + G + B/256) - 32768  metres.
-For Hawaii these come largely from USGS 3DEP. Public, no key.
-
-The PNGs are decoded with zlib in pure Python (8-bit RGB, non-interlaced, as
-Terrarium tiles are), so no imaging library is added to the project. The result
-is a compact Int16 grid the 3D map can turn into a terrain mesh.
-
-    python scripts/fetch_terrain.py
-"""
-
 from __future__ import annotations
 
 import json
@@ -27,10 +14,10 @@ OUT_BIN = ROOT / "data" / "terrain" / "upcountry_dem.i16"
 OUT_META = ROOT / "data" / "terrain" / "upcountry_dem.json"
 
 URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
-ZOOM = 13  # ~19 m per pixel at this latitude — finer than the 3D view needs
-# Pukalani study area plus the Olinda, Kula and Pulehu perimeters, with margin.
-BBOX = (-156.45, 20.70, -156.24, 20.88)  # west, south, east, north
-GRID_MAX = 320  # longest side of the exported grid, in samples
+ZOOM = 13
+
+BBOX = (-156.45, 20.70, -156.24, 20.88)
+GRID_MAX = 320
 
 
 def lonlat_to_tile(lon, lat, z):
@@ -41,7 +28,6 @@ def lonlat_to_tile(lon, lat, z):
 
 
 def decode_png_rgb(data: bytes) -> tuple[int, int, bytes]:
-    """Minimal PNG decoder for 8-bit truecolour (RGB or RGBA), non-interlaced."""
     assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
     pos, idat, width = 8, b"", None
     while pos < len(data):
@@ -84,7 +70,7 @@ def decode_png_rgb(data: bytes) -> tuple[int, int, bytes]:
                 line[k] = (line[k] + pred) & 0xFF
         out[row * stride:(row + 1) * stride] = line
         prev = line
-    if bpp == 4:  # drop alpha
+    if bpp == 4:
         out = bytearray(b for j, b in enumerate(out) if j % 4 != 3)
     return width, height, bytes(out)
 
@@ -107,7 +93,7 @@ def main() -> None:
     print(f"tiles x {tx0}..{tx1}, y {ty0}..{ty1} at z{ZOOM} "
           f"({(tx1 - tx0 + 1) * (ty1 - ty0 + 1)} tiles)")
 
-    # Decode every tile into one mosaic of elevations.
+
     tiles_w, tiles_h = tx1 - tx0 + 1, ty1 - ty0 + 1
     W, H = tiles_w * 256, tiles_h * 256
     mosaic = [0.0] * (W * H)
@@ -121,17 +107,14 @@ def main() -> None:
                     j = (r * w + c) * 3
                     mosaic[base + c] = rgb[j] * 256 + rgb[j + 1] + rgb[j + 2] / 256 - 32768
 
-    # Crop to the bbox in mosaic-pixel space, then resample to the grid size.
+
     px0, py0 = (x0f - tx0) * 256, (y0f - ty0) * 256
     px1, py1 = (x1f - tx0) * 256, (y1f - ty0) * 256
     span_x, span_y = px1 - px0, py1 - py0
     scale = GRID_MAX / max(span_x, span_y)
     gw, gh = max(2, round(span_x * scale)), max(2, round(span_y * scale))
 
-    # Rows are spaced evenly in LATITUDE (and columns in longitude), not in the
-    # tiles' Web Mercator space, so any consumer can map lat/lon to a grid cell
-    # with plain linear interpolation. Each target latitude is converted to its
-    # Mercator row before sampling the mosaic.
+
     grid = []
     for gy in range(gh):
         lat = north - gy * (north - south) / (gh - 1)

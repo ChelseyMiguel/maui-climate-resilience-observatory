@@ -1,18 +1,3 @@
-"""ESA WorldCover 2021 (v200) land cover for the terrain box, and how the
-study's browning splits across land-cover classes.
-
-Source: the public AWS bucket esa-worldcover (CC BY 4.0, ESA WorldCover
-project 2021 / Zanaga et al. 2022). 10 m classes from Sentinel-1 + Sentinel-2.
-
-Products:
-  data/context/worldcover_2021.tif     uint8 classes, EPSG:4326, terrain box
-  data/research/worldcover_browning.json
-      for each class inside the study area: pixels, share of the study area,
-      and the share of its pixels with study dNDVI < -0.10 (the study raster,
-      unchanged; WorldCover resampled to its 10 m UTM grid, nearest)
-
-Run:  .venv/bin/python scripts/remote_sensing/worldcover.py
-"""
 from __future__ import annotations
 
 import json

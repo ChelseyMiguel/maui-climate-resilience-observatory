@@ -1,20 +1,3 @@
-"""Overlay the Hawaii Statewide GIS layers on our whole-island Sentinel-2 results.
-
-Questions, answered on the 60 m island grid (data/research/island_annual.tif):
-  1. How much did each moisture zone brown from the 2019 to the 2022 dry season?
-  2. Did former sugarcane/pineapple land brown differently from the rest?
-  3. How did land inside each DLNR fire-risk rating brown?
-  4. Which DLNR fire-risk rating did each 2023 fire burn in?
-  5. What are the study area's own moisture zone, fire rating, response zone and history?
-
-"Browned" = dry-season NDVI fell by more than 0.10 from 2019 to 2022, the study's
-threshold, here at 60 m (exploratory; the 10 m study raster is unchanged). The fire-risk
-polygons cover populated areas only, so most land is "not rated"; that is reported as such,
-never as low risk.
-
-Output: data/research/portal_overlays.json
-Run:    .venv/bin/python scripts/remote_sensing/portal_overlays.py
-"""
 from __future__ import annotations
 
 import json
@@ -29,7 +12,7 @@ from rasterio.warp import transform_geom
 
 ROOT = Path(__file__).resolve().parents[2]
 PORTAL = ROOT / "data" / "context" / "hawaii_portal"
-RISK_ORDER = {"High": 3, "Medium": 2, "Low": 1}          # where polygons overlap, the higher rating wins
+RISK_ORDER = {"High": 3, "Medium": 2, "Low": 1}
 MOISTURE = ["Arid", "Very Dry", "Moderately Dry", "Seasonal Mesic", "Moist Mesic", "Moderately Wet", "Very Wet"]
 THRESHOLD = -0.1
 
@@ -39,7 +22,6 @@ def feats(name: str) -> list[dict]:
 
 
 def burn(shapes, shape, transform, default=1):
-    """Rasterise (geometry, value) pairs from EPSG:4326 onto the island grid."""
     pairs = [(transform_geom("EPSG:4326", "EPSG:32604", g), v) for g, v in shapes if g]
     return rasterize(pairs, out_shape=shape, transform=transform, fill=0, dtype="uint8") if pairs else np.zeros(shape, "uint8")
 
@@ -86,7 +68,7 @@ def main() -> int:
         "never_plantation": stats(change, n19, n22, land & ~ever),
         "share_of_island_land_in_plantation": round(float((land & ever).sum() / land.sum()), 4),
     }
-    # Plantation land is mostly dry, so compare like with like: inside each moisture zone.
+
     out["plantation_within_moisture_zone"] = [
         {"zone": name, "plantation": stats(change, n19, n22, land & ever & (zones == i + 1)),
          "other": stats(change, n19, n22, land & ~ever & (zones == i + 1))} for i, name in enumerate(MOISTURE)]

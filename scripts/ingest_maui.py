@@ -23,7 +23,6 @@ PHOTO_DIR = client.PHOTO_DIR
 
 
 def download_photos(sites: list[client.LandCoverSite]) -> tuple[int, list[str]]:
-    """Mirror each observation's photos locally; returns (saved, errors)."""
     saved_total, errors = 0, []
     for index, site in enumerate(sites, 1):
         saved, errs = client.mirror_photos(site)

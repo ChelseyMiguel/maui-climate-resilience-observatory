@@ -24,18 +24,13 @@ OUT_PATH = Path(__file__).resolve().parents[1] / "data" / "research" / "lcms_mau
 
 SECTIONS = ("Vegetation Change", "Land Cover", "Land Use")
 
-# "2018(Acres)" / "2023(Area %)"
+
 _HEADER_RE = re.compile(r"^(\d{4})\(Acres\)$")
 _NUMBER_RE = re.compile(r"^[\d,]+$")
 _PERCENT_RE = re.compile(r"^[\d.]+%$")
 
 
 def _parse_section(lines: list[str], start: int) -> tuple[dict, int]:
-    """Read one table starting at the 'Class' header line.
-
-    Returns {class_name: {year: {"acres": int, "pct": float}}} and the index
-    where the table ended.
-    """
     i = start
     years: list[str] = []
     while i < len(lines):
@@ -56,8 +51,8 @@ def _parse_section(lines: list[str], start: int) -> tuple[dict, int]:
         if line.startswith("Figure ") or line in SECTIONS:
             break
         if _NUMBER_RE.match(line) and name_parts:
-            # A class name is followed by len(years) acre values then the same
-            # number of percentages.
+
+
             acres = []
             for _ in range(len(years)):
                 if i < len(lines) and _NUMBER_RE.match(lines[i]):
@@ -89,7 +84,7 @@ def parse_report(path: Path) -> dict:
     out: dict[str, dict] = {}
     for idx, line in enumerate(lines):
         if line in SECTIONS and idx + 1 < len(lines):
-            # The 'Class' header follows the section title and the area subtitle.
+
             for probe in range(idx, min(idx + 4, len(lines))):
                 if lines[probe] == "Class":
                     rows, _ = _parse_section(lines, probe + 1)
@@ -102,7 +97,6 @@ def parse_report(path: Path) -> dict:
 
 
 def merge(reports: list[dict]) -> dict:
-    """Merge per-report tables into {section: {class: {year: {...}}}}."""
     merged: dict[str, dict] = {}
     for report in reports:
         for section, rows in report.items():

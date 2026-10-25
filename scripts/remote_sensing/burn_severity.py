@@ -49,7 +49,6 @@ DNDVI_BINS = [(-9.0, -0.2), (-0.2, -0.1), (-0.1, 0.0), (0.0, 9.0)]
 
 
 def severity_class(v: np.ndarray) -> np.ndarray:
-    """Index into CLASSES for each dNBR value (-1 for NaN)."""
     out = np.full(v.shape, -1, dtype=np.int8)
     for k, (lo, hi, _) in enumerate(CLASSES):
         out[(v >= lo) & (v < hi)] = k
@@ -69,7 +68,7 @@ def main() -> int:
     fires = json.loads((ROOT / "data" / "research" / "maui_fire_perimeters.geojson").read_text())
     fires2023 = [transform_geom("EPSG:4326", s2.UTM, f["geometry"]) for f in fires["features"] if f["properties"].get("year") == 2023]
     burned = ~geometry_mask(fires2023, out_shape=(h, w), transform=transform)
-    near = burned.copy()                                   # grow the burned mask by 500 m (25 px)
+    near = burned.copy()
     for _ in range(25):
         near[1:] |= near[:-1]; near[:-1] |= near[1:]; near[:, 1:] |= near[:, :-1]; near[:, :-1] |= near[:, 1:]
     offset = float(np.nanmedian(raw[~near]))
@@ -78,7 +77,7 @@ def main() -> int:
                  {"description": "Sentinel-2 dNBR minus the unburned offset, before (1 May-7 Aug 2023) minus after "
                                  f"(15 Aug-31 Oct 2023), 20 m; offset {offset:.4f}"})
     with rasterio.open(ROOT / "data" / "research" / "s2_regional_change.tif") as r:
-        prior = r.read(1)                                  # 2019 -> 2022 dNDVI, same 20 m grid
+        prior = r.read(1)
     assert prior.shape == dnbr.shape, "regional change and burn severity grids differ"
     report = {"unburned_offset": round(offset, 4), "unburned_pixels_used": int(np.isfinite(raw[~near]).sum()),
               "method": __doc__.split("\n\n")[1].strip(), "scenes_before": used_b, "scenes_after": used_a,
@@ -89,7 +88,7 @@ def main() -> int:
         geom = transform_geom("EPSG:4326", s2.UTM, f["geometry"])
         inside = ~geometry_mask([geom], out_shape=(h, w), transform=transform) & np.isfinite(dnbr)
         if inside.sum() < 25:
-            continue                                       # outside the terrain box (Lahaina)
+            continue
         v, cls = dnbr[inside], severity_class(dnbr[inside])
         ha = 20 * 20 / 10000
         by_prior = []

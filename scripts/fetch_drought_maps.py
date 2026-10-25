@@ -1,19 +1,3 @@
-"""Download U.S. Drought Monitor category maps for Maui, one week per year.
-
-The USDM publishes a national map every Tuesday: polygons for categories D0
-(abnormally dry) through D4 (exceptional drought). For a year-by-year comparison
-this takes the map for the week nearest 8 August — the same point in the dry
-season every year (and the date of the 2023 fires) — so years are compared at
-the same season rather than mixing wet- and dry-season maps.
-
-Each national file is 14-20 MB; only polygon parts that touch Maui are kept.
-
-Source: U.S. Drought Monitor, National Drought Mitigation Center, University of
-Nebraska-Lincoln (with USDA and NOAA). Public.
-
-    python scripts/fetch_drought_maps.py
-"""
-
 from __future__ import annotations
 
 import json
@@ -24,7 +8,7 @@ import httpx
 
 OUT = Path(__file__).resolve().parents[1] / "data" / "context" / "drought_maps"
 URL = "https://droughtmonitor.unl.edu/data/json/usdm_{d}.json"
-MAUI = (-156.75, 20.45, -155.95, 21.10)  # west, south, east, north
+MAUI = (-156.75, 20.45, -155.95, 21.10)
 YEARS = range(2018, 2025)
 CATEGORY = {0: "D0 Abnormally dry", 1: "D1 Moderate drought", 2: "D2 Severe drought",
             3: "D3 Extreme drought", 4: "D4 Exceptional drought"}
@@ -32,7 +16,7 @@ CATEGORY = {0: "D0 Abnormally dry", 1: "D1 Moderate drought", 2: "D2 Severe drou
 
 def tuesday_nearest_aug8(year: int) -> date:
     target = date(year, 8, 8)
-    back = (target.weekday() - 1) % 7          # days since the previous Tuesday
+    back = (target.weekday() - 1) % 7
     prev = target - timedelta(days=back)
     nxt = prev + timedelta(days=7)
     return prev if (target - prev) <= (nxt - target) else nxt

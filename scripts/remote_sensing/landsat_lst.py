@@ -1,18 +1,3 @@
-"""Land surface temperature over the study area, Landsat 8/9 thermal, 2013-2025.
-
-Source: Landsat Collection 2 Level-2 Surface Temperature (ST_B10, the
-Planetary Computer's `lwir11` asset), Tier 1, May-September. Same cloud mask
-and 30 m study grid as landsat_baseline.py. Kelvin = DN * 0.00341802 + 149.0;
-reported in degrees C. Landsat 8/9 only (one thermal sensor design): Landsat 7
-is left out rather than mixed in.
-
-Surface temperature is the skin temperature of the ground and canopy at the
-~10:30 a.m. overpass, not air temperature.
-
-Products: data/research/landsat_lst_dryseason.csv  year, lst_c_median, n_scenes, sensors
-          data/research/landsat_lst_annual.tif      per-pixel dry-season median, degC, one band per year
-Run:  .venv/bin/python scripts/remote_sensing/landsat_lst.py
-"""
 from __future__ import annotations
 
 import csv

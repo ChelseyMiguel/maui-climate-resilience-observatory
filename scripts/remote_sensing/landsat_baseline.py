@@ -1,28 +1,3 @@
-"""Landsat dry-season NDVI for the study area, 2000 onward, from Microsoft's
-Planetary Computer (free; no account: an anonymous SAS token signs the reads).
-
-Mirrors section 6 of notebooks/gee_exports.ipynb exactly, so either source can
-fill the app's "Was 2022 unusual?" chart (lib/landsat_baseline.py):
-  * Landsat 5 TM, 7 ETM+, 8 and 9 OLI, Collection 2 Level-2, Tier 1 only;
-  * May-September of each year;
-  * per scene: QA_PIXEL bits 1 (dilated cloud), 3 (cloud), 4 (cloud shadow)
-    masked, reflectance = DN * 0.0000275 - 0.2, NDVI from NIR and red;
-  * per-pixel median NDVI over the year's scenes, then the mean over the
-    1.5 km study-area circle at 30 m.
-
-Path 063 is stored in UTM zone 5; scenes are warped (nearest neighbour, so QA
-bits are not blended) onto a 30 m EPSG:32604 grid sharing the study raster's
-origin. Landsat 7 scan-line gaps after May 2003 are no-data and simply masked.
-
-Products:
-  data/research/pukalani_landsat_ndvi_dryseason.csv   year, ndvi_dry_median, n_scenes,
-                                                      sensors, clear_pixel_share
-  data/research/landsat_aoi_annual.tif                per-pixel dry-season median NDVI,
-                                                      one band per year, 30 m
-  data/research/landsat_manifest.json                 scenes used per year
-
-Run:  .venv/bin/python scripts/remote_sensing/landsat_baseline.py
-"""
 from __future__ import annotations
 
 import csv
@@ -47,15 +22,15 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "data" / "research"
 STAC = "https://planetarycomputer.microsoft.com/api/stac/v1/search"
 SAS = "https://planetarycomputer.microsoft.com/api/sas/v1/token/landsateuwest/landsat-c2"
-CENTRE = (-156.344856, 20.838722)              # same as every script here
+CENTRE = (-156.344856, 20.838722)
 RADIUS = 1500.0
 YEARS = range(2000, 2026)
 PLATFORMS = {"landsat-5": ("nir08", "red"), "landsat-7": ("nir08", "red"),
              "landsat-8": ("nir08", "red"), "landsat-9": ("nir08", "red")}
 CLOUD_BITS = (1 << 1) | (1 << 3) | (1 << 4)
-# 30 m grid on the study raster's origin (774820, 2308080), EPSG:32604, 100 x 100.
+
 ORIGIN, RES, SIZE = (774820.0, 2308080.0), 30.0, 100
-CACHE = ROOT / "data" / "cache" / "landsat"          # gitignored
+CACHE = ROOT / "data" / "cache" / "landsat"
 
 os.environ.setdefault("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
 os.environ.setdefault("GDAL_HTTP_MAX_RETRY", "4")
@@ -68,7 +43,6 @@ _lock = threading.Lock()
 
 
 def _open(req, tries: int = 6) -> bytes:
-    """urlopen with back-off: the Planetary Computer rate-limits (HTTP 429)."""
     for attempt in range(tries):
         try:
             with urllib.request.urlopen(req, timeout=90) as r:
@@ -81,8 +55,6 @@ def _open(req, tries: int = 6) -> bytes:
 
 
 def token() -> str:
-    """Anonymous SAS token for the landsat-c2 container, shared by all threads
-    and refreshed before it expires."""
     with _lock:
         if time.time() > _token["expires"] - 300:
             _token["value"] = json.loads(_open(SAS))["token"]
@@ -110,8 +82,6 @@ def grid():
 
 
 def scene_ndvi(item: dict, transform) -> np.ndarray | None:
-    """One scene's NDVI on the 30 m study grid (NaN = masked or no data), or
-    None if a file can't be read (recorded in the manifest, never filled)."""
     try:
         return _scene_ndvi(item, transform)
     except rasterio.errors.RasterioIOError as e:
@@ -129,7 +99,7 @@ def _scene_ndvi(item: dict, transform) -> np.ndarray:
                 resampling=Resampling.nearest, src_nodata=src.nodata) as vrt:
             out[key] = vrt.read(1)
     qa = out["qa_pixel"].astype("uint16")
-    bad = ((qa & CLOUD_BITS) != 0) | (out[nir_key] == 0) | (out[red_key] == 0) | (qa == 1)   # QA bit 0 = fill
+    bad = ((qa & CLOUD_BITS) != 0) | (out[nir_key] == 0) | (out[red_key] == 0) | (qa == 1)
     nir = out[nir_key].astype("float32") * 0.0000275 - 0.2
     red = out[red_key].astype("float32") * 0.0000275 - 0.2
     with np.errstate(all="ignore"):
@@ -146,7 +116,7 @@ def main() -> int:
     for year in YEARS:
         items = search(year)
         cached = CACHE / f"{year}.npz"
-        if cached.exists():                                     # resumable reruns
+        if cached.exists():
             z = np.load(cached, allow_pickle=False)
             stack, skipped = list(z["stack"]), list(z["skipped"])
         else:

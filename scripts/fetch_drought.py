@@ -1,15 +1,3 @@
-"""Download the U.S. Drought Monitor's weekly drought index for Maui County.
-
-DSCI (Drought Severity and Coverage Index) weights the share of the county in
-each drought category D0-D4 into one 0-500 number: 0 means no drought anywhere,
-500 means the whole county in D4 (exceptional). It is the series the manuscript
-correlates against NDVI (r = -0.47).
-
-Source: USDM data services, University of Nebraska-Lincoln (public, no key).
-
-    python scripts/fetch_drought.py
-"""
-
 from __future__ import annotations
 
 import csv
@@ -43,9 +31,7 @@ def main(start: str = "1/1/2018", end: str = "12/31/2024") -> None:
         writer.writeheader()
         writer.writerows(rows)
 
-    # Percent of the county in each category, every week. Needed to say anything
-    # about D4 accurately: one map per year cannot show whether a category
-    # appeared at other times of year.
+
     cats = httpx.get(
         URL_CATEGORIES,
         params={"aoi": MAUI_COUNTY_FIPS, "startdate": start, "enddate": end, "statisticsType": 1},

@@ -21,7 +21,6 @@ from lib.globe_api import client
 
 
 def _clean_note(note: str, limit: int = 60) -> str:
-    """One-line, truncated field note safe to drop into a JS comment."""
     flat = " ".join(note.split())
     return flat[: limit - 1] + "…" if len(flat) > limit else flat
 
@@ -46,9 +45,7 @@ def main() -> None:
         complete_only=args.complete_only,
     )
 
-    # One row per *site*, not per observation — repeat visits share coordinates,
-    # and Earth Engine only needs each location once. Averaging the visits gives
-    # a slightly better fix than picking one arbitrarily.
+
     by_site: dict[str, list] = {}
     for site in sites:
         by_site.setdefault(site.site_name, []).append(site)
@@ -60,8 +57,8 @@ def main() -> None:
     for index, (name, observations) in enumerate(entries):
         lat = sum(o.latitude for o in observations) / len(observations)
         lon = sum(o.longitude for o in observations) / len(observations)
-        # The separating comma must come BEFORE the comment, or it ends up
-        # inside it and the array silently loses an element.
+
+
         separator = "," if index < len(entries) - 1 else ""
         note = observations[0].field_notes
         comment = f"  // {_clean_note(note)}" if note else ""

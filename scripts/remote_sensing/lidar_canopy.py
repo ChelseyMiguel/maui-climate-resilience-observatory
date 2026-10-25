@@ -1,27 +1,3 @@
-"""Lidar terrain and canopy height for the study area, from the USGS 3DEP archive.
-
-Source: the 2022-2023 NOAA/USGS QL1 lidar for Maui and Oahu (work unit
-HI_NOAAMauiOahu_2), served as an Entwine Point Tile (EPT) octree in the public
-AWS bucket usgs-lidar-public. Points over the study area carry GPS times in
-February 2023: after the 2022 drought, before the August 2023 fires.
-
-Only the octree down to depth 11 is read: ~5 points per m2 of the survey's
-~8+, enough for a 2 m grid, and ~300 MB instead of ~2 GB.
-
-Products, on a 2 m grid aligned with the study raster (EPSG:32604):
-  data/research/lidar_aoi.tif         uint16: band 1 DTM (ground, class 2) in dm,
-                                      band 2 CHM = highest return - DTM in cm,
-                                      band 3 hillshade of the DTM (az 315, alt 45)
-  data/research/lidar_points.bin      ~300k thinned points for the 3D view,
-                                      quantised to 9 bytes (layout in the manifest)
-  data/research/lidar_manifest.json   nodes, point counts, density, dates, fills
-
-DTM cells with no ground point (under buildings, dense canopy) are filled from
-neighbouring ground cells (iterative mean, at most 8 passes) and counted in the
-manifest; the CHM is left empty where the DTM had to be filled more than 2 passes.
-
-Run:  .venv/bin/python scripts/remote_sensing/lidar_canopy.py
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -46,15 +22,14 @@ OUT = ROOT / "data" / "research"
 EPT = "https://usgs-lidar-public.s3.amazonaws.com/HI_NOAAMauiOahu_2_B20"
 MAX_DEPTH = 11
 RES = 2.0
-NOISE = (7, 18)               # low / high noise
+NOISE = (7, 18)
 GROUND = 2
 
 
-CACHE = ROOT / "data" / "cache" / "lidar"          # gitignored; makes reruns resumable
+CACHE = ROOT / "data" / "cache" / "lidar"
 
 
 def _get(url: str, tries: int = 5) -> bytes:
-    """GET with retries: the archive occasionally drops a connection."""
     for attempt in range(tries):
         try:
             with urllib.request.urlopen(url, timeout=120) as r:
@@ -115,7 +90,7 @@ def grid_stat(ix, iy, values, shape, how):
     flat = iy * shape[1] + ix
     if how == "max":
         order = np.argsort(values)
-        out.flat[flat[order]] = values[order]            # last write wins = max
+        out.flat[flat[order]] = values[order]
     else:
         s = np.bincount(flat, weights=values, minlength=out.size)
         n = np.bincount(flat, minlength=out.size)
@@ -125,8 +100,6 @@ def grid_stat(ix, iy, values, shape, how):
 
 
 def fill(a: np.ndarray, passes: int) -> tuple[np.ndarray, np.ndarray]:
-    """Fill NaN cells from the mean of valid 8-neighbours, `passes` times.
-    Returns the filled array and the pass number at which each cell was filled (0 = measured)."""
     a = a.copy()
     when = np.where(np.isnan(a), -1, 0)
     for p in range(1, passes + 1):
@@ -137,7 +110,7 @@ def fill(a: np.ndarray, passes: int) -> tuple[np.ndarray, np.ndarray]:
         stack = np.stack([pad[1 + dy:pad.shape[0] - 1 + dy, 1 + dx:pad.shape[1] - 1 + dx]
                           for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx])
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)       # all-NaN neighbourhoods
+            warnings.simplefilter("ignore", RuntimeWarning)
             m = np.nanmean(stack, axis=0)
         newly = hole & ~np.isnan(m)
         a[newly] = m[newly]
@@ -146,8 +119,6 @@ def fill(a: np.ndarray, passes: int) -> tuple[np.ndarray, np.ndarray]:
 
 
 def hillshade(dem: np.ndarray, res: float, az=315.0, alt=45.0) -> np.ndarray:
-    """Lambertian shading: surface normal . sun vector. Rows run north -> south,
-    so dz/dNorth is minus the row gradient. az is clockwise from north."""
     d_row, d_col = np.gradient(dem, res)
     dz_de, dz_dn = d_col, -d_row
     norm = np.sqrt(dz_de ** 2 + dz_dn ** 2 + 1)
@@ -188,8 +159,7 @@ def main() -> int:
     chm[(filled > 2) | (filled < 0)] = np.nan
     hs = hillshade(dtm, RES)
 
-    # Stored as scaled uint16 to keep the repository small (65535 = no data):
-    # DTM in decimetres, CHM in centimetres, hillshade 0-255. DSM = DTM + CHM.
+
     def u16(a, scale):
         out = np.full(a.shape, 65535, dtype="uint16")
         ok = np.isfinite(a)
@@ -205,9 +175,7 @@ def main() -> int:
         dst.update_tags(source="USGS 3DEP / NOAA lidar HI_NOAAMauiOahu_2 (2022-2023, QL1), EPT depth <= 11",
                         units="band 1 DTM decimetres, band 2 CHM centimetres (highest return minus ground), band 3 hillshade")
 
-    # Thinned points for the 3D view, quantised (9 bytes each): uint16 easting and
-    # northing in dm from the box's SW corner, uint16 z in cm above z_min, int16
-    # height above ground in cm, uint8 class.
+
     hag = z - dtm[iy, ix]
     k = max(1, len(z) // 300_000)
     sel = slice(None, None, k)
