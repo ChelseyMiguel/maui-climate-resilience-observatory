@@ -16,11 +16,16 @@ Browning Viewer shows Upcountry Maui residents, teachers, NASA GLOBE observers a
 
 ## What technical difficulties did you face programming your app?
 
-I wanted a 3D model of a GLOBE site from its six photos, so I tried structure-from-motion on the one site with 8 visits. Only 12 of 496 photo pairs matched, because the scene was repetitive grass under changing light, so no model could be built. I turned the failure into a 360 degree cube-map viewer and a plan for a better capture method.
+The hardest problems were about getting correct numbers from messy public data.
 
-A second difficulty was trust. When I rebuilt my result from public Sentinel-2 data, it first matched my study poorly (r = 0.10). The archive had already removed a reflectance offset I was subtracting again, and some reprocessed scenes were counted twice. After fixing both, the rebuild matched my study at r = 0.85, and 77% of pixels fell in the same class. I also had to keep the 3D view honest: height shows terrain only, and greenness change is shown by colour, never as height. [Add one difficulty in your own words.]
+1. **3D from photos failed.** Structure-from-motion on the one GLOBE site with 8 visits matched only 12 of 496 photo pairs (repetitive grass, changing light), so no 3D model was possible. I turned it into a 360 degree cube-map viewer.
+2. **My rebuild disagreed with my study.** Rebuilding the 2022 minus 2019 change from public Sentinel-2 data first gave r = 0.10. The archive had already removed a reflectance offset I was subtracting again, and reprocessed scenes were counted twice. Fixing both gave r = 0.85, with 77% of pixels in the same class.
+3. **One exact number everywhere.** The browned count (30,037 of 70,280 pixels, 42.7%) had to be identical in Python, in the browser's slider and in the charts. The browser compares 32-bit floats exactly as stored in the GeoTIFF, and a test checks it against the real raster.
+4. **Public servers push back.** A satellite service rate-limited me (HTTP 429), so I added back-off and fewer parallel reads. One unreadable Landsat file is skipped and listed, never filled in.
+5. **A false signal.** Burn severity showed "low severity" on unburned grass because grass dries in summer. I subtracted the typical change on unburned land and clipped the map to the fire perimeters.
+6. **No fabricated data.** Services that needed a login (a rainfall API) were left out instead of faked, and the 3D view shows terrain height only, never greenness as height.
 
-*(157 words)*
+*(247 words)*
 
 ## What improvements would you make if you were to create a 2.0 version of your app?
 
@@ -30,11 +35,19 @@ The biggest limit is that the 3D views come from terrain and lidar, not from the
 
 ## Did you use AI in the creation, development, or functionality of your app?
 
-Yes. I used Claude (Anthropic) through Claude Code as a pair-programming assistant, September to October 2026. Claude wrote much of the application code from my direction: the Python and FastAPI back end, the GLOBE API client, the Svelte, MapLibre and three.js front end, the 360 degree viewer, the data scripts, and the automated tests. It also helped find bugs, fetch public datasets such as the Hawaii Statewide GIS and the U.S. Drought Monitor, and draft documentation. The app itself uses no AI at runtime.
+Yes. I used Claude (Anthropic) through Claude Code as a coding assistant from September to October 2026. The app itself uses no AI when it runs.
 
-What I contributed: the NASA SEES research question and the original Earth Engine analysis (NDVI and NBR, 2019 versus 2022), which every result comes from. I wrote the original Earth Engine scripts and ran the Earth Engine exports (NDVI, NBR, rainfall and land-cover classes) that the app's data comes from. I chose the app's name and logo, set the design direction (a dark, flat look with square corners, no gradients), and decided which features and data to add. I ran the app locally, checked what it showed, and asked for fixes. I set the rules that every number must trace to a source and that nothing is fabricated or simulated, and I checked results against my own study. The research findings, the choice of what to show, and the final decisions are mine. The full disclosure is in docs/ai-disclosure-and-code-tour.md in the repository.
+**What the AI did.** Claude wrote most of the application code from my directions:
+- The Python and FastAPI back end, and the NASA GLOBE API client.
+- The Svelte, TypeScript, MapLibre and three.js front end: Map Explorer, 3D view, Analysis charts and the logo header.
+- The 360 degree viewer.
+- Data scripts for Sentinel-2, Landsat, lidar, burn severity, Drought Monitor and Hawaii state GIS data.
+- Earth Engine scripts, the Render deploy file, and 258 Python and 40 JavaScript tests.
+- Bug fixes, and drafts of documentation and these answers.
 
-*(about 232 words)*
+**What I did.** I did the NASA SEES research and wrote the original Earth Engine analysis (NDVI and NBR, 2019 versus 2022), which every result comes from. I ran the Earth Engine exports and uploaded the rainfall, land-cover and LCMS data. I chose the name, logo and design direction, decided which features and data to add, required that every number trace to a source with nothing fabricated, ran the app, checked it against my study, and asked for fixes. [Add anything else you did.]
+
+*(202 words)*
 
 ## What did you learn or take away from participating in the Congressional App Challenge?
 
