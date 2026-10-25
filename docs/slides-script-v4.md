@@ -44,26 +44,28 @@ in slide 1 and slide 4 and the title card.
 > 0.47. ✂ *A USDA Forest Service map partly agreed.* That doesn't show the browned land burned. It shows the land was
 > drying before the fires.
 
-## Slide 3 — How other sites turn satellite data into a product (1:03–1:25)
+## Slide 3 — How other sites turn satellite data into a product, and the gap (1:03–1:25)
 
 **On slide**
 - NASA FIRMS: satellite fire detections, mapped within hours
 - Global Forest Watch: satellite images processed into forest-loss alerts
 - U.S. Drought Monitor: many measurements blended into one weekly map
 - Same recipe: raw data → one clear layer → a map anyone can open
-- Mine: the recipe at community scale, with the source one click away
+- Gap: none shows one community's own change, with every source to check
+- Mine: that recipe at community scale
 
 **Say**
 > Websites already turn satellite data into something people can use. NASA FIRMS maps fire detections from satellites
 > within hours. Global Forest Watch processes satellite images into forest-loss alerts. The Drought Monitor blends many
 > measurements into one weekly map. Each takes raw data, processes it into one clear layer, and shows it on a map anyone
-> can open. ✂ *I used the same recipe for my own NASA SEES results, but at the scale of one community, and every layer
-> shows its source and its limits.*
+> can open. But the Drought Monitor covers a whole county, not a place. ✂ *And my results lived in a poster and in code,
+> so no one place let a community see them, or check them.* So I used the same recipe at community scale: every layer
+> shows its source and its limits.
 
 **Before you say it:** open each site's own "About" or "Data" page and confirm the one-line description matches what you
 say (FIRMS: active-fire detections; GFW: forest-loss alerts; USDM: weekly authored map). No numbers are quoted on this slide,
 so there is nothing to trace, but the descriptions must be true in the sites' own words. Add a screenshot of each site.
-Time: about 34 seconds with the ✂ sentence, 23 without (the slot is 22). Cut the ✂ sentence. The totals in the header were counted before this slide changed, so re-time the whole script.
+Time: about 43 seconds with the ✂ sentence, 34 without (the slot is 22), so it needs a real cut: drop the FIRMS or Global Forest Watch sentence, or give slide 3 more time. Cut the ✂ sentence. The totals in the header were counted before this slide changed, so re-time the whole script.
 
 ## Slide 4 — How it grew into an app (1:25–1:57)
 
