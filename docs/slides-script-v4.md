@@ -34,14 +34,19 @@ in slide 1 and slide 4 and the title card.
 - Sentinel-2 satellite, dry seasons 2019 vs 2022, Pukalani Park (10 m)
 - 42.7% of 70,280 pixels browned · biggest patch 130.7 ha
 - Drought and greenness anomalies move together: r = −0.47
+- Not just one park: Maui's 2022 dry season was its least green of 2017–2025
+- 26 years of Landsat: 2022 is the lowest at Pukalani
+- Hottest dry-season ground of 13 years: 44.2 °C
 - Browning ≠ burning: the study area did not burn
 - Figure: the browning map (red = browned)
+
+**Time:** slide 2 now runs about 48 seconds with every ✂ and about 40 without, against a 33-second slot. Cut both ✂ sentences, then trim elsewhere or re-time.
 
 **Say**
 > My research asked: did the 2022 drought brown the vegetation before the fires? With Sentinel-2 imagery in Google Earth
 > Engine, I compared the 2019 and 2022 dry seasons around Pukalani Park. Of 70,280 ten-meter pixels, 42.7 percent
 > browned; the largest patch covered 130.7 hectares. Drought and greenness anomalies were correlated, r equals minus
-> 0.47. ✂ *A USDA Forest Service map partly agreed.* That doesn't show the browned land burned. It shows the land was
+> 0.47. Browning wasn't just one park. Across the whole island, 2022 was the least green dry season of nine years, and at Pukalani the lowest in 26 years of Landsat. ✂ *The ground was also the hottest of thirteen dry seasons, 44 degrees Celsius.* ✂ *A USDA Forest Service map partly agreed.* That doesn't show the browned land burned. It shows the land was
 > drying before the fires.
 
 ## Slide 3 — How other sites turn satellite data into a product, and the gap (1:03–1:25)
@@ -116,8 +121,9 @@ Time: about 43 seconds with the ✂ sentence, 34 without (the slot is 22), so it
 | 20 weeks of exceptional drought, most since 2000 | U.S. Drought Monitor, Maui County; 2010 had 9, 2021 had 8 (docs/evidence-claims.md, "Hawaii state data") |
 | Do **not** say "worst drought on record" | By annual drought index 2022 ranks 3rd since 2000 (2010 and 2025 higher) |
 | 42.7% of 70,280 pixels, 130.7 ha, r = −0.47 | Manuscript (Miguel et al. 2026); r = −0.47 is the monthly anomaly method |
-| 2022 least green since 2017 across Maui | Sentinel-2, island median NDVI 0.470 vs 0.557 in 2019 |
+| Island 2022 least green of nine dry seasons (2017–2025) | Sentinel-2, island median NDVI 0.470 vs 0.557 in 2019 |
 | Lowest of 26 years of Landsat | Landsat 2000–2025, study area, z = −1.6 vs 2000–2018 |
+| Hottest of 13 dry seasons, 44.2 °C (Landsat surface temperature; r = −0.80 with NDVI) | docs/evidence-claims.md, surface temperature section |
 | Rebuilt result matches, r = 0.85 | Independent Sentinel-2 rebuild vs the study raster, 70,280 pixels |
 | ~three quarters old plantation land | 76% of the study circle in sugarcane/pineapple land 1900–1937 (state maps) |
 | Nearly 300 tests | 258 Python + 40 JavaScript |
