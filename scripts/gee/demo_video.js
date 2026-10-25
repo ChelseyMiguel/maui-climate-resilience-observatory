@@ -1,81 +1,90 @@
-// demo_video.js
-// Paste into a NEW script tab at code.earthengine.google.com and press Run.
-//
-// The NASA SEES analysis, live: Sentinel-2 dry-season (May-Sep) 2019 vs 2022 around
-// Pukalani Park. Same method as the study: SCL cloud mask, tile cloud < 60 %,
-// median composites, NDVI = (B8-B4)/(B8+B4), dNDVI = 2022 - 2019, browned = dNDVI < -0.10.
-//
-// Check against the study (10 m, EPSG:32604): 70,280 valid pixels, 30,037 browned (42.7 %).
-// Earth Engine's composite can differ by a few pixels or tenths of a percent; if it is
-// far off, say so rather than forcing a match.
-//
-// Chelsey Miguel | NASA SEES
+var aoi = ee.Geometry.Point([-156.344856, 20.838722]).buffer(1500);
 
-var AOI = ee.Geometry.Point([-156.344856, 20.838722]).buffer(1500);
-var PROJ = 'EPSG:32604';
-
-function maskS2(img) {
+function cleanImage(img) {
   var scl = img.select('SCL');
   var bad = scl.eq(1).or(scl.eq(3)).or(scl.eq(8)).or(scl.eq(9)).or(scl.eq(10));
-  return img.updateMask(bad.not()).divide(10000).copyProperties(img, ['system:time_start']);
+  return img.updateMask(bad.not()).divide(10000);
 }
 
-function dry(year) {
+function drySeason(year) {
   return ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-    .filterBounds(AOI)
+    .filterBounds(aoi)
     .filterDate(year + '-05-01', year + '-10-01')
     .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 60))
-    .map(maskS2);
+    .map(cleanImage);
 }
 
-var c19 = dry(2019), c22 = dry(2022);
-var m19 = c19.median(), m22 = c22.median();
-var ndvi19 = m19.normalizedDifference(['B8', 'B4']).rename('NDVI_2019');
-var ndvi22 = m22.normalizedDifference(['B8', 'B4']).rename('NDVI_2022');
-var d = ndvi22.subtract(ndvi19).rename('dNDVI').clip(AOI);
-var browned = d.lt(-0.10).selfMask().rename('browned');
+var scenes2019 = drySeason(2019);
+var scenes2022 = drySeason(2022);
+var image2019 = scenes2019.median();
+var image2022 = scenes2022.median();
 
-// ---- Map layers (toggle these on camera, in this order) ----
+var ndvi2019 = image2019.normalizedDifference(['B8', 'B4']).rename('ndvi2019');
+var ndvi2022 = image2022.normalizedDifference(['B8', 'B4']).rename('ndvi2022');
+var change = ndvi2022.subtract(ndvi2019).rename('change').clip(aoi);
+var browned = change.lt(-0.10).selfMask().rename('browned');
+
+var trueColor = {bands: ['B4', 'B3', 'B2'], min: 0.02, max: 0.28};
+var greenness = {min: 0.1, max: 0.8, palette: ['#7a4b1f', '#c9a66b', '#e8e0a0', '#8fbf5a', '#2e7d32', '#0b4d1a']};
+var changeColors = {min: -0.4, max: 0.2, palette: ['#8c2d04', '#fd8d3c', '#f7f7f7', '#41b6c4', '#0c2c84']};
+
 Map.setOptions('SATELLITE');
-Map.centerObject(AOI, 14);
-var tc = {bands: ['B4', 'B3', 'B2'], min: 0.02, max: 0.28};
-var veg = {min: 0.1, max: 0.8, palette: ['#7a4b1f', '#c9a66b', '#e8e0a0', '#8fbf5a', '#2e7d32', '#0b4d1a']};
-Map.addLayer(m19.clip(AOI), tc, '1  True colour, dry season 2019');
-Map.addLayer(m22.clip(AOI), tc, '2  True colour, dry season 2022', false);
-Map.addLayer(ndvi19.clip(AOI), veg, '3  NDVI 2019', false);
-Map.addLayer(ndvi22.clip(AOI), veg, '4  NDVI 2022', false);
-Map.addLayer(d, {min: -0.4, max: 0.2, palette: ['#8c2d04', '#fd8d3c', '#f7f7f7', '#41b6c4', '#0c2c84']}, '5  Change in NDVI (2022 - 2019)', false);
-Map.addLayer(browned, {palette: ['#ff7a00']}, '6  Browned: dNDVI < -0.10', false);
-Map.addLayer(ee.Image().byte().paint(AOI, 1, 2), {palette: ['#ffffff']}, 'Study area (1.5 km)');
+Map.centerObject(aoi, 14);
+Map.addLayer(image2019.clip(aoi), trueColor, '1  True colour 2019');
+Map.addLayer(image2022.clip(aoi), trueColor, '2  True colour 2022', false);
+Map.addLayer(ndvi2019.clip(aoi), greenness, '3  NDVI 2019', false);
+Map.addLayer(ndvi2022.clip(aoi), greenness, '4  NDVI 2022', false);
+Map.addLayer(change, changeColors, '5  Change in NDVI', false);
+Map.addLayer(browned, {palette: ['#ff7a00']}, '6  Browned', false);
+Map.addLayer(ee.Image().byte().paint(aoi, 1, 2), {palette: ['#ffffff']}, 'Study area');
 
-// ---- Numbers (appear in the Console) ----
-var valid = d.mask().rename('valid').reduceRegion({
-  reducer: ee.Reducer.sum(), geometry: AOI, scale: 10, crs: PROJ, maxPixels: 1e9}).get('valid');
-var nb = browned.unmask(0).reduceRegion({
-  reducer: ee.Reducer.sum(), geometry: AOI, scale: 10, crs: PROJ, maxPixels: 1e9}).get('browned');
-print('Scenes used, dry season 2019:', c19.size());
-print('Scenes used, dry season 2022:', c22.size());
-print('Valid 10 m pixels:', valid);
-print('Browned pixels (dNDVI < -0.10):', nb);
-print('Share browned (%):', ee.Number(nb).divide(ee.Number(valid)).multiply(100));
-print('Browned area (ha):', ee.Number(nb).multiply(100).divide(10000));
-print('Mean NDVI 2019:', ndvi19.reduceRegion({reducer: ee.Reducer.mean(), geometry: AOI, scale: 10, crs: PROJ}).get('NDVI_2019'));
-print('Mean NDVI 2022:', ndvi22.reduceRegion({reducer: ee.Reducer.mean(), geometry: AOI, scale: 10, crs: PROJ}).get('NDVI_2022'));
+function total(image, name) {
+  return image.reduceRegion({
+    reducer: ee.Reducer.sum(),
+    geometry: aoi,
+    scale: 10,
+    crs: 'EPSG:32604',
+    maxPixels: 1e9
+  }).get(name);
+}
 
-// ---- Chart: monthly NDVI, 2018-2025, for the "2022 dips" shot ----
-var months = ee.List.sequence(0, 95);
-var start = ee.Date('2018-01-01');
-var series = ee.FeatureCollection(months.map(function (m) {
-  var t0 = start.advance(m, 'month');
-  var col = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED').filterBounds(AOI)
-    .filterDate(t0, t0.advance(1, 'month'))
-    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 60)).map(maskS2);
-  var v = ee.Algorithms.If(col.size().gt(0),
-    col.median().normalizedDifference(['B8', 'B4']).reduceRegion({
-      reducer: ee.Reducer.mean(), geometry: AOI, scale: 10, maxPixels: 1e9}).get('nd'), null);
-  return ee.Feature(null, {'system:time_start': t0.millis(), NDVI: v});
-})).filter(ee.Filter.notNull(['NDVI']));
-print(ui.Chart.feature.byFeature(series, 'system:time_start', 'NDVI').setOptions({
-  title: 'Pukalani Park area: monthly median NDVI (Sentinel-2)',
-  lineWidth: 2, pointSize: 3, colors: ['#ff7a00'],
-  vAxis: {title: 'NDVI'}, hAxis: {title: 'Month'}, legend: {position: 'none'}}));
+var validPixels = total(change.mask().rename('valid'), 'valid');
+var brownedPixels = total(browned.unmask(0), 'browned');
+
+print('Scenes used, dry season 2019:', scenes2019.size());
+print('Scenes used, dry season 2022:', scenes2022.size());
+print('Valid 10 m pixels:', validPixels);
+print('Browned pixels (change < -0.10):', brownedPixels);
+print('Share browned (%):', ee.Number(brownedPixels).divide(validPixels).multiply(100));
+print('Browned area (ha):', ee.Number(brownedPixels).multiply(100).divide(10000));
+
+var firstMonth = ee.Date('2018-01-01');
+var monthly = ee.FeatureCollection(ee.List.sequence(0, 95).map(function (i) {
+  var start = firstMonth.advance(i, 'month');
+  var scenes = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+    .filterBounds(aoi)
+    .filterDate(start, start.advance(1, 'month'))
+    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 60))
+    .map(cleanImage);
+  var ndvi = ee.Algorithms.If(
+    scenes.size().gt(0),
+    scenes.median().normalizedDifference(['B8', 'B4']).reduceRegion({
+      reducer: ee.Reducer.mean(),
+      geometry: aoi,
+      scale: 10,
+      maxPixels: 1e9
+    }).get('nd'),
+    null
+  );
+  return ee.Feature(null, {'system:time_start': start.millis(), ndvi: ndvi});
+})).filter(ee.Filter.notNull(['ndvi']));
+
+print(ui.Chart.feature.byFeature(monthly, 'system:time_start', 'ndvi').setOptions({
+  title: 'Pukalani Park area: monthly NDVI',
+  lineWidth: 2,
+  pointSize: 3,
+  colors: ['#ff7a00'],
+  legend: {position: 'none'},
+  vAxis: {title: 'NDVI'},
+  hAxis: {title: 'Month'}
+}));
